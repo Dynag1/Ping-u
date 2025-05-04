@@ -58,7 +58,8 @@ def recupDerVer():
 
 def download_new_version(version):
     try:
-        exe_url = f"{var.site}/pingu/ping ü.exe"  # URL du fichier .exe à télécharger
+        exe_url = f"{var.site}/Pingu/Ping ü.exe"  # URL du fichier .exe à télécharger
+        print(exe_url)
         temp_path = os.path.join(os.getcwd(), "temp.exe")  # Chemin temporaire pour la nouvelle version
 
         # Télécharger le fichier .exe

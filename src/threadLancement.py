@@ -71,8 +71,8 @@ def mailRecap(model):
 
 def lang(self):
     print("lang")
-    messHS = self.tr("les hotes suivants sont HS : \n")
-    messOk = self.tr("les hotes suivants sont OK : \n")
+    self.messHS = self.tr("les hotes suivants sont HS : \n")
+    self.messOk = self.tr("les hotes suivants sont OK : \n")
 
 
 def popup(self):
@@ -82,6 +82,7 @@ def popup(self):
         erase = ()
         ip_hs = ""
         ip_ok = ""
+        lang(self)
         for key, value in var.liste_hs.items():
             if int(value) == int(var.nbrHs):
                 ip_hs = ip_hs + key + "\n "
@@ -95,11 +96,11 @@ def popup(self):
             except:
                 pass
         if len(ip_hs) > 0:
-            mess = messHs + ip_hs
+            mess = self.messHs + ip_hs
             threading.Thread(target=showinfo("alerte", mess)).start()
             # self.QMessageBox.information(self, "Hotes HS", mess)
         if len(ip_ok) > 0:
-            mess = messOk + ip_ok
+            mess = self.messOk + ip_ok
             threading.Thread(target=showinfo("alerte", mess)).start()
         ip_hs = ""
         ip_ok = ""
@@ -174,6 +175,7 @@ def telegram(self, model):
         erase = ()
         ip_hs1 = ""
         ip_ok1 = ""
+        lang(self)
         mess = 0
         message = self.tr("Alerte sur le site ") + var.nom_site + "\n \n"
         sujet = self.tr("Alerte sur le site ") + var.nom_site

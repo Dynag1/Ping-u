@@ -141,3 +141,9 @@ def fenetreMailRecap(self):
     resultat = dialog.exec()
     if resultat == QMessageBox.Accepted:
         save_param_mail()
+def fenAPropos(self):
+    from src.ui_fenAPropos import Ui_Dialog
+    dialog = QDialog()
+    sfenetre = Ui_Dialog()
+    sfenetre.setupUi(dialog)
+    dialog.exec()

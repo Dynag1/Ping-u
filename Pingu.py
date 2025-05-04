@@ -2,7 +2,7 @@
 import sys
 import os
 from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
-from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QMenu
+from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QMenu, QDialog
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QAction, QActionGroup
 from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, QEvent, QCoreApplication, QLocale
 from src.ui_mainwindow import Ui_MainWindow
@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
             fctMaj.main(self)
         except Exception:
             return
+        if lic.verify_license() == False:
             self.ui.checkMail.setEnabled(False)
             self.ui.checkDbExterne.setEnabled(False)
             self.ui.checkTelegram.setEnabled(False)
@@ -90,6 +91,8 @@ class MainWindow(QMainWindow):
         self.ui.actionEnvoies.triggered.connect(sFenetre.fenetreParamEnvoie)
         self.ui.actionMail_recap.triggered.connect(sFenetre.fenetreMailRecap)
         self.ui.actionG_n_raux.triggered.connect(lambda: sFenetre.fenetreParametre(self, self.comm))
+        self.ui.actionAPropos.triggered.connect(sFenetre.fenAPropos)
+
         # Fonction Save et Load
         self.ui.actionSauvegarder.triggered.connect(lambda: fct.save_csv(self, self.treeIpModel))
         self.ui.actionOuvrir.triggered.connect(lambda: fct.load_csv(self, self.treeIpModel))
@@ -97,6 +100,7 @@ class MainWindow(QMainWindow):
         # Fonction export excel
         self.ui.actionExporter_xls.triggered.connect(lambda: fctXls.saveExcel(self, self.treeIpModel))
         self.ui.actionImporter_xls.triggered.connect(lambda: fctXls.openExcel(self, self.treeIpModel))
+        # Communication
         self.comm.relaodWindow.connect(self.reload_main_window)
         self.comm.addRow.connect(self.on_add_row)
         self.comm.progress.connect(self.barProgress)
