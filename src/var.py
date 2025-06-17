@@ -2,9 +2,10 @@
 
 # if __name__ == "__main__":
 #     pass
-version = "99.00.01"
+version = "99.01.02"
 
 nom = "Ping ü"
+nom_logiciel = "Pingu"
 site = 'http://prog.dynag.co'
 
 thread_ouvert = 0

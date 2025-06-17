@@ -1,29 +1,15 @@
+## Copyright Dynag ##
+## https://prog.dynag.co ##
+## thread_lancement.py ##
+
 import threading
-from PySide6.QtWidgets import QMessageBox
-from PySide6.QtCore import Signal
 import time
 from src import thread_mail, thread_recap_mail, thread_telegram, var, db
-from queue import Queue
-from tkinter.messagebox import *
 
-"""
-*********************************************************************************************
-*********************************************************************************************
-*****	Threads des alertes															    *****
-*********************************************************************************************
-*********************************************************************************************
-"""
-
-
-
-############################################################################################
-#####	Lancement des différentes alertes										       #####
-############################################################################################
-
-messHs = ""
-messOk = ""
+# Thread des alertes #
+## Lancement des alertes ##
 def main(self, model):
-    mailRecap(model)
+    mailRecap(self, model)
     while True:
         time.sleep(10)
         if int(var.delais) < 10:
@@ -53,8 +39,8 @@ def main(self, model):
         except Exception as inst:
             print(inst)
 
-
-def mailRecap(model):
+## Mail recap ##
+def mailRecap(self, model):
     print("lancement")
     if var.tourne is True:
         print("tourne OK")
@@ -64,25 +50,13 @@ def mailRecap(model):
             except Exception as inst:
                 print(inst)
 
-############################################################################################
-#####	Alerte Popup															       #####
-############################################################################################
-
-
-def lang(self):
-    print("lang")
-    self.messHS = self.tr("les hotes suivants sont HS : \n")
-    self.messOk = self.tr("les hotes suivants sont OK : \n")
-
-
+## Popup ##
 def popup(self):
-    ask_user = Signal(str)
     try:
         time.sleep(0)
         erase = ()
         ip_hs = ""
         ip_ok = ""
-        lang(self)
         for key, value in var.liste_hs.items():
             if int(value) == int(var.nbrHs):
                 ip_hs = ip_hs + key + "\n "
@@ -96,21 +70,18 @@ def popup(self):
             except:
                 pass
         if len(ip_hs) > 0:
-            mess = self.messHs + ip_hs
-            threading.Thread(target=showinfo("alerte", mess)).start()
-            # self.QMessageBox.information(self, "Hotes HS", mess)
+            mess = self.tr("les hotes suivants sont HS : \n") + ip_hs
+            #threading.Thread(target=showinfo("alerte", mess)).start()
+            self.popup_signal.emit(mess)
         if len(ip_ok) > 0:
-            mess = self.messOk + ip_ok
-            threading.Thread(target=showinfo("alerte", mess)).start()
+            mess = self.tr("les hotes suivants sont OK : \n") + ip_ok
+            self.popup_signal.emit(mess)
         ip_hs = ""
         ip_ok = ""
     except Exception as inst:
         print(inst)
 
-
-############################################################################################
-#####	Alertes mails															       #####
-############################################################################################
+## Alertes mail ##
 def mail(self, model):
     # time.sleep(10)
     try:
@@ -140,7 +111,7 @@ def mail(self, model):
             try:
                 del var.liste_mail[cle]
             except Exception as inst:
-                design.logs("fct_thread--" + str(inst))
+                print("fct_thread--" + str(inst))
         if len(ip_hs1) > 0:
             mess = 1
             message = message + self.tr("""\
@@ -159,26 +130,19 @@ def mail(self, model):
         print("mail preparé")
         if mess == 1:
 
-            threading.Thread(target=thread_mail.envoie_mail, args=(self, message, sujet)).start()
+            threading.Thread(target=thread_mail.envoie_mail, args=(message, sujet)).start()
             mess = 0
-        ip_hs = ""
-        ip_ok = ""
     except Exception as inst:
-        design.logs("fct_thread--" + str(inst))
+       print("fct_thread--" + str(inst))
 
-
-############################################################################################
-#####	Alertes Télégram														       #####
-############################################################################################
+## Alertes Télégram ##
 def telegram(self, model):
     try:
         erase = ()
         ip_hs1 = ""
         ip_ok1 = ""
-        lang(self)
         mess = 0
         message = self.tr("Alerte sur le site ") + var.nom_site + "\n \n"
-        sujet = self.tr("Alerte sur le site ") + var.nom_site
         time.sleep(1)
         for key1, value1 in var.liste_telegram.items():
             if int(value1) == int(var.nbrHs):
@@ -200,20 +164,18 @@ def telegram(self, model):
 
         if len(ip_hs1) > 0:
             mess = 1
-            message = message + messHs + ip_hs1
+            message = message + self.tr("les hotes suivants sont HS : \n") + ip_hs1
 
         if len(ip_ok1) > 0:
             mess = 1
-            message = message + messOk + ip_ok1
+            message = message + self.tr("les hotes suivants sont OK : \n") + ip_ok1
         if mess == 1:
-            threading.Thread(target=thread_telegram.main, args=(self, message,)).start()
+            threading.Thread(target=thread_telegram.main, args=(message,)).start()
             mess = 0
-        ip_hs = ""
-        ip_ok = ""
     except Exception as inst:
         print("fct_thread--" + str(inst))
 
-
+## Recap mail ##
 def recapmail(self, model):
     print("lancement recap")
     thread_recap_mail.main(self, model)

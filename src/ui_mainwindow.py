@@ -68,6 +68,10 @@ class Ui_MainWindow(object):
         self.actiondf.setObjectName(u"actiondf")
         self.actionAPropos = QAction(MainWindow)
         self.actionAPropos.setObjectName(u"actionAPropos")
+        self.actionMaj = QAction(MainWindow)
+        self.actionMaj.setObjectName(u"actionMaj")
+        self.actionCleGpg = QAction(MainWindow)
+        self.actionCleGpg.setObjectName(u"actionCleGpg")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.formLayout = QFormLayout(self.centralwidget)
@@ -156,6 +160,15 @@ class Ui_MainWindow(object):
         self.gridLayout_2.setSpacing(0)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.gridLayout_2.setContentsMargins(-1, 0, -1, 0)
+        self.labLic = QLabel(self.frame_bas)
+        self.labLic.setObjectName(u"labLic")
+
+        self.gridLayout_2.addWidget(self.labLic, 0, 2, 1, 1)
+
+        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_2.addItem(self.horizontalSpacer_6, 0, 3, 1, 1)
+
         self.labVersion1 = QLabel(self.frame_bas)
         self.labVersion1.setObjectName(u"labVersion1")
         self.labVersion1.setMinimumSize(QSize(0, 0))
@@ -164,18 +177,14 @@ class Ui_MainWindow(object):
 
         self.gridLayout_2.addWidget(self.labVersion1, 0, 0, 1, 1)
 
-        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_2.addItem(self.horizontalSpacer_6, 0, 3, 1, 1)
-
-        self.labLic = QLabel(self.frame_bas)
-        self.labLic.setObjectName(u"labLic")
-
-        self.gridLayout_2.addWidget(self.labLic, 0, 2, 1, 1)
-
         self.horizontalSpacer_7 = QSpacerItem(40, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
 
         self.gridLayout_2.addItem(self.horizontalSpacer_7, 0, 1, 1, 1)
+
+        self.label_4 = QLabel(self.frame_bas)
+        self.label_4.setObjectName(u"label_4")
+
+        self.gridLayout_2.addWidget(self.label_4, 0, 4, 1, 1)
 
 
         self.gridLayout.addWidget(self.frame_bas, 2, 0, 1, 1)
@@ -389,7 +398,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 800, 17))
+        self.menubar.setGeometry(QRect(0, 0, 800, 21))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         self.menuParametres = QMenu(self.menubar)
@@ -421,6 +430,7 @@ class Ui_MainWindow(object):
         self.menuParametres.addAction(self.actionG_n_raux)
         self.menuParametres.addAction(self.actionEnvoies)
         self.menuParametres.addAction(self.actionMail_recap)
+        self.menuParametres.addAction(self.actionCleGpg)
         self.menuParametres.addAction(self.actionBase_de_donn_e)
         self.menuParametres.addSeparator()
         self.menuParametres.addAction(self.menuLangue.menuAction())
@@ -430,6 +440,8 @@ class Ui_MainWindow(object):
         self.menu.addAction(self.actionChangelog)
         self.menu.addAction(self.actionLogs)
         self.menu.addAction(self.actionEffacer_logs)
+        self.menu.addSeparator()
+        self.menu.addAction(self.actionMaj)
         self.menuPlugin.addAction(self.actionG_rer)
         self.menuPlugin.addSeparator()
 
@@ -463,13 +475,16 @@ class Ui_MainWindow(object):
         self.actionG_rer.setText(QCoreApplication.translate("MainWindow", u"G\u00e9rer", None))
         self.actiondf.setText(QCoreApplication.translate("MainWindow", u"df", None))
         self.actionAPropos.setText(QCoreApplication.translate("MainWindow", u"A Propos", None))
+        self.actionMaj.setText(QCoreApplication.translate("MainWindow", u"Recherche de mise \u00e0 jour", None))
+        self.actionCleGpg.setText(QCoreApplication.translate("MainWindow", u"Cl\u00e9 GPG", None))
         self.butStart.setText(QCoreApplication.translate("MainWindow", u"Start", None))
 #if QT_CONFIG(shortcut)
         self.butStart.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+D", None))
 #endif // QT_CONFIG(shortcut)
         self.labSite.setText("")
-        self.labVersion1.setText(QCoreApplication.translate("MainWindow", u"a", None))
         self.labLic.setText("")
+        self.labVersion1.setText(QCoreApplication.translate("MainWindow", u"a", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><a href=\"https://prog.dynag.co\"><span style=\" text-decoration: underline; color:#007af4;\">Copyright Dynag</span></a></p></body></html>", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"IP", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Nbr Hotes", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Ports XX,XX", None))

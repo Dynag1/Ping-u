@@ -1,15 +1,13 @@
-# This Python file uses the following encoding: utf-8
+## Copyright Dynag ##
+## https://prog.dynag.co ##
+## lic.py ##
 
-# if __name__ == "__main__":
-#     pass
 import os
 import pickle
 import platform
 import uuid
 import hashlib
 from datetime import datetime
-
-
 
 
 def lire_param_gene():

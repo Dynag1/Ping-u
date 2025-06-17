@@ -21,21 +21,28 @@ def fenetreParametre(self, comm):
     dialog = QDialog()
     sfenetre = Ui_Dialog()
     sfenetre.setupUi(dialog)
+
+
     try:
         titre = resutl[0]
         code = lic.generate_activation_code()
         licence = resutl[1]
-        try:
-            theme = resutl[2]
-        except:
-            theme = "light"
+        theme_actuel = resutl[2]
+        def list_themes():
+            themes = ["nord", "monokai", "catppuccin_latte", "catppuccin_frappe","catppuccin_mocha",
+                "atom_one", "github_dark", "github_light", "dracula", "blender"]
+            return themes
+        themes = list_themes()
+        for theme_name in themes:
+            sfenetre.comboTheme.addItem(theme_name)
+
+        sfenetre.comboTheme.setCurrentText(theme_actuel)
+
         sfenetre.lineTitre.setText(titre)
         sfenetre.lineCode.setText(code)
         sfenetre.LineLicence.setText(licence)
 
-        options = ["light", "dark"]
-        sfenetre.comboTheme.addItems(options)
-        sfenetre.comboTheme.setCurrentText(theme)
+
     except:
         print("")
 

@@ -276,6 +276,26 @@
          <property name="spacing">
           <number>0</number>
          </property>
+         <item row="0" column="2">
+          <widget class="QLabel" name="labLic">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <spacer name="horizontalSpacer_6">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="labVersion1">
            <property name="minimumSize">
@@ -298,26 +318,6 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="3">
-          <spacer name="horizontalSpacer_6">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="labLic">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <spacer name="horizontalSpacer_7">
            <property name="orientation">
@@ -333,6 +333,13 @@
             </size>
            </property>
           </spacer>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://prog.dynag.co&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;Copyright Dynag&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -719,7 +726,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>17</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -745,6 +752,7 @@
     <addaction name="actionG_n_raux"/>
     <addaction name="actionEnvoies"/>
     <addaction name="actionMail_recap"/>
+    <addaction name="actionCleGpg"/>
     <addaction name="actionBase_de_donn_e"/>
     <addaction name="separator"/>
     <addaction name="menuLangue"/>
@@ -764,6 +772,8 @@
     <addaction name="actionChangelog"/>
     <addaction name="actionLogs"/>
     <addaction name="actionEffacer_logs"/>
+    <addaction name="separator"/>
+    <addaction name="actionMaj"/>
    </widget>
    <widget class="QMenu" name="menuPlugin">
     <property name="title">
@@ -868,6 +878,16 @@
   <action name="actionAPropos">
    <property name="text">
     <string>A Propos</string>
+   </property>
+  </action>
+  <action name="actionMaj">
+   <property name="text">
+    <string>Recherche de mise à jour</string>
+   </property>
+  </action>
+  <action name="actionCleGpg">
+   <property name="text">
+    <string>Clé GPG</string>
    </property>
   </action>
  </widget>

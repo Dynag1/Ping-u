@@ -1,50 +1,106 @@
-# This Python file uses the following encoding: utf-8
-
-# if __name__ == "__main__":
-#     pass
+import gnupg
 import smtplib
 import ssl
-from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import src.db as param_mail
+from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
+import os
+import src.db as param_mail
+import sys
 
+gpg_path = os.path.join(os.path.dirname(__file__), "gpg", "gpg.exe")
+gpg = gnupg.GPG(gpgbinary=gpg_path)
+
+
+def importer_cle_publique(chemin_cle):
+    """Importe une clé publique PGP depuis un fichier .asc s'il existe, retourne le fingerprint ou None"""
+    if not os.path.exists(chemin_cle):
+        print(f"Clé publique absente ({chemin_cle})")
+        return None
+    with open(chemin_cle, 'r') as f:
+        key_data = f.read()
+    import_result = gpg.import_keys(key_data)
+    print(f"Import de {chemin_cle} :", import_result.results)
+    if import_result.fingerprints:
+        return import_result.fingerprints[0]
+    return None
+
+def chiffrer_message(message, fingerprints):
+    """Chiffre le message pour une liste de fingerprints"""
+    if not fingerprints:
+        return None
+    encrypted_data = gpg.encrypt(message, recipients=fingerprints, always_trust=True)
+    return str(encrypted_data) if encrypted_data.ok else None
 
 def envoie_mail(messageRecep, sujet):
     variables = param_mail.lire_param_mail()
-
     destinateur = variables[0]
     password = variables[1]
     port = variables[2]
     smtp_server = variables[3]
-    destinataire = variables[4]
+    destinataires = [d.strip() for d in variables[4].split(",")]
+
+    dossier_cles = "cle"
+    fingerprints = []
+    destinataires_chiffres = []
+    destinataires_non_chiffres = []
+
+    # 1. Cherche une clé pour chaque destinataire
+    for dest in destinataires:
+        nom_cle = f"{dest}.asc"
+        chemin_cle = os.path.join(dossier_cles, nom_cle)
+        fingerprint = importer_cle_publique(chemin_cle)
+        if fingerprint:
+            fingerprints.append(fingerprint)
+            destinataires_chiffres.append(dest)
+        else:
+            destinataires_non_chiffres.append(dest)
+
+    # 2. Préparation du message
     message = MIMEMultipart('alternative')
     message['Subject'] = sujet
     message['From'] = destinateur
-    message['To'] = destinataire
     message['Date'] = formatdate(localtime=True)
 
-    email_texte = messageRecep
-    email_html = messageRecep
-
-    mimetext_texte = MIMEText(email_texte, "texte")
-    mimetext_html = MIMEText(email_html, "html")
-    message.attach(mimetext_texte)
-    message.attach(mimetext_html)
-    try:
-        context = ssl.create_default_context()
-    except Exception as inst:
-        print("fct_tread_mail"+inst)
-        return
-    try:
-        with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
-            server.login(destinateur, password)
+    # 3. Envoi chiffré si possible
+    if fingerprints and len(destinataires_chiffres) > 0:
+        message['To'] = ", ".join(destinataires_chiffres)
+        message_chiffre = chiffrer_message(messageRecep, fingerprints)
+        if message_chiffre:
+            message.attach(MIMEText(message_chiffre, "plain"))
+            print("Envoi chiffré à :", ", ".join(destinataires_chiffres))
             try:
-                server.sendmail(destinateur, destinataire.split(","), message.as_string())
-            except Exception as inst:
-                print("fct_tread_mail" + inst)
-            server.quit()
-            print("Test envoie mail OK")
-    except Exception as inst:
-        print("fct_tread_mail"+inst)
+                context = ssl.create_default_context()
+                with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
+                    server.login(destinateur, password)
+                    server.sendmail(destinateur, destinataires_chiffres, message.as_string())
+                    print("Mail chiffré envoyé avec succès")
+            except Exception as e:
+                print("Erreur d'envoi chiffré :", str(e))
+        else:
+            print("Erreur lors du chiffrement, envoi en clair à tous.")
+            destinataires_non_chiffres.extend(destinataires_chiffres)
 
+    # 4. Envoi en clair pour ceux qui n'ont pas de clé
+    if destinataires_non_chiffres:
+        message2 = MIMEMultipart('alternative')
+        message2['Subject'] = sujet
+        message2['From'] = destinateur
+        message2['To'] = ", ".join(destinataires_non_chiffres)
+        message2['Date'] = formatdate(localtime=True)
+        mimetext_texte = MIMEText(messageRecep, "plain")
+        mimetext_html = MIMEText(messageRecep, "html")
+        message2.attach(mimetext_texte)
+        message2.attach(mimetext_html)
+        print("Envoi en clair à :", ", ".join(destinataires_non_chiffres))
+        try:
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
+                server.login(destinateur, password)
+                server.sendmail(destinateur, destinataires_non_chiffres, message2.as_string())
+                print("Mail en clair envoyé avec succès")
+        except Exception as e:
+            print("Erreur d'envoi en clair :", str(e))
+
+if __name__ == "__main__":
+    envoie_mail("Ceci est un message secret envoyé en PGP si possible !", "Message sécurisé")
