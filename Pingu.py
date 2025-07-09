@@ -8,6 +8,7 @@ from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator
 from src.ui_mainwindow import Ui_MainWindow
 from src import var, fct, lic, threadAjIp, threadLancement, db, sFenetre
 from src import fctXls, fctMaj
+import src.Snyf.main as snyf
 from src.fcy_ping import PingManager
 import threading
 import qt_themes
@@ -18,8 +19,8 @@ import subprocess
 
 
 os.makedirs("logs", exist_ok=True)
-#sys.stdout = open('logs/stdout.log', 'w')
-#sys.stderr = open('logs/stderr.log', 'w')
+sys.stdout = open('logs/stdout.log', 'w')
+sys.stderr = open('logs/stderr.log', 'w')
 
 class Communicate(QObject):
     addRow = Signal(str, str, str, str, str, str, bool)
@@ -29,7 +30,6 @@ class Communicate(QObject):
 
 class MainWindow(QMainWindow):
     popup_signal = Signal(str)
-
     def changeEvent(self, event):
         if event.type() == QEvent.LanguageChange:
             self.retranslateUi()
@@ -47,6 +47,10 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.translator = QTranslator()
         result = db.lire_param_gene()
+        if not result or len(result) < 3:
+            print("Paramètres généraux manquants, utilisation du thème par défaut.")
+            result = ["", "", "nord"]
+        self.change_theme(result[2])
         self.change_theme(result[2])
         self.create_language_menu()
         self.comm = Communicate()
@@ -67,7 +71,7 @@ class MainWindow(QMainWindow):
             self.ui.checkTelegram.setEnabled(False)
             self.ui.checkMailRecap.setEnabled(False)
         connect.connector(self)
-        
+
         self.plugin = fct.plug(self)
         self.menuPlugin(self.plugin)
         self.ui.progressBar.hide()
@@ -84,10 +88,8 @@ class MainWindow(QMainWindow):
 ## Path du langage ##
     def get_language_path(self):
         if getattr(sys, 'frozen', False):
-            # Mode compilé : chemin dans le bundle
             base_path = sys._MEIPASS
         else:
-            # Mode développement : chemin relatif
             base_path = os.path.dirname(__file__)
 
         return os.path.join(base_path, 'src', 'languages')
@@ -317,12 +319,15 @@ class MainWindow(QMainWindow):
             QStandardItem(""),
             QStandardItem("")
         ]
-        if is_ok:
-            for item in items:
-                item.setBackground(QColor("#1f8137"))
-        else:
-            for item in items:
-                item.setBackground(QColor("#A9A9A9"))
+        # Rendre certaines colonnes non éditables
+        for col in [0, 1, 3, 5, 6, 8]:
+            items[col].setFlags(items[col].flags() & ~Qt.ItemIsEditable)
+
+        # Coloration selon is_ok
+        couleur = QColor("#1f8137") if is_ok else QColor("#A9A9A9")
+        for item in items:
+            item.setBackground(couleur)
+
         self.treeIpModel.appendRow(items)
 
     def butStart(self):
@@ -386,12 +391,10 @@ class MainWindow(QMainWindow):
             else:
                 subprocess.run(["xdg-open", chemin])
 
+    def notice(self):
+        webbrowser.open('http://prog.dynag.co/Pingu/pingu-Notice.pdf')
 
 class connect():
-
-    
-
-
     def connector(self):
         self.ui.butIp.clicked.connect(self.butIpClic)
         self.ui.butStart.clicked.connect(self.butStart)
@@ -420,12 +423,14 @@ class connect():
         # Fonction export excel
         self.ui.actionExporter_xls.triggered.connect(lambda: fctXls.saveExcel(self, self.treeIpModel))
         self.ui.actionImporter_xls.triggered.connect(lambda: fctXls.openExcel(self, self.treeIpModel))
+        self.ui.actionSnyf_2.triggered.connect(lambda: snyf.main(self, self.comm))
         self.ui.actionCleGpg.triggered.connect(lambda: self.pgp())
         # Communication
         self.comm.relaodWindow.connect(self.reload_main_window)
         self.comm.addRow.connect(self.on_add_row)
         self.comm.progress.connect(self.barProgress)
         self.popup_signal.connect(self.show_popup)
+        self.ui.actionNotice.triggered.connect(lambda: self.notice())
 
     def demarre(self):
         if lic.verify_license() == False:

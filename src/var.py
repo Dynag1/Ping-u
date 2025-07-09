@@ -2,7 +2,7 @@
 
 # if __name__ == "__main__":
 #     pass
-version = "99.01.02"
+version = "99.01.04"
 
 nom = "Ping ü"
 nom_logiciel = "Pingu"

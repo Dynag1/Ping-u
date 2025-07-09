@@ -763,6 +763,8 @@
     </property>
     <addaction name="actionExporter_xls"/>
     <addaction name="actionImporter_xls"/>
+    <addaction name="separator"/>
+    <addaction name="actionSnyf_2"/>
    </widget>
    <widget class="QMenu" name="menu">
     <property name="title">
@@ -774,6 +776,7 @@
     <addaction name="actionEffacer_logs"/>
     <addaction name="separator"/>
     <addaction name="actionMaj"/>
+    <addaction name="actionNotice"/>
    </widget>
    <widget class="QMenu" name="menuPlugin">
     <property name="title">
@@ -888,6 +891,21 @@
   <action name="actionCleGpg">
    <property name="text">
     <string>Clé GPG</string>
+   </property>
+  </action>
+  <action name="actionSnyf">
+   <property name="text">
+    <string>Snyf</string>
+   </property>
+  </action>
+  <action name="actionSnyf_2">
+   <property name="text">
+    <string>Snyf</string>
+   </property>
+  </action>
+  <action name="actionNotice">
+   <property name="text">
+    <string>Notice</string>
    </property>
   </action>
  </widget>

@@ -33,7 +33,7 @@ class PingWorker(QRunnable):
                 future = executor.submit(
                     ping.ping,
                     self.ip,
-                    size=10,
+                    size=1,
                     count=1,
                     timeout=0.5
                 )
@@ -111,6 +111,7 @@ class PingManager(QObject):
         super().__init__()
         self.tree_widget = tree_widget
         self.thread_pool = QThreadPool()
+        #self.thread_pool.setMaxThreadCount(1)
         self.thread_pool.setMaxThreadCount(multiprocessing.cpu_count() * 2)
         self.workers = []
         self.timer = None
@@ -155,8 +156,6 @@ class PingManager(QObject):
     def remove_worker(self, worker):
         if worker in self.workers:
             self.workers.remove(worker)
-
-    # ... (handle_result et autres méthodes inchangées mais thread-safe) ...
 
 
     def handle_result(self, ip, latency, color):
