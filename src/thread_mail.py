@@ -1,4 +1,3 @@
-import gnupg
 import smtplib
 import ssl
 from email.mime.text import MIMEText
@@ -8,8 +7,16 @@ import os
 import src.db as param_mail
 import sys
 
-gpg_path = os.path.join(os.path.dirname(__file__), "gpg", "gpg.exe")
-gpg = gnupg.GPG(gpgbinary=gpg_path)
+# Import optionnel de GPG (peut échouer dans l'exécutable PyInstaller)
+try:
+    import gnupg
+    gpg_path = os.path.join(os.path.dirname(__file__), "gpg", "gpg.exe")
+    gpg = gnupg.GPG(gpgbinary=gpg_path)
+    GPG_AVAILABLE = True
+except (ImportError, OSError) as e:
+    print(f"GPG non disponible: {e}")
+    gpg = None
+    GPG_AVAILABLE = False
 
 
 def importer_cle_publique(chemin_cle):
@@ -45,8 +52,11 @@ def envoie_mail(messageRecep, sujet):
     destinataires_chiffres = []
     destinataires_non_chiffres = []
 
-    # 1. Cherche une clé pour chaque destinataire
+    # 1. Cherche une clé pour chaque destinataire (seulement si GPG est disponible)
     for dest in destinataires:
+        if not GPG_AVAILABLE:
+            destinataires_non_chiffres.append(dest)
+            continue
         nom_cle = f"{dest}.asc"
         chemin_cle = os.path.join(dossier_cles, nom_cle)
         fingerprint = importer_cle_publique(chemin_cle)
@@ -62,8 +72,8 @@ def envoie_mail(messageRecep, sujet):
     message['From'] = destinateur
     message['Date'] = formatdate(localtime=True)
 
-    # 3. Envoi chiffré si possible
-    if fingerprints and len(destinataires_chiffres) > 0:
+    # 3. Envoi chiffré si possible (seulement si GPG est disponible)
+    if GPG_AVAILABLE and fingerprints and len(destinataires_chiffres) > 0:
         message['To'] = ", ".join(destinataires_chiffres)
         message_chiffre = chiffrer_message(messageRecep, fingerprints)
         if message_chiffre:

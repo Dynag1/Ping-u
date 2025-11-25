@@ -5,6 +5,9 @@
 import threading
 import time
 from src import thread_mail, thread_recap_mail, thread_telegram, var, db
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Thread des alertes #
 ## Lancement des alertes ##
@@ -23,32 +26,32 @@ def main(self, model):
                     try:
                         threading.Thread(target=popup, args=(self,)).start()
                     except Exception as inst:
-                        print("popup "+inst)
+                        logger.error(f"Erreur popup: {inst}", exc_info=True)
                 if var.mail is True:
                     try:
                         threading.Thread(target=mail, args=(self, model,)).start()
                     except Exception as inst:
-                        print(inst)
+                        logger.error(f"Erreur mail: {inst}", exc_info=True)
                 if var.telegram is True:
                     try:
                         threading.Thread(target=telegram, args=(self, model,)).start()
                     except Exception as inst:
-                        print(inst)
+                        logger.error(f"Erreur telegram: {inst}", exc_info=True)
             else:
                 break
         except Exception as inst:
-            print(inst)
+            logger.error(f"Erreur boucle principale threadLancement: {inst}", exc_info=True)
 
 ## Mail recap ##
 def mailRecap(self, model):
-    print("lancement")
+    logger.info("Lancement mail recap")
     if var.tourne is True:
-        print("tourne OK")
+        logger.debug("Application tourne, vérification mail recap")
         if var.mailRecap is True:
             try:
                 threading.Thread(target=thread_recap_mail.main, args=(self, model,)).start()
             except Exception as inst:
-                print(inst)
+                logger.error(f"Erreur lancement thread recap mail: {inst}", exc_info=True)
 
 ## Popup ##
 def popup(self):
@@ -79,7 +82,7 @@ def popup(self):
         ip_hs = ""
         ip_ok = ""
     except Exception as inst:
-        print(inst)
+        logger.error(f"Erreur fonction popup: {inst}", exc_info=True)
 
 ## Alertes mail ##
 def mail(self, model):
@@ -111,7 +114,7 @@ def mail(self, model):
             try:
                 del var.liste_mail[cle]
             except Exception as inst:
-                print("fct_thread--" + str(inst))
+                logger.error(f"Erreur suppression liste mail: {inst}", exc_info=True)
         if len(ip_hs1) > 0:
             mess = 1
             message = message + self.tr("""\
@@ -127,13 +130,13 @@ def mail(self, model):
                         </table><br><br>
                         Cordialement,
                          """)
-        print("mail preparé")
+        logger.info("Mail d'alerte préparé")
         if mess == 1:
 
             threading.Thread(target=thread_mail.envoie_mail, args=(message, sujet)).start()
             mess = 0
     except Exception as inst:
-       print("fct_thread--" + str(inst))
+       logger.error(f"Erreur fonction mail: {inst}", exc_info=True)
 
 ## Alertes Télégram ##
 def telegram(self, model):
@@ -173,9 +176,9 @@ def telegram(self, model):
             threading.Thread(target=thread_telegram.main, args=(message,)).start()
             mess = 0
     except Exception as inst:
-        print("fct_thread--" + str(inst))
+        logger.error(f"Erreur fonction telegram: {inst}", exc_info=True)
 
 ## Recap mail ##
 def recapmail(self, model):
-    print("lancement recap")
+    logger.info("Lancement recap mail manuel")
     thread_recap_mail.main(self, model)

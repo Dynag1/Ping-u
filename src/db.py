@@ -3,6 +3,10 @@ import pickle
 import os.path
 from pathlib import Path
 from PySide6.QtCore import Qt
+from src.utils.logger import get_logger
+from src.utils.paths import AppPaths
+
+logger = get_logger(__name__)
 
 
 """**************
@@ -12,15 +16,12 @@ fichierini = "tabG"
 
 
 def creerDossier(nom):
-    # Spécifiez le chemin du dossier à créer
-    chemin_dossier = os.getcwd()+"\\"+nom
-
-    # Vérifiez si le dossier n'existe pas, puis créez-le
-    dossier = Path(chemin_dossier)
-    if not dossier.exists():
-        dossier.mkdir(parents=True, exist_ok=True)
-    else:
-        pass
+    # Obsolète : Utiliser AppPaths.ensure_dirs() au démarrage
+    # On garde pour compatibilité mais on utilise AppPaths
+    try:
+        AppPaths.ensure_dirs()
+    except Exception as e:
+        logger.error(f"Erreur création dossier {nom}: {e}")
 
 
 def lireNom(ip, model):
@@ -47,7 +48,7 @@ def nom_site():
         var.nom_site = param[0]
         var.l = param[1]
     except Exception as inst:
-        print("param_gene - "+str(inst))
+        logger.error(f"Erreur lecture nom site: {inst}", exc_info=True)
         return param[0]
 
 
@@ -59,9 +60,9 @@ def lire_param_gene():
             fichierSauvegarde.close()
             return variables
         else:
-            print("Fichier " + fichierini + " non trouvé")
+            logger.warning(f"Fichier {fichierini} non trouvé")
     except Exception as inst:
-        print("param_gene - "+str(inst))
+        logger.error(f"Erreur lecture param gene: {inst}", exc_info=True)
 
 
 def save_param_gene(param_site, param_li, param_theme):
@@ -71,7 +72,7 @@ def save_param_gene(param_site, param_li, param_theme):
         pickle.dump(variables, fichierSauvegarde)
         fichierSauvegarde.close()
     except Exception as inst:
-        print("param_gene - "+str(inst))
+        logger.error(f"Erreur sauvegarde param gene: {inst}", exc_info=True)
 
 
 """**************
@@ -88,9 +89,9 @@ def lire_param_db():
             fichierSauvegarde.close()
             return variables
         else:
-            print("Fichier "+fichierini+" non trouvé")
+            logger.warning(f"Fichier {fichierini} non trouvé")
     except Exception as inst:
-        print(inst)
+        logger.error(f"Erreur lecture param db: {inst}", exc_info=True)
 
 
 def save_param_db():
@@ -108,10 +109,10 @@ def save_param_db():
             pickle.dump(variables, fichierSauvegarde)
             fichierSauvegarde.close()
         except Exception as inst:
-            print((inst))
+            logger.error(f"Erreur sauvegarde param db (interne): {inst}", exc_info=True)
             return
     except Exception as inst:
-        print((inst))
+        logger.error(f"Erreur sauvegarde param db: {inst}", exc_info=True)
 
 
 """**************
@@ -128,10 +129,10 @@ def lire_param_mail():
             fichierSauvegarde.close()
             return variables
         else:
+            logger.warning(f"Fichier {fichierini} non trouvé")
             return False
-            print("Fichier " + fichierini + " non trouvé")
     except Exception as inst:
-        print(inst)
+        logger.error(f"Erreur lecture param mail: {inst}", exc_info=True)
 
 
 def save_param_mail(variables):
@@ -140,7 +141,7 @@ def save_param_mail(variables):
         pickle.dump(variables, fichierSauvegarde)
         fichierSauvegarde.close()
     except Exception as inst:
-        print(inst)
+        logger.error(f"Erreur sauvegarde param mail: {inst}", exc_info=True)
     return
 
 
@@ -155,7 +156,7 @@ def save_param_mail_recap(value):
         pickle.dump(value, fichierSauvegarde)
         fichierSauvegarde.close()
     except Exception as inst:
-        print("mail-"+str(inst))
+        logger.error(f"Erreur sauvegarde param mail recap: {inst}", exc_info=True)
         return
 
 
@@ -171,6 +172,6 @@ def lire_param_mail_recap():
             return variables
         else:
             # Le fichier n'existe pas
-            print("Fichier " + fichierini + " non trouvé")
+            logger.warning(f"Fichier {fichierini} non trouvé")
     except Exception as inst:
-        print("mail-"+str(inst))
+        logger.error(f"Erreur lecture param mail recap: {inst}", exc_info=True)

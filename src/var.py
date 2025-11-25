@@ -2,7 +2,9 @@
 
 # if __name__ == "__main__":
 #     pass
-version = "99.01.04"
+from src.utils.colors import AppColors
+
+version = "99.01.05"
 
 nom = "Ping ü"
 nom_logiciel = "Pingu"
@@ -27,13 +29,13 @@ liste_hs = {}
 liste_mail = {}
 liste_telegram = {}
 
-couleur_vert = "#baf595"
-couleur_jaune = "#fffd6a"
-couleur_orange = "#ffb845"
-couleur_rouge = "#f97e7e"
-couleur_noir = "#6d6d6d"
+couleur_vert = AppColors.VERT_PALE
+couleur_jaune = AppColors.JAUNE_PALE
+couleur_orange = AppColors.ORANGE_PALE
+couleur_rouge = AppColors.ROUGE_PALE
+couleur_noir = AppColors.NOIR_GRIS
 
-bg_frame_haut = "#81BEF7"
-bg_frame_mid = "#A9D0F5"
-bg_frame_droit = "#A9D0F5"
-bg_but = "#81BEF7"
+bg_frame_haut = AppColors.BG_FRAME_HAUT
+bg_frame_mid = AppColors.BG_FRAME_MID
+bg_frame_droit = AppColors.BG_FRAME_DROIT
+bg_but = AppColors.BG_BUT

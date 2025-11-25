@@ -1,26 +1,33 @@
 # This Python file uses the following encoding: utf-8
 import sys
 import os
+import subprocess
 from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
 from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QMenu
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QAction, QActionGroup
 from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, QEvent, QCoreApplication, QLocale
 from src.ui_mainwindow import Ui_MainWindow
-from src import var, fct, lic, threadAjIp, threadLancement, db, sFenetre
+from src import var, fct, lic, threadAjIp, db, sFenetre
 from src import fctXls, fctMaj
 import src.Snyf.main as snyf
-from src.fcy_ping import PingManager
+from src.controllers.settings_controller import SettingsController
+from src.controllers.main_controller import MainController
 import threading
 import qt_themes
 import webbrowser
 import importlib
 import platform
-import subprocess
 
 
-os.makedirs("logs", exist_ok=True)
-sys.stdout = open('logs/stdout.log', 'w')
-sys.stderr = open('logs/stderr.log', 'w')
+from src.utils.logger import setup_logging, get_logger
+
+# Initialisation du logging
+setup_logging()
+logger = get_logger(__name__)
+
+# Suppression de la redirection stdout/stderr obsolète
+# sys.stdout = open('logs/stdout.log', 'w')
+# sys.stderr = open('logs/stderr.log', 'w')
 
 class Communicate(QObject):
     addRow = Signal(str, str, str, str, str, str, bool)
@@ -36,8 +43,34 @@ class MainWindow(QMainWindow):
         super().changeEvent(event)
 
     def closeEvent(self, event):
-        os._exit(0)
+        """Fermeture propre de l'application"""
+        logger.info("Fermeture de l'application demandée")
+        self.cleanup_resources()
         event.accept()
+
+    def cleanup_resources(self):
+        """Nettoyage propre de toutes les ressources"""
+        try:
+            # 1. Arrêter le flag global
+            var.tourne = False
+            
+            # 2. Arrêter le monitoring via le contrôleur
+            if hasattr(self, 'main_controller') and self.main_controller:
+                self.main_controller.stop_monitoring()
+            
+            # 3. Sauvegarder les paramètres
+            try:
+                db.save_param_db()
+                logger.info("Paramètres sauvegardés")
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde paramètres: {e}", exc_info=True)
+                
+            # 4. Attendre un peu pour que les threads se terminent
+            # Note: QTimer.singleShot n'est pas idéal ici car on est dans closeEvent
+            # On laisse le temps aux threads de voir var.tourne = False
+            
+        except Exception as e:
+            logger.error(f"Erreur lors du nettoyage: {e}", exc_info=True)
 
     def __init__(self):
 
@@ -48,38 +81,104 @@ class MainWindow(QMainWindow):
         self.translator = QTranslator()
         result = db.lire_param_gene()
         if not result or len(result) < 3:
-            print("Paramètres généraux manquants, utilisation du thème par défaut.")
+            logger.warning("Paramètres généraux manquants, utilisation du thème par défaut.")
             result = ["", "", "nord"]
-        self.change_theme(result[2])
         self.change_theme(result[2])
         self.create_language_menu()
         self.comm = Communicate()
         self.tree_view = self.ui.treeIp
+        
+        # Contrôleurs
+        self.settings_controller = SettingsController(self)
+        self.main_controller = MainController(self)
+        
         self.load_language(QLocale().name()[:2])
-        connect.demarre(self)
+        
+        # Initialisation de l'application
+        self._initialize_app()
+
+    def _initialize_app(self):
+        """Initialisation complète de l'application"""
+        if lic.verify_license() == False:
+            self.ui.checkMail.setEnabled(False)
+            self.ui.checkDbExterne.setEnabled(False)
+            self.ui.checkTelegram.setEnabled(False)
+            self.ui.checkMailRecap.setEnabled(False)
+            
+        os.makedirs("cle", exist_ok=True)
+        
+        # Connexion des signaux
+        self._setup_connections()
+        
+        # Chargement des plugins
+        self.plugin = fct.plug(self)
+        self.menuPlugin(self.plugin)
+        
+        self.ui.progressBar.hide()
+        lic.verify_license()
+        
+        # Initialisation de l'arbre
+        self.tree_view = self.ui.treeIp
+        self.treeIpHeader(self.tree_view)
+        # IP locale
+        self.ui.txtIp.setText(fct.getIp(self))
+        
+        # Chargement des paramètres UI
+        # Chargement des paramètres UI
+        self.settings_controller.load_ui_settings()
+        
+        # Initialisation de la couleur du bouton Start
+        self.ui.butStart.setStyleSheet(f"background-color: {var.couleur_vert}; color: black;")
+        self.ui.butStart.setText("Start")
+
+    def _setup_connections(self):
+        """Configuration des connexions signaux/slots"""
+        self.ui.butIp.clicked.connect(self.butIpClic)
+        self.ui.butStart.clicked.connect(self.butStart)
+        self.ui.menuClose.triggered.connect(self.close)
+        self.ui.actionG_rer.triggered.connect(self.plugGerer)
+        self.ui.actionMaj.triggered.connect(lambda: fctMaj.main(self))
+        # Modele alertes
+        self.ui.spinDelais.valueChanged.connect(self.on_spin_delais_changed)
+        self.ui.spinHs.valueChanged.connect(self.on_spin_spinHs_changed)
+        self.ui.checkPopup.clicked.connect(self.popup)
+        self.ui.checkMail.clicked.connect(self.mail)
+        self.ui.checkTelegram.clicked.connect(self.telegram)
+        self.ui.checkMailRecap.clicked.connect(self.mailRecap)
+        self.ui.checkDbExterne.clicked.connect(self.pingDb)
+        # Fentres
+        self.ui.checkDbExterne.clicked.connect(self.pingDb)
+        # Fentres
+        self.ui.actionSauvegarder_les_r_glages.triggered.connect(self.settings_controller.save_settings)
+        self.ui.actionEnvoies.triggered.connect(sFenetre.fenetreParamEnvoie)
+        self.ui.actionMail_recap.triggered.connect(sFenetre.fenetreMailRecap)
+        self.ui.actionG_n_raux.triggered.connect(lambda: sFenetre.fenetreParametre(self, self.comm))
+        self.ui.actionAPropos.triggered.connect(sFenetre.fenAPropos)
+
+        # Fonction Save et Load
+        self.ui.actionSauvegarder.triggered.connect(lambda: fct.save_csv(self, self.treeIpModel))
+        self.ui.actionOuvrir.triggered.connect(lambda: fct.load_csv(self, self.treeIpModel))
+        self.ui.actionTout_effacer.triggered.connect(lambda: fct.clear(self, self.treeIpModel))
+        # Fonction export excel
+        self.ui.actionExporter_xls.triggered.connect(lambda: fctXls.saveExcel(self, self.treeIpModel))
+        self.ui.actionImporter_xls.triggered.connect(lambda: fctXls.openExcel(self, self.treeIpModel))
+        self.ui.actionSnyf_2.triggered.connect(lambda: snyf.main(self, self.comm))
+        self.ui.actionCleGpg.triggered.connect(lambda: self.pgp())
+        # Communication
+        self.comm.relaodWindow.connect(self.reload_main_window)
+        self.comm.addRow.connect(self.on_add_row)
+        self.comm.progress.connect(self.barProgress)
+        self.popup_signal.connect(self.show_popup)
+        self.ui.actionNotice.triggered.connect(lambda: self.notice())
+        # Logs
+        self.ui.actionLogs.triggered.connect(self.open_logs)
+        self.ui.actionEffacer_logs.triggered.connect(self.clear_logs)
 
     def change_theme(self, theme_name):
         try:
             qt_themes.set_theme(theme_name)
         except:
             qt_themes.set_theme("nord")
-
-    def demarre(self):
-        if lic.verify_license() == False:
-            self.ui.checkMail.setEnabled(False)
-            self.ui.checkDbExterne.setEnabled(False)
-            self.ui.checkTelegram.setEnabled(False)
-            self.ui.checkMailRecap.setEnabled(False)
-        connect.connector(self)
-
-        self.plugin = fct.plug(self)
-        self.menuPlugin(self.plugin)
-        self.ui.progressBar.hide()
-        lic.verify_license()
-        self.tree_view = self.ui.treeIp
-        self.treeIpHeader(self.tree_view)
-        self.ui.txtIp.setText(fct.getIp(self))
-        param.lireParamUi(self)
 
     def show_popup(self, mess):
           QMessageBox.information(self, "Alerte", mess)
@@ -142,7 +241,7 @@ class MainWindow(QMainWindow):
 
 ## Rechager l'UI ##
     def langReload(self):
-        print("lang")
+        # print("lang")
         self.ui.labVersion1.setText(self.tr("Ping ü version : ")+var.version)
         textLiNok = self.tr("Vous n'avez pas de license active")
         if lic.verify_license():
@@ -168,6 +267,7 @@ class MainWindow(QMainWindow):
                 # Ajout direct de l'action dans le menu (PAS dans un sous-menu)
                 self.ui.menuPlugin.addAction(action_directe)
         except Exception as e:
+            logger.error(f"Erreur menu plugin: {e}", exc_info=True)
             QMessageBox.information(
                 self,
                 "Erreur",
@@ -188,6 +288,7 @@ class MainWindow(QMainWindow):
             else:
                 print(f"Le plugin '{plug}' n'a pas de fonction 'run'.")
         except Exception as e:
+            logger.error(f"Erreur lancement plugin {plug}: {e}", exc_info=True)
             QMessageBox.information(
                 self,
                 "Erreur",
@@ -207,8 +308,7 @@ class MainWindow(QMainWindow):
             elif os.path.isfile(path):
                 subprocess.run([FILEBROWSER_PATH, '/select,', os.path.normpath(path)])
         except Exception as e:
-            print(e)
-            print("design - " + str(e))
+            logger.error(f"Erreur gestion plugin: {e}", exc_info=True)
 
 
     def popup(self):
@@ -242,26 +342,26 @@ class MainWindow(QMainWindow):
             var.dbExterne = False
 
     def close(self):
-        var.tourne = False
-        app.aboutToQuit.connect(self.cleanup_threads)
-        os._exit(0)
+        self.cleanup_resources()
+        QApplication.quit()
 
     def treeIpHeader(self, tree_view):
         self.tree_view = self.ui.treeIp
         self.treeIpModel = QStandardItemModel()
-        self.treeIpModel.setHorizontalHeaderLabels([self.tr("Id"), self.tr("IP"), self.tr("Nom"), self.tr("Mac"), self.tr("Port"), self.tr("Latence"), self.tr("Suivi"), self.tr("Comm"), self.tr("Excl")])
+        self.treeIpModel.setHorizontalHeaderLabels([self.tr("Id"), self.tr("IP"), self.tr("Nom"), self.tr("Mac"), self.tr("Port"), self.tr("Latence"), self.tr("Temp"), self.tr("Suivi"), self.tr("Comm"), self.tr("Excl")])
         self.tree_view.setModel(self.treeIpModel)
         header = self.tree_view.header()
         header.setStretchLastSection(False)
         for i in range(self.treeIpModel.columnCount()):
-            if i in [0, 5, 6, 8]:  # Colonnes figées
+            if i in [0, 5, 6, 7, 9]:  # Colonnes figées (Id, Latence, Temp, Suivi, Excl)
                 header.setSectionResizeMode(i, QHeaderView.Fixed)
             else:  # Colonnes étirables
                 header.setSectionResizeMode(i, QHeaderView.Stretch)
         self.tree_view.setColumnWidth(0, 1)
-        self.tree_view.setColumnWidth(5, 50)
-        self.tree_view.setColumnWidth(6, 50)
-        self.tree_view.setColumnWidth(8, 50)
+        self.tree_view.setColumnWidth(5, 50)  # Latence
+        self.tree_view.setColumnWidth(6, 50)  # Temp
+        self.tree_view.setColumnWidth(7, 50)  # Suivi
+        self.tree_view.setColumnWidth(9, 50)  # Excl
         self.tree_view.setStyleSheet("QTreeView, QTreeView::item { color: black; }")
         self.tree_view.setSelectionMode(QAbstractItemView.NoSelection)
 
@@ -289,7 +389,7 @@ class MainWindow(QMainWindow):
     def handle_web_action(self, index: QModelIndex):
         ip_item = self.treeIpModel.item(index.row(), 1)
         webbrowser.open('http://' + ip_item.text())
-        print(f"Ouverture de {ip_item.text()}")
+        logger.info(f"Ouverture navigateur pour {ip_item.text()}")
 
     def find_and_remove(self, index: QModelIndex):
         self.treeIpModel.removeRow(index.row())
@@ -315,12 +415,13 @@ class MainWindow(QMainWindow):
             QStandardItem(mac),
             QStandardItem(str(port)),
             QStandardItem(extra),
+            QStandardItem(""),  # Temp (sera remplie par SNMP)
             QStandardItem(""),
             QStandardItem(""),
             QStandardItem("")
         ]
         # Rendre certaines colonnes non éditables
-        for col in [0, 1, 3, 5, 6, 8]:
+        for col in [0, 1, 3, 5, 6, 7, 9]:  # Id, IP, Mac, Latence, Temp, Suivi, Excl
             items[col].setFlags(items[col].flags() & ~Qt.ItemIsEditable)
 
         # Coloration selon is_ok
@@ -331,14 +432,7 @@ class MainWindow(QMainWindow):
         self.treeIpModel.appendRow(items)
 
     def butStart(self):
-        self.ping_manager = PingManager(self.treeIpModel)
-        if self.ui.butStart.isChecked():
-            var.tourne = True
-            self.ping_manager.start()
-            threading.Thread(target=threadLancement.main, args=(self, self.treeIpModel)).start()
-        else:
-            var.tourne = False
-            self.ping_manager.stop()
+        self.main_controller.toggle_monitoring()
 
     def on_spin_delais_changed(self, value):
         var.delais = value
@@ -379,108 +473,50 @@ class MainWindow(QMainWindow):
         window.show()
 
     def pgp(self):
-
-            chemin = os.path.abspath("cle")
-            if not os.path.exists(chemin):
-                raise FileNotFoundError(f"Le dossier {chemin} n'existe pas.")
-            systeme = platform.system()
-            if systeme == "Windows":
-                os.startfile(chemin)
-            elif systeme == "Darwin":
-                subprocess.run(["open", chemin])
-            else:
-                subprocess.run(["xdg-open", chemin])
+        chemin = os.path.abspath("cle")
+        if not os.path.exists(chemin):
+            raise FileNotFoundError(f"Le dossier {chemin} n'existe pas.")
+        systeme = platform.system()
+        if systeme == "Windows":
+            os.startfile(chemin)
+        elif systeme == "Darwin":
+            subprocess.run(["open", chemin])
+        else:
+            subprocess.run(["xdg-open", chemin])
 
     def notice(self):
-        webbrowser.open('http://prog.dynag.co/Pingu/pingu-Notice.pdf')
+        webbrowser.open("https://github.com/Atypi/Ping-u/blob/main/Notice.md")
 
-class connect():
-    def connector(self):
-        self.ui.butIp.clicked.connect(self.butIpClic)
-        self.ui.butStart.clicked.connect(self.butStart)
-        self.ui.menuClose.triggered.connect(self.close)
-        self.ui.actionG_rer.triggered.connect(self.plugGerer)
-        self.ui.actionMaj.triggered.connect(lambda: fctMaj.main(self))
-        # Modele alertes
-        self.ui.spinDelais.valueChanged.connect(self.on_spin_delais_changed)
-        self.ui.spinHs.valueChanged.connect(self.on_spin_spinHs_changed)
-        self.ui.checkPopup.clicked.connect(self.popup)
-        self.ui.checkMail.clicked.connect(self.mail)
-        self.ui.checkTelegram.clicked.connect(self.telegram)
-        self.ui.checkMailRecap.clicked.connect(self.mailRecap)
-        self.ui.checkDbExterne.clicked.connect(self.pingDb)
-        # Fentres
-        self.ui.actionSauvegarder_les_r_glages.triggered.connect(lambda: param.save_param(self))
-        self.ui.actionEnvoies.triggered.connect(sFenetre.fenetreParamEnvoie)
-        self.ui.actionMail_recap.triggered.connect(sFenetre.fenetreMailRecap)
-        self.ui.actionG_n_raux.triggered.connect(lambda: sFenetre.fenetreParametre(self, self.comm))
-        self.ui.actionAPropos.triggered.connect(sFenetre.fenAPropos)
+    def open_logs(self):
+        """Ouvre le fichier de logs dans l'éditeur par défaut."""
+        import os
+        log_file = os.path.abspath("logs/app.log")
+        if os.path.exists(log_file):
+            try:
+                os.startfile(log_file)  # Windows
+            except AttributeError:
+                # Linux/Mac
+                import subprocess
+                subprocess.call(['xdg-open', log_file])
+        else:
+            QMessageBox.warning(self, "Logs", "Le fichier de logs n'existe pas encore.")
 
-        # Fonction Save et Load
-        self.ui.actionSauvegarder.triggered.connect(lambda: fct.save_csv(self, self.treeIpModel))
-        self.ui.actionOuvrir.triggered.connect(lambda: fct.load_csv(self, self.treeIpModel))
-        self.ui.actionTout_effacer.triggered.connect(lambda: fct.clear(self, self.treeIpModel))
-        # Fonction export excel
-        self.ui.actionExporter_xls.triggered.connect(lambda: fctXls.saveExcel(self, self.treeIpModel))
-        self.ui.actionImporter_xls.triggered.connect(lambda: fctXls.openExcel(self, self.treeIpModel))
-        self.ui.actionSnyf_2.triggered.connect(lambda: snyf.main(self, self.comm))
-        self.ui.actionCleGpg.triggered.connect(lambda: self.pgp())
-        # Communication
-        self.comm.relaodWindow.connect(self.reload_main_window)
-        self.comm.addRow.connect(self.on_add_row)
-        self.comm.progress.connect(self.barProgress)
-        self.popup_signal.connect(self.show_popup)
-        self.ui.actionNotice.triggered.connect(lambda: self.notice())
-
-    def demarre(self):
-        if lic.verify_license() == False:
-            self.ui.checkMail.setEnabled(False)
-            self.ui.checkDbExterne.setEnabled(False)
-            self.ui.checkTelegram.setEnabled(False)
-            self.ui.checkMailRecap.setEnabled(False)
-        os.makedirs("cle", exist_ok=True)
-        connect.connector(self)
-        self.plugin = fct.plug(self)
-        self.menuPlugin(self.plugin)
-        self.ui.progressBar.hide()
-        lic.verify_license()
-        self.tree_view = self.ui.treeIp
-        self.treeIpHeader(self.tree_view)
-        self.ui.txtIp.setText(fct.getIp(self))
-        param.lireParamUi(self)
-
-
-
-class param():
-    def lireParamUi(self):
+    def clear_logs(self):
+        """Efface le contenu du fichier de logs."""
+        import os
+        log_file = os.path.abspath("logs/app.log")
         try:
-            variable = db.lire_param_db()
-            var.delais = variable[0]
-            var.envoie_alert = variable[1]
-            var.popup = variable[2]
-            var.mail = variable[3]
-            var.telegram = variable[4]
-            var.mailRecap = variable[5]
-            db.nom_site()
-            self.ui.labSite.setText(var.nom_site)
-            self.ui.spinDelais.setValue(int(var.delais))
-            self.ui.spinHs.setValue(int(var.envoie_alert))
-            if var.popup is True:
-                self.ui.checkPopup.setChecked(True)
-            if var.mail is True:
-                self.ui.checkMail.setChecked(True)
-            if var.telegram is True:
-                self.ui.checkTelegram.setChecked(True)
-            if var.mailRecap is True:
-                self.ui.checkMailRecap.setChecked(True)
-        except Exception as inst:
-            print(inst)
-        db.creerDossier("bd")
-        db.creerDossier("fichier")
-        db.creerDossier("fichier/plugin")
+            if os.path.exists(log_file):
+                with open(log_file, 'w') as f:
+                    f.write('')
+                logger.info("Logs effacés par l'utilisateur")
+                QMessageBox.information(self, "Succès", "Les logs ont été effacés.")
+            else:
+                QMessageBox.warning(self, "Logs", "Le fichier de logs n'existe pas.")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'effacement des logs: {e}", exc_info=True)
+            QMessageBox.critical(self, "Erreur", f"Impossible d'effacer les logs: {e}")
 
-    def save_param(self):
-        db.save_param_db()
 
 if __name__ == "__main__":
     from PySide6.QtWidgets import QSplashScreen

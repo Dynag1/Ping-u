@@ -1,30 +1,25 @@
-attr==0.3.2
-ConfigParser==7.2.0
-contextlib2==21.6.0
-cryptography==45.0.4
-docutils==0.21.2
-htmlparser==0.0.2
-importlib_metadata==8.0.0
-ipython==8.12.3
-ipywidgets==8.1.7
-Jinja2==3.1.6
-jnius==1.1.0
-keyring==25.6.0
-lockfile==0.12.2
-mock==5.2.0
-openpyxl==3.1.5
-Pillow==11.2.1
-protobuf==6.31.1
-PyInstaller==6.14.1
-pyOpenSSL==25.1.0
-python_gnupg==0.5.4
-pythonping==1.1.4
-qt_themes==0.3.0
-railroad==0.5.0
-Sphinx==8.2.3
-thread==2.0.5
-tornado==6.5.1
-truststore==0.10.1
-urllib3_secure_extra==0.1.0
-xmlrpclib==1.0.1
-xmltodict==0.14.2
+# Interface graphique
+PySide6>=6.5.0
+qt_themes>=1.0.0
+
+# Réseau et ping
+pythonping>=1.1.0
+requests>=2.26.0
+
+# SNMP (surveillance température et onduleurs)
+pysnmp==4.4.12
+pyasn1>=0.6.0
+pyasn1-modules>=0.4.0
+pysmi>=1.1.0
+ply>=3.11
+pycryptodomex>=3.20.0
+
+# Email et sécurité
+python-gnupg>=0.5.0
+
+# Fichiers Excel
+openpyxl>=3.1.0
+
+# Build et packaging
+Pillow>=10.0.0
+pyinstaller>=6.0.0
