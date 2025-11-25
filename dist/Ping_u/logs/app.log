@@ -1,0 +1,18 @@
+2025-11-25 12:14:11 - root - INFO - Logging initialisé. Fichier: logs\app.log
+2025-11-25 12:14:12 - src.db - WARNING - Fichier tabG non trouvé
+2025-11-25 12:14:12 - __main__ - WARNING - Paramètres généraux manquants, utilisation du thème par défaut.
+2025-11-25 12:14:12 - qt_themes - WARNING - Cannot find theme 'nord.json'.
+2025-11-25 12:14:12 - src.db - WARNING - Fichier tab4 non trouvé
+2025-11-25 12:14:12 - src.controllers.settings_controller - ERROR - Erreur chargement paramètres UI: 'NoneType' object is not subscriptable
+Traceback (most recent call last):
+  File "src\controllers\settings_controller.py", line 15, in load_ui_settings
+TypeError: 'NoneType' object is not subscriptable
+2025-11-25 12:14:30 - src.controllers.main_controller - INFO - Démarrage du monitoring via MainController
+2025-11-25 12:14:30 - src.fcy_ping - INFO - Démarrage AsyncPingManager
+2025-11-25 12:14:30 - src.core.alert_manager - INFO - Démarrage du gestionnaire d'alertes
+2025-11-25 12:15:09 - src.controllers.main_controller - INFO - Arrêt du monitoring via MainController
+2025-11-25 12:15:09 - src.fcy_ping - INFO - Arrêt AsyncPingManager
+2025-11-25 12:15:09 - src.core.alert_manager - INFO - Arrêt du gestionnaire d'alertes
+2025-11-25 12:15:10 - __main__ - INFO - Fermeture de l'application demandée
+2025-11-25 12:15:10 - src.controllers.main_controller - INFO - Arrêt du monitoring via MainController
+2025-11-25 12:15:10 - __main__ - INFO - Paramètres sauvegardés

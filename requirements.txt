@@ -1,18 +1,16 @@
 # Interface graphique
 PySide6>=6.5.0
-qt_themes>=1.0.0
+qt_material>=2.14  # Thèmes Material Design pour Qt
 
 # Réseau et ping
 pythonping>=1.1.0
 requests>=2.26.0
 
-# SNMP (surveillance température et onduleurs)
-pysnmp==4.4.12
-pyasn1>=0.6.0
-pyasn1-modules>=0.4.0
-pysmi>=1.1.0
-ply>=3.11
-pycryptodomex>=3.20.0
+# SNMP (surveillance température et onduleurs) - Compatible Python 3.13
+pysnmp>=6.0.0
+pyasn1>=0.4.8
+pyasn1-modules>=0.2.8
+pycryptodomex>=3.15.0
 
 # Email et sécurité
 python-gnupg>=0.5.0
@@ -23,3 +21,6 @@ openpyxl>=3.1.0
 # Build et packaging
 Pillow>=10.0.0
 pyinstaller>=6.0.0
+
+# Utilitaires
+setuptools>=65.0.0
