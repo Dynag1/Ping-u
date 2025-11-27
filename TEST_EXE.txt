@@ -1,0 +1,185 @@
+═══════════════════════════════════════════════════════════════
+  🧪 GUIDE DE TEST - Ping_u.exe avec Serveur Web
+═══════════════════════════════════════════════════════════════
+
+✅ COMPILATION RÉUSSIE !
+   Fichier : dist\Ping_u\Ping_u.exe
+   Taille : 17.3 MB
+   Date : 27/11/2025 17:56
+
+═══════════════════════════════════════════════════════════════
+🚀 ÉTAPE 1 : TEST DE BASE
+═══════════════════════════════════════════════════════════════
+
+1. Ouvrez un explorateur de fichiers
+2. Allez dans : dist\Ping_u\
+3. Double-cliquez sur : Ping_u.exe
+4. L'application devrait démarrer normalement
+
+✅ À vérifier :
+   - L'application se lance sans erreur
+   - L'interface s'affiche correctement
+   - Les menus sont présents
+   - Le treeview fonctionne
+
+═══════════════════════════════════════════════════════════════
+🌐 ÉTAPE 2 : TEST DU SERVEUR WEB
+═══════════════════════════════════════════════════════════════
+
+1. Dans Ping ü, cherchez le menu "Serveur Web"
+2. Cliquez sur "Démarrer le serveur"
+3. Une boîte de dialogue devrait afficher :
+   ✅ "Serveur web démarré avec succès !"
+   ✅ "Accès local: http://localhost:5000"
+   ✅ "Accès réseau: http://[votre-ip]:5000"
+
+Si vous voyez cette boîte → ✅ Le serveur web fonctionne !
+
+═══════════════════════════════════════════════════════════════
+🖥️ ÉTAPE 3 : TEST DE LA PAGE WEB
+═══════════════════════════════════════════════════════════════
+
+1. Dans Ping ü, menu : Serveur Web → Ouvrir dans le navigateur
+   OU
+   Ouvrez manuellement : http://localhost:5000
+
+2. La page web devrait s'afficher avec :
+   ✅ Titre "Monitoring IP - Ping ü"
+   ✅ Badge vert "Connecté"
+   ✅ Statistiques (Total, En ligne, Hors ligne)
+
+Si la page s'affiche → ✅ La page web fonctionne !
+
+═══════════════════════════════════════════════════════════════
+🔄 ÉTAPE 4 : TEST ACTUALISATION AUTOMATIQUE
+═══════════════════════════════════════════════════════════════
+
+Test 1 : Ajout d'hôte
+─────────────────────
+1. Dans Ping ü, ajoutez quelques IP (exemple : 192.168.1.1)
+2. Regardez la page web
+3. Les hôtes doivent apparaître INSTANTANÉMENT ✅
+
+Test 2 : Modification de nom
+─────────────────────────────
+1. Dans le treeview, double-cliquez sur un nom
+2. Changez le nom
+3. Regardez la page web
+4. Le nom doit se mettre à jour IMMÉDIATEMENT ✅
+
+Test 3 : Détection HS
+─────────────────────
+1. Démarrez le monitoring (bouton Start)
+2. Attendez qu'un hôte passe en "HS" (colonne Latence)
+3. Regardez la page web
+4. L'hôte doit devenir rouge "Hors ligne" ✅
+
+Test 4 : Suppression
+────────────────────
+1. Supprimez un hôte du treeview (clic droit → Supprimer)
+2. Regardez la page web
+3. L'hôte doit DISPARAÎTRE immédiatement ✅
+
+═══════════════════════════════════════════════════════════════
+🌍 ÉTAPE 5 : TEST DEPUIS UN AUTRE PC
+═══════════════════════════════════════════════════════════════
+
+1. Notez l'IP affichée (exemple : 192.168.1.100)
+
+2. Sur un autre appareil (PC, téléphone, tablette) :
+   - Ouvrez un navigateur
+   - Allez à : http://192.168.1.100:5000
+   - La page devrait s'afficher ✅
+
+3. Testez l'actualisation :
+   - Ajoutez un hôte dans Ping ü
+   - Il doit apparaître sur l'autre appareil ✅
+
+Si ça ne fonctionne pas :
+   → Vérifiez le pare-feu Windows (voir GUIDE_SERVEUR_WEB.md)
+
+═══════════════════════════════════════════════════════════════
+📊 ÉTAPE 6 : TEST TRI DES IP
+═══════════════════════════════════════════════════════════════
+
+Dans le treeview de Ping ü :
+
+1. Ajoutez ces IP dans cet ordre :
+   - 192.168.1.100
+   - 192.168.1.20
+   - 192.168.1.200
+   - 192.168.1.10
+
+2. Cliquez sur l'en-tête "IP" pour trier
+
+3. Résultat attendu (ordre numérique) :
+   ✅ 192.168.1.10    (et pas 100)
+   ✅ 192.168.1.20    (et pas 200)
+   ✅ 192.168.1.100
+   ✅ 192.168.1.200
+
+Si c'est dans cet ordre → ✅ Tri numérique fonctionne !
+
+═══════════════════════════════════════════════════════════════
+✅ RÉSUMÉ DES TESTS
+═══════════════════════════════════════════════════════════════
+
+[ ] Test 1 : L'exe se lance
+[ ] Test 2 : Le menu "Serveur Web" est présent
+[ ] Test 3 : Le serveur démarre
+[ ] Test 4 : La page web s'affiche
+[ ] Test 5 : Les hôtes apparaissent
+[ ] Test 6 : L'actualisation fonctionne
+[ ] Test 7 : Détection HS correcte
+[ ] Test 8 : Accès depuis un autre PC
+[ ] Test 9 : Tri numérique des IP
+
+═══════════════════════════════════════════════════════════════
+🎯 RÉSULTAT ATTENDU
+═══════════════════════════════════════════════════════════════
+
+Si tous les tests passent :
+✅ L'exécutable est prêt pour la distribution
+✅ Le serveur web fonctionne parfaitement
+✅ L'actualisation automatique est opérationnelle
+✅ Le tri des IP est correct
+
+Vous pouvez passer à l'étape suivante :
+→ Créer l'installateur avec Inno Setup
+→ Distribuer l'application
+
+═══════════════════════════════════════════════════════════════
+📝 EN CAS DE PROBLÈME
+═══════════════════════════════════════════════════════════════
+
+Erreur au lancement :
+→ Vérifiez les logs : dist\Ping_u\logs\app.log
+
+Serveur web ne démarre pas :
+→ Vérifiez que le port 5000 n'est pas utilisé
+→ Consultez les logs de l'application
+
+Page web ne s'affiche pas :
+→ Vérifiez que le serveur est bien démarré
+→ Vérifiez l'URL (http://localhost:5000)
+
+Pas d'actualisation :
+→ Vérifiez la console du navigateur (F12)
+→ Redémarrez le serveur web
+
+Accès réseau impossible :
+→ Vérifiez le pare-feu Windows
+→ Voir GUIDE_SERVEUR_WEB.md pour la configuration
+
+═══════════════════════════════════════════════════════════════
+🎉 BON TEST !
+═══════════════════════════════════════════════════════════════
+
+L'application est prête avec le serveur web intégré !
+
+Commencez par les tests de base (1-2-3-4)
+Puis testez l'actualisation (5-6)
+Enfin testez l'accès réseau (7-8)
+
+═══════════════════════════════════════════════════════════════
+

@@ -5,13 +5,14 @@ import subprocess
 from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
 from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QMenu
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QAction, QActionGroup
-from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, QEvent, QCoreApplication, QLocale
+from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, QEvent, QCoreApplication, QLocale, QSortFilterProxyModel
 from src.ui_mainwindow import Ui_MainWindow
 from src import var, fct, lic, threadAjIp, db, sFenetre
 from src import fctXls, fctMaj
 import src.Snyf.main as snyf
 from src.controllers.settings_controller import SettingsController
 from src.controllers.main_controller import MainController
+from src.web_server import WebServer
 import threading
 import qt_themes
 import webbrowser
@@ -28,6 +29,30 @@ logger = get_logger(__name__)
 # Suppression de la redirection stdout/stderr obsolète
 # sys.stdout = open('logs/stdout.log', 'w')
 # sys.stderr = open('logs/stderr.log', 'w')
+
+class IPSortProxyModel(QSortFilterProxyModel):
+    """Proxy model pour trier les IP numériquement"""
+    def lessThan(self, left, right):
+        # Récupérer les colonnes
+        left_col = left.column()
+        right_col = right.column()
+        
+        # Pour la colonne IP (colonne 1), trier numériquement
+        if left_col == 1 or right_col == 1:
+            left_data = self.sourceModel().data(left, Qt.DisplayRole)
+            right_data = self.sourceModel().data(right, Qt.DisplayRole)
+            
+            if left_data and right_data:
+                try:
+                    # Convertir IP en tuple d'entiers pour tri numérique
+                    left_parts = [int(x) for x in str(left_data).split('.')]
+                    right_parts = [int(x) for x in str(right_data).split('.')]
+                    return left_parts < right_parts
+                except:
+                    pass
+        
+        # Pour les autres colonnes, tri par défaut
+        return super().lessThan(left, right)
 
 class Communicate(QObject):
     addRow = Signal(str, str, str, str, str, str, bool)
@@ -58,14 +83,20 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'main_controller') and self.main_controller:
                 self.main_controller.stop_monitoring()
             
-            # 3. Sauvegarder les paramètres
+            # 3. Arrêter le serveur web
+            if hasattr(self, 'web_server') and self.web_server:
+                logger.info("Arrêt du serveur web lors de la fermeture")
+                self.web_server.stop()
+                self.web_server = None
+            
+            # 4. Sauvegarder les paramètres
             try:
                 db.save_param_db()
                 logger.info("Paramètres sauvegardés")
             except Exception as e:
                 logger.error(f"Erreur sauvegarde paramètres: {e}", exc_info=True)
                 
-            # 4. Attendre un peu pour que les threads se terminent
+            # 5. Attendre un peu pour que les threads se terminent
             # Note: QTimer.singleShot n'est pas idéal ici car on est dans closeEvent
             # On laisse le temps aux threads de voir var.tourne = False
             
@@ -91,6 +122,10 @@ class MainWindow(QMainWindow):
         # Contrôleurs
         self.settings_controller = SettingsController(self)
         self.main_controller = MainController(self)
+        
+        # Serveur Web
+        self.web_server = None
+        self.web_server_running = False
         
         self.load_language(QLocale().name()[:2])
         
@@ -173,6 +208,14 @@ class MainWindow(QMainWindow):
         # Logs
         self.ui.actionLogs.triggered.connect(self.open_logs)
         self.ui.actionEffacer_logs.triggered.connect(self.clear_logs)
+        
+        # Menu Serveur Web
+        self._setup_web_server_menu()
+        
+        # Connexion des signaux du modèle pour détecter les changements
+        self.treeIpModel.dataChanged.connect(self.on_treeview_data_changed)
+        self.treeIpModel.rowsInserted.connect(self.on_treeview_rows_inserted)
+        self.treeIpModel.rowsRemoved.connect(self.on_treeview_rows_removed)
 
     def change_theme(self, theme_name):
         try:
@@ -349,7 +392,12 @@ class MainWindow(QMainWindow):
         self.tree_view = self.ui.treeIp
         self.treeIpModel = QStandardItemModel()
         self.treeIpModel.setHorizontalHeaderLabels([self.tr("Id"), self.tr("IP"), self.tr("Nom"), self.tr("Mac"), self.tr("Port"), self.tr("Latence"), self.tr("Temp"), self.tr("Suivi"), self.tr("Comm"), self.tr("Excl")])
-        self.tree_view.setModel(self.treeIpModel)
+        
+        # Utiliser un proxy model pour le tri numérique des IP
+        self.proxyModel = IPSortProxyModel()
+        self.proxyModel.setSourceModel(self.treeIpModel)
+        self.tree_view.setModel(self.proxyModel)
+        self.tree_view.setSortingEnabled(True)
         header = self.tree_view.header()
         header.setStretchLastSection(False)
         for i in range(self.treeIpModel.columnCount()):
@@ -516,6 +564,107 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.error(f"Erreur lors de l'effacement des logs: {e}", exc_info=True)
             QMessageBox.critical(self, "Erreur", f"Impossible d'effacer les logs: {e}")
+    
+    # ============= Serveur Web =============
+    
+    def _setup_web_server_menu(self):
+        """Crée le menu pour le serveur web"""
+        try:
+            web_menu = self.ui.menubar.addMenu(self.tr("Serveur Web"))
+            
+            self.action_toggle_web_server = QAction(self.tr("Démarrer le serveur"), self)
+            self.action_toggle_web_server.triggered.connect(self.toggle_web_server)
+            web_menu.addAction(self.action_toggle_web_server)
+            
+            self.action_open_web_page = QAction(self.tr("Ouvrir dans le navigateur"), self)
+            self.action_open_web_page.triggered.connect(self.open_web_page)
+            self.action_open_web_page.setEnabled(False)
+            web_menu.addAction(self.action_open_web_page)
+            
+            self.action_show_web_urls = QAction(self.tr("Voir les URLs d'accès"), self)
+            self.action_show_web_urls.triggered.connect(self.show_web_urls)
+            self.action_show_web_urls.setEnabled(False)
+            web_menu.addAction(self.action_show_web_urls)
+            
+        except Exception as e:
+            logger.error(f"Erreur création menu serveur web: {e}", exc_info=True)
+    
+    def toggle_web_server(self):
+        """Démarre ou arrête le serveur web"""
+        try:
+            if not self.web_server_running:
+                self.web_server = WebServer(self, port=5000)
+                if self.web_server.start():
+                    self.web_server_running = True
+                    self.action_toggle_web_server.setText(self.tr("Arrêter le serveur"))
+                    self.action_open_web_page.setEnabled(True)
+                    self.action_show_web_urls.setEnabled(True)
+                    
+                    urls = self.web_server.get_access_urls()
+                    msg = self.tr("Serveur web démarré avec succès !\n\n")
+                    msg += self.tr("Accès local: ") + urls['local'] + "\n"
+                    msg += self.tr("Accès réseau: ") + urls['network']
+                    QMessageBox.information(self, self.tr("Serveur Web"), msg)
+                    logger.info("Serveur web démarré")
+                else:
+                    QMessageBox.critical(self, self.tr("Erreur"), 
+                                       self.tr("Impossible de démarrer le serveur web.\nLe port 5000 est peut-être déjà utilisé."))
+            else:
+                if self.web_server:
+                    self.web_server.stop()
+                    self.web_server = None
+                self.web_server_running = False
+                self.action_toggle_web_server.setText(self.tr("Démarrer le serveur"))
+                self.action_open_web_page.setEnabled(False)
+                self.action_show_web_urls.setEnabled(False)
+                QMessageBox.information(self, self.tr("Serveur Web"), 
+                                      self.tr("Serveur web arrêté"))
+                logger.info("Serveur web arrêté")
+                
+        except Exception as e:
+            logger.error(f"Erreur toggle serveur web: {e}", exc_info=True)
+            QMessageBox.critical(self, self.tr("Erreur"), 
+                               self.tr("Erreur lors du démarrage/arrêt du serveur: ") + str(e))
+    
+    def open_web_page(self):
+        """Ouvre la page web dans le navigateur par défaut"""
+        if self.web_server_running and self.web_server:
+            try:
+                urls = self.web_server.get_access_urls()
+                webbrowser.open(urls['local'])
+                logger.info(f"Ouverture page web: {urls['local']}")
+            except Exception as e:
+                logger.error(f"Erreur ouverture page web: {e}", exc_info=True)
+    
+    def show_web_urls(self):
+        """Affiche les URLs d'accès au serveur web"""
+        if self.web_server_running and self.web_server:
+            try:
+                urls = self.web_server.get_access_urls()
+                msg = self.tr("URLs d'accès au serveur web:\n\n")
+                msg += self.tr("Accès local (sur cet ordinateur):\n")
+                msg += urls['local'] + "\n\n"
+                msg += self.tr("Accès réseau (depuis un autre PC):\n")
+                msg += urls['network'] + "\n\n"
+                msg += self.tr("Note: Assurez-vous que le pare-feu autorise les connexions sur le port 5000.")
+                QMessageBox.information(self, self.tr("URLs d'accès"), msg)
+            except Exception as e:
+                logger.error(f"Erreur affichage URLs: {e}", exc_info=True)
+    
+    def on_treeview_data_changed(self, topLeft, bottomRight, roles):
+        """Appelé quand des données du treeview changent"""
+        if self.web_server_running and self.web_server:
+            self.web_server.broadcast_update()
+    
+    def on_treeview_rows_inserted(self, parent, first, last):
+        """Appelé quand des lignes sont ajoutées au treeview"""
+        if self.web_server_running and self.web_server:
+            self.web_server.broadcast_update()
+    
+    def on_treeview_rows_removed(self, parent, first, last):
+        """Appelé quand des lignes sont supprimées du treeview"""
+        if self.web_server_running and self.web_server:
+            self.web_server.broadcast_update()
 
 
 if __name__ == "__main__":

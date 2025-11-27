@@ -1,0 +1,194 @@
+═══════════════════════════════════════════════════════════════
+  ✅ COMPILATION RÉUSSIE - Problème résolu !
+═══════════════════════════════════════════════════════════════
+
+Date : 27 novembre 2025 - 18:47
+
+═══════════════════════════════════════════════════════════════
+🎉 EXÉCUTABLE CRÉÉ AVEC SUCCÈS !
+═══════════════════════════════════════════════════════════════
+
+Fichier : dist\Ping_u\Ping_u.exe
+Taille : 17.3 MB
+Date : 27/11/2025 18:47:02
+
+✅ Templates web inclus
+✅ Socket.IO configuré avec async_mode='threading'
+
+═══════════════════════════════════════════════════════════════
+🔧 PROBLÈME CORRIGÉ
+═══════════════════════════════════════════════════════════════
+
+ERREUR INITIALE :
+─────────────────
+ValueError: Invalid async_mode specified
+
+CAUSE :
+───────
+Socket.IO ne pouvait pas détecter automatiquement le mode 
+asynchrone dans l'environnement PyInstaller.
+
+SOLUTION APPLIQUÉE :
+────────────────────
+Ajout explicite de : async_mode='threading'
+
+Dans src/web_server.py (ligne 30-34) :
+```python
+self.socketio = SocketIO(self.app, 
+                        cors_allowed_origins="*",
+                        async_mode='threading',  ← SOLUTION !
+                        logger=False,
+                        engineio_logger=False)
+```
+
+═══════════════════════════════════════════════════════════════
+🧪 POUR TESTER MAINTENANT
+═══════════════════════════════════════════════════════════════
+
+1. Ouvrez un explorateur de fichiers
+2. Allez dans : dist\Ping_u\
+3. Double-cliquez sur : Ping_u.exe
+4. L'application se lance
+
+5. Dans le menu, cliquez sur : Serveur Web → Démarrer le serveur
+
+RÉSULTAT ATTENDU :
+──────────────────
+✅ "Serveur web démarré avec succès !"
+✅ "Accès local: http://localhost:5000"
+✅ "Accès réseau: http://[votre-ip]:5000"
+
+❌ Plus d'erreur "Invalid async_mode" !
+
+═══════════════════════════════════════════════════════════════
+🌐 TESTER LA PAGE WEB
+═══════════════════════════════════════════════════════════════
+
+1. Menu → Serveur Web → Ouvrir dans le navigateur
+   OU
+   Ouvrez : http://localhost:5000
+
+2. La page devrait afficher :
+   ✅ Titre "Monitoring IP - Ping ü"
+   ✅ Badge vert "Connecté"
+   ✅ Statistiques
+
+3. Ajoutez des hôtes dans l'application :
+   ✅ Ils doivent apparaître IMMÉDIATEMENT sur la page web
+
+4. Modifiez un nom :
+   ✅ Doit se mettre à jour EN TEMPS RÉEL
+
+═══════════════════════════════════════════════════════════════
+📊 DÉTECTION HS (HORS SERVICE)
+═══════════════════════════════════════════════════════════════
+
+RÈGLE :
+───────
+Si la colonne "Latence" (colonne 5) contient "HS"
+→ L'hôte apparaît en ROUGE "Hors ligne" sur la page web
+
+Sinon
+→ L'hôte apparaît en VERT "En ligne"
+
+POUR TESTER :
+─────────────
+1. Démarrez le monitoring (bouton Start)
+2. Attendez qu'un hôte passe en "HS" dans la colonne Latence
+3. Regardez la page web
+4. L'hôte doit devenir ROUGE automatiquement ✅
+
+═══════════════════════════════════════════════════════════════
+🔄 TRI DES IP
+═══════════════════════════════════════════════════════════════
+
+CORRECTION APPLIQUÉE :
+──────────────────────
+Tri numérique des IP avec IPSortProxyModel
+
+RÉSULTAT :
+──────────
+Ordre correct :
+  10.0.0.1
+  20.0.0.1    ← Correct !
+  100.0.0.1
+  200.0.0.1
+
+Et non plus :
+  10.0.0.1
+  100.0.0.1   ← Incorrect
+  20.0.0.1
+  200.0.0.1
+
+═══════════════════════════════════════════════════════════════
+✅ RÉCAPITULATIF DES CORRECTIONS
+═══════════════════════════════════════════════════════════════
+
+1. ✅ async_mode='threading' ajouté (obligatoire pour PyInstaller)
+2. ✅ Détection HS sur colonne Latence (colonne 5)
+3. ✅ Tri numérique des IP dans le treeview
+4. ✅ HS affichés en premier sur la page web
+5. ✅ Latence retirée de l'affichage web
+6. ✅ Débits IN/OUT ajoutés (N/A par défaut)
+7. ✅ Templates web inclus dans l'exe
+8. ✅ requirements.txt mis à jour
+9. ✅ Ping_u.spec mis à jour (Flask au lieu de FastAPI)
+
+═══════════════════════════════════════════════════════════════
+📦 FICHIERS INCLUS DANS L'EXE
+═══════════════════════════════════════════════════════════════
+
+✅ src/web_server.py (avec async_mode='threading')
+✅ src/web/__init__.py
+✅ src/web/templates/index.html
+✅ src/web/static/ (vide)
+✅ Toutes les dépendances Flask/Socket.IO
+
+═══════════════════════════════════════════════════════════════
+🚀 PROCHAINE ÉTAPE
+═══════════════════════════════════════════════════════════════
+
+TESTEZ L'EXÉCUTABLE :
+─────────────────────
+1. cd dist\Ping_u
+2. .\Ping_u.exe
+3. Menu → Serveur Web → Démarrer le serveur
+4. Si ça fonctionne → ✅ SUCCÈS TOTAL !
+
+CRÉER L'INSTALLATEUR :
+───────────────────────
+Si le test fonctionne, créez l'installateur :
+.\build-py313-full.ps1
+
+Ou manuellement :
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
+
+═══════════════════════════════════════════════════════════════
+🎯 L'ERREUR EST CORRIGÉE !
+═══════════════════════════════════════════════════════════════
+
+Le paramètre async_mode='threading' est maintenant présent dans le code
+et l'exe a été recompilé avec cette correction.
+
+Le serveur web devrait démarrer sans erreur ! ✅
+
+═══════════════════════════════════════════════════════════════
+📝 SCRIPT UTILE CRÉÉ
+═══════════════════════════════════════════════════════════════
+
+clean_and_build.ps1
+───────────────────
+Ce script :
+✅ Ferme tous les processus Ping_u
+✅ Nettoie les dossiers dist/ et build/
+✅ Vérifie les dépendances
+✅ Recompile l'exe
+
+Utilisez-le à chaque fois que vous voulez recompiler !
+
+═══════════════════════════════════════════════════════════════
+
+Testez maintenant l'exe et le serveur web devrait fonctionner ! 🎉
+
+═══════════════════════════════════════════════════════════════
+

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Réseau - Ping ü</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: #f3f4f6;
+            padding: 12px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-card .label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .stat-card .value {
+            color: #111827;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .stat-card.total .value { color: #3b82f6; }
+        .stat-card.online .value { color: #10b981; }
+        .stat-card.offline .value { color: #ef4444; }
+
+        .hosts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .host-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid #10b981;
+        }
+
+        .host-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .host-card.offline {
+            border-left-color: #ef4444;
+            opacity: 0.85;
+        }
+
+        .host-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .host-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+            word-break: break-word;
+            flex: 1;
+        }
+
+        .host-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .host-status.online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .host-status.offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .host-ip {
+            font-size: 20px;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .host-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-label {
+            color: #6b7280;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            color: #111827;
+            font-size: 13px;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .no-hosts {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-hosts h2 {
+            color: #6b7280;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .no-hosts p {
+            color: #9ca3af;
+            font-size: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .last-update {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .hosts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .host-metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🌐 Monitoring Réseau - Ping ü
+                <span class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>Connecté</span>
+                </span>
+            </h1>
+            <div class="stats">
+                <div class="stat-card total">
+                    <span class="label">Total:</span>
+                    <span class="value" id="total-hosts">0</span>
+                </div>
+                <div class="stat-card online">
+                    <span class="icon">🟢</span>
+                    <span class="label">En ligne:</span>
+                    <span class="value" id="online-hosts">0</span>
+                </div>
+                <div class="stat-card offline">
+                    <span class="icon">🔴</span>
+                    <span class="label">Hors ligne:</span>
+                    <span class="value" id="offline-hosts">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="hosts-container">
+            <div class="loading">Chargement des hôtes</div>
+        </div>
+
+        <div class="last-update">
+            Dernière mise à jour: <span id="last-update-time">-</span>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        
+        let hostsData = [];
+
+        socket.on('connect', function() {
+            console.log('Connecté au serveur');
+            updateStatusBadge(true);
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Déconnecté du serveur');
+            updateStatusBadge(false);
+        });
+
+        socket.on('hosts_update', function(hosts) {
+            console.log('Mise à jour reçue:', hosts.length, 'hôtes');
+            hostsData = hosts;
+            renderHosts(hosts);
+            updateStats(hosts);
+            updateLastUpdateTime();
+        });
+
+        function updateStatusBadge(connected) {
+            const badge = document.querySelector('.status-badge');
+            const badgeText = badge.querySelector('span:last-child');
+            
+            if (connected) {
+                badge.style.background = '#10b981';
+                badgeText.textContent = 'Connecté';
+            } else {
+                badge.style.background = '#ef4444';
+                badgeText.textContent = 'Déconnecté';
+            }
+        }
+
+        function renderHosts(hosts) {
+            const container = document.getElementById('hosts-container');
+            
+            if (!hosts || hosts.length === 0) {
+                container.innerHTML = `
+                    <div class="no-hosts">
+                        <h2>Aucun hôte trouvé</h2>
+                        <p>Ajoutez des hôtes dans l'application pour les voir apparaître ici.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Trier les hôtes : HS (offline) en premier, puis online
+            const sortedHosts = hosts.sort((a, b) => {
+                if (a.status === 'offline' && b.status === 'online') return -1;
+                if (a.status === 'online' && b.status === 'offline') return 1;
+                // Si même statut, trier par nom
+                return (a.nom || a.ip).localeCompare(b.nom || b.ip);
+            });
+
+            const hostsHTML = sortedHosts.map(host => createHostCard(host)).join('');
+            container.innerHTML = `<div class="hosts-grid">${hostsHTML}</div>`;
+        }
+
+        function createHostCard(host) {
+            const statusClass = host.status === 'online' ? 'online' : 'offline';
+            const statusText = host.status === 'online' ? 'En ligne' : 'Hors ligne';
+            const displayName = host.nom || 'Sans nom';
+            const temperature = host.temp || '-';
+            const debitIn = host.debit_in || 'N/A';
+            const debitOut = host.debit_out || 'N/A';
+            
+            return `
+                <div class="host-card ${statusClass}">
+                    <div class="host-header">
+                        <div class="host-name">${escapeHtml(displayName)}</div>
+                        <div class="host-status ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="host-ip">${escapeHtml(host.ip)}</div>
+                    <div class="host-details">
+                        <div class="detail-item">
+                            <div class="detail-label">MAC</div>
+                            <div class="detail-value">${escapeHtml(host.mac) || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Port</div>
+                            <div class="detail-value">${escapeHtml(host.port) || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">🌡️ Température</div>
+                            <div class="detail-value">${escapeHtml(temperature)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">📥 Débit IN</div>
+                            <div class="detail-value">${escapeHtml(debitIn)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">📤 Débit OUT</div>
+                            <div class="detail-value">${escapeHtml(debitOut)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateStats(hosts) {
+            const total = hosts.length;
+            const online = hosts.filter(h => h.status === 'online').length;
+            const offline = total - online;
+
+            document.getElementById('total-hosts').textContent = total;
+            document.getElementById('online-hosts').textContent = online;
+            document.getElementById('offline-hosts').textContent = offline;
+        }
+
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('fr-FR');
+            document.getElementById('last-update-time').textContent = timeString;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        setInterval(() => {
+            socket.emit('request_update');
+        }, 10000);
+
+        socket.emit('request_update');
+    </script>
+</body>
+</html>
+

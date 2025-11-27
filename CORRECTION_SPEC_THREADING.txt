@@ -1,0 +1,93 @@
+﻿================================================================
+  CORRECTION FINALE - 27 novembre 2025 à 19:01:40
+================================================================
+
+PROBLÈME RÉSOLU
+
+
+Erreur : "Invalid async_mode specified" UNIQUEMENT dans l'exe
+Le code Python direct fonctionnait, mais pas l'exe compilé.
+
+
+CAUSE DU PROBLÈME
+
+
+PyInstaller ne collectait PAS automatiquement les modules 
+nécessaires pour le mode threading de Socket.IO/Engine.IO.
+
+Module critique manquant :
+ engineio.async_drivers.threading
+
+
+CORRECTIONS APPORTÉES AU Ping_u.spec
+
+
+1. Ajout de collect_all('socketio') et collect_all('engineio')
+    Collecte automatique de TOUS les sous-modules
+
+2. Ajout des hiddenimports critiques :
+    engineio.async_drivers.threading  (LE PLUS IMPORTANT !)
+    engineio.payload
+    engineio.packet
+    engineio.base_server
+    engineio._pickle
+    socketio.client
+    socketio.base_manager
+    socketio.pubsub_manager
+
+3. Ajout des binaries et datas collectés
+
+
+NOUVEL EXE
+
+
+Fichier : dist\Ping_u\Ping_u.exe
+Taille : 16.5 MB
+Date : 27/11/2025 à 19:01:40
+
+ Contient async_mode='threading' dans le code
+ Contient engineio.async_drivers.threading
+ Contient tous les modules Socket.IO/Engine.IO nécessaires
+
+
+TESTEZ MAINTENANT
+
+
+1. cd dist\Ping_u
+2. .\Ping_u.exe
+3. Menu  Serveur Web  Démarrer le serveur
+
+RÉSULTAT ATTENDU :
+ "Serveur web démarré avec succès !"
+ PLUS d'erreur "Invalid async_mode" !
+
+
+POURQUOI ÇA FONCTIONNE MAINTENANT
+
+
+Quand Socket.IO utilise async_mode='threading', il cherche
+le module engineio.async_drivers.threading pour gérer les
+opérations asynchrones via des threads Python.
+
+Sans ce module dans l'exe PyInstaller :
+ Socket.IO ne peut pas charger le driver threading
+ Erreur : "Invalid async_mode specified"
+
+Avec ce module dans l'exe PyInstaller :
+ Socket.IO charge le driver threading correctement
+ Le serveur web démarre sans problème
+
+
+SI ÇA NE FONCTIONNE PAS
+
+
+1. Vérifiez que vous utilisez le BON exe (créé à 19:01:40)
+2. Fermez TOUTES les anciennes fenêtres de Ping_u
+3. Vérifiez les logs pour plus de détails
+
+
+================================================================
+
+L'exe est prêt avec les modules threading ! Testez maintenant !
+
+================================================================

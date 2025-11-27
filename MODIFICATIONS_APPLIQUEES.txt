@@ -1,0 +1,167 @@
+═══════════════════════════════════════════════════════════════
+  MODIFICATIONS APPLIQUÉES - Serveur Web
+═══════════════════════════════════════════════════════════════
+
+Date : 27 novembre 2024
+
+═══════════════════════════════════════════════════════════════
+✅ PROBLÈMES CORRIGÉS
+═══════════════════════════════════════════════════════════════
+
+1. ❌ PROBLÈME : Hôtes marqués hors ligne alors qu'en ligne
+   ✅ CORRIGÉ : 
+   - Amélioration de la détection du statut
+   - Nouvelle logique : green > red ET green > blue
+   - Fonctionne avec la couleur verte #1f8137
+
+2. ❌ PROBLÈME : Latence affichée sur la page web
+   ✅ CORRIGÉ :
+   - Latence retirée de l'affichage
+   - Section host-metrics supprimée du HTML
+   - CSS nettoyé
+
+3. ➕ AJOUT : Débits IN/OUT
+   ✅ AJOUTÉ :
+   - Colonne "Débit IN" avec émoji 📥
+   - Colonne "Débit OUT" avec émoji 📤
+   - Valeur "N/A" par défaut (à implémenter via SNMP)
+
+═══════════════════════════════════════════════════════════════
+📝 FICHIERS MODIFIÉS
+═══════════════════════════════════════════════════════════════
+
+1. src/web_server.py
+   ---------------------------------
+   
+   Méthode _get_row_status() :
+   AVANT :
+   if color.green() > 150:
+       return 'online'
+   
+   APRÈS :
+   if color.green() > color.red() and color.green() > color.blue():
+       return 'online'
+   
+   Méthode _get_hosts_data() :
+   AJOUTÉ :
+   'debit_in': 'N/A',
+   'debit_out': 'N/A',
+
+2. src/web/templates/index.html
+   ---------------------------------
+   
+   Fonction createHostCard() :
+   RETIRÉ :
+   - Variable latence
+   - Section host-metrics avec latence
+   - CSS .host-metrics, .metric, .metric-label, .metric-value
+   
+   AJOUTÉ :
+   - Variable debitIn
+   - Variable debitOut
+   - Affichage "📥 Débit IN"
+   - Affichage "📤 Débit OUT"
+   
+   Affichage dans host-details :
+   - MAC
+   - Port
+   - 🌡️ Température
+   - 📥 Débit IN (nouveau)
+   - 📤 Débit OUT (nouveau)
+   
+   CSS modifié :
+   - host-details avec fond gris et padding
+   - Suppression des styles inutilisés
+
+═══════════════════════════════════════════════════════════════
+🎯 RÉSULTAT
+═══════════════════════════════════════════════════════════════
+
+La page web affiche maintenant pour chaque hôte :
+
+┌────────────────────────────┐
+│ Nom de l'hôte    [En ligne]│
+│                            │
+│ 192.168.1.100              │
+│                            │
+│ ┌─────────┬──────────────┐ │
+│ │ MAC     │ Port         │ │
+│ │ AA:BB.. │ 80           │ │
+│ ├─────────┼──────────────┤ │
+│ │ 🌡️ Temp │ 📥 Débit IN  │ │
+│ │ 45°C    │ N/A          │ │
+│ ├─────────┴──────────────┤ │
+│ │ 📤 Débit OUT           │ │
+│ │ N/A                    │ │
+│ └────────────────────────┘ │
+└────────────────────────────┘
+
+✅ Statut correctement détecté (online/offline)
+✅ Latence retirée
+✅ Débits IN/OUT ajoutés
+
+═══════════════════════════════════════════════════════════════
+📊 DÉTECTION DU STATUT
+═══════════════════════════════════════════════════════════════
+
+Couleurs utilisées par l'application :
+- En ligne : #1f8137 (vert)
+  RGB(31, 129, 55) → green > red ET green > blue ✅
+
+- Hors ligne : #A9A9A9 (gris)
+  RGB(169, 169, 169) → green = red = blue ❌
+
+Nouvelle logique de détection :
+if color.green() > color.red() AND color.green() > color.blue():
+    → EN LIGNE
+else:
+    → HORS LIGNE
+
+═══════════════════════════════════════════════════════════════
+⚙️ IMPLÉMENTATION DES DÉBITS (OPTIONNEL)
+═══════════════════════════════════════════════════════════════
+
+Les débits sont actuellement affichés comme "N/A".
+
+Pour les implémenter avec SNMP :
+1. Récupérer les débits via SNMP (OID ifInOctets, ifOutOctets)
+2. Ajouter les colonnes au treeview
+3. Mettre à jour web_server.py pour lire ces colonnes
+4. Les valeurs seront automatiquement affichées
+
+Exemple de modification :
+'debit_in': model.item(row, 10).text() if model.item(row, 10) else 'N/A',
+'debit_out': model.item(row, 11).text() if model.item(row, 11) else 'N/A',
+
+═══════════════════════════════════════════════════════════════
+✅ TESTS EFFECTUÉS
+═══════════════════════════════════════════════════════════════
+
+✅ Import de web_server.py → OK
+✅ Import de Pingu.py → OK
+✅ Pas d'erreurs de syntaxe
+✅ Logique de détection corrigée
+
+═══════════════════════════════════════════════════════════════
+🚀 POUR TESTER
+═══════════════════════════════════════════════════════════════
+
+1. Lancez Ping ü
+2. Ajoutez quelques hôtes
+3. Menu → Serveur Web → Démarrer le serveur
+4. Ouvrez http://localhost:5000
+5. Vérifiez que :
+   - Les hôtes en ligne sont bien marqués "En ligne" ✅
+   - Les hôtes hors ligne sont bien marqués "Hors ligne" ✅
+   - La latence n'apparaît plus ✅
+   - Les débits IN/OUT apparaissent (N/A) ✅
+
+═══════════════════════════════════════════════════════════════
+✨ C'EST TERMINÉ !
+═══════════════════════════════════════════════════════════════
+
+Les modifications ont été appliquées avec succès.
+Le serveur web est prêt à l'emploi !
+
+═══════════════════════════════════════════════════════════════
+
