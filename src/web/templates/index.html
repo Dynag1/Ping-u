@@ -308,26 +308,43 @@
     </div>
 
     <script>
-        const socket = io();
+        const socket = io({
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 10
+        });
         
         let hostsData = [];
-
+        
         socket.on('connect', function() {
-            console.log('Connecté au serveur');
             updateStatusBadge(true);
+            socket.emit('request_update');
         });
 
         socket.on('disconnect', function() {
-            console.log('Déconnecté du serveur');
             updateStatusBadge(false);
         });
 
         socket.on('hosts_update', function(hosts) {
-            console.log('Mise à jour reçue:', hosts.length, 'hôtes');
+            if (!Array.isArray(hosts)) {
+                hosts = [];
+            }
+            
             hostsData = hosts;
             renderHosts(hosts);
             updateStats(hosts);
             updateLastUpdateTime();
+        });
+        
+        socket.on('connect_error', function(error) {
+            updateStatusBadge(false);
+            document.getElementById('hosts-container').innerHTML = `
+                <div class="no-hosts">
+                    <h2>Erreur de connexion</h2>
+                    <p>Impossible de se connecter au serveur. Vérifiez que le serveur web est démarré.</p>
+                </div>
+            `;
         });
 
         function updateStatusBadge(connected) {
@@ -509,10 +526,12 @@
             return div.innerHTML;
         }
 
+        // Demander une mise à jour toutes les 10 secondes
         setInterval(() => {
             socket.emit('request_update');
         }, 10000);
 
+        // Demander les données immédiatement au chargement
         socket.emit('request_update');
     </script>
 </body>

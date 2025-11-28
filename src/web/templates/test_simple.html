@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Simple - Serveur Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #667eea; margin-top: 0; }
+        .log {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #667eea;
+            background: white;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #5568d3; }
+        #hostCount { font-size: 24px; font-weight: bold; color: #667eea; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Page de Test - Serveur Web Ping ü</h1>
+    
+    <div class="section">
+        <h2>📊 État du Serveur</h2>
+        <p>Nombre d'hôtes: <span id="hostCount">...</span></p>
+        <button onclick="fetchHosts()">🔄 Rafraîchir</button>
+        <button onclick="clearLogs()">🗑️ Effacer logs</button>
+    </div>
+    
+    <div class="section">
+        <h2>📝 Console de Logs</h2>
+        <div id="logs" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>👥 Liste des Hôtes</h2>
+        <div id="hostsList"></div>
+    </div>
+
+    <script>
+        function addLog(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            addLog('Logs effacés', 'info');
+        }
+        
+        async function fetchHosts() {
+            addLog('📡 Requête vers /api/hosts...', 'info');
+            try {
+                const response = await fetch('/api/hosts');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const hosts = await response.json();
+                addLog(`✅ Reçu ${hosts.length} hôtes`, 'success');
+                
+                document.getElementById('hostCount').textContent = hosts.length;
+                
+                const hostsList = document.getElementById('hostsList');
+                if (hosts.length === 0) {
+                    hostsList.innerHTML = '<p style="color: #999;">Aucun hôte trouvé</p>';
+                } else {
+                    let html = '<ul>';
+                    hosts.forEach(host => {
+                        const status = host.status === 'online' ? '🟢' : '🔴';
+                        html += `<li>${status} <strong>${host.nom || 'Sans nom'}</strong> (${host.ip}) - ${host.latence || 'N/A'}</li>`;
+                    });
+                    html += '</ul>';
+                    hostsList.innerHTML = html;
+                }
+            } catch (error) {
+                addLog(`❌ Erreur: ${error.message}`, 'error');
+                document.getElementById('hostCount').textContent = 'Erreur';
+            }
+        }
+        
+        // Charger les hôtes au démarrage
+        addLog('🚀 Page de test chargée', 'info');
+        fetchHosts();
+        
+        // Rafraîchir toutes les 5 secondes
+        setInterval(fetchHosts, 5000);
+    </script>
+</body>
+</html>
+

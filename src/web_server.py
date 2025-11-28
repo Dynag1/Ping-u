@@ -33,9 +33,23 @@ class WebServer(QObject):
         super().__init__()
         self.main_window = main_window
         self.port = port
+        
+        # Déterminer le chemin absolu des templates
+        import os
+        import sys
+        if getattr(sys, 'frozen', False):
+            # Mode PyInstaller
+            base_path = sys._MEIPASS
+        else:
+            # Mode développement
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        
+        template_path = os.path.join(base_path, 'web', 'templates')
+        static_path = os.path.join(base_path, 'web', 'static')
+        
         self.app = Flask(__name__, 
-                        template_folder='web/templates',
-                        static_folder='web/static')
+                        template_folder=template_path,
+                        static_folder=static_path)
         CORS(self.app)
         
         # ═══════════════════════════════════════════════════════════════
@@ -62,7 +76,19 @@ class WebServer(QObject):
         
         @self.app.route('/')
         def index():
-            return render_template('index.html')
+            try:
+                return render_template('index.html')
+            except Exception as e:
+                logger.error(f"Erreur lors du rendu du template: {e}", exc_info=True)
+                return f"Erreur: {e}", 500
+        
+        @self.app.route('/test')
+        def test_page():
+            try:
+                return render_template('test_simple.html')
+            except Exception as e:
+                logger.error(f"Erreur lors du rendu du template de test: {e}", exc_info=True)
+                return f"Erreur: {e}", 500
         
         @self.app.route('/api/hosts')
         def get_hosts():
@@ -82,8 +108,12 @@ class WebServer(QObject):
         @self.socketio.on('connect')
         def handle_connect():
             logger.info(f"Client web connecté")
-            hosts = self._get_hosts_data()
-            emit('hosts_update', hosts)
+            try:
+                hosts = self._get_hosts_data()
+                emit('hosts_update', hosts)
+            except Exception as e:
+                logger.error(f"Erreur lors de l'envoi initial: {e}", exc_info=True)
+                emit('hosts_update', [])
         
         @self.socketio.on('disconnect')
         def handle_disconnect():
@@ -91,58 +121,67 @@ class WebServer(QObject):
         
         @self.socketio.on('request_update')
         def handle_request_update():
-            hosts = self._get_hosts_data()
-            emit('hosts_update', hosts)
+            try:
+                hosts = self._get_hosts_data()
+                emit('hosts_update', hosts)
+            except Exception as e:
+                logger.error(f"Erreur lors de l'envoi: {e}", exc_info=True)
+                emit('hosts_update', [])
     
     def _get_hosts_data(self):
-        """Extrait les données du treeview et récupère les débits SNMP"""
+        """Extrait les données du treeview"""
         hosts = []
         try:
             model = self.main_window.treeIpModel
             row_count = model.rowCount()
             
-            logger.debug(f"Extraction des données: {row_count} lignes dans le modèle")
-            
             if row_count == 0:
-                logger.warning("Le modèle treeIpModel est vide (0 lignes)")
                 return hosts
             
             for row in range(row_count):
                 try:
-                    ip = model.item(row, 1).text() if model.item(row, 1) else ''
-                    latence_text = model.item(row, 5).text() if model.item(row, 5) else ''
+                    # S'assurer que tous les items existent
+                    item_ip = model.item(row, 1)
+                    if not item_ip:
+                        continue
+                    
+                    ip = item_ip.text() if item_ip else ''
+                    if not ip:
+                        continue
+                    
+                    latence_text = model.item(row, 5).text() if model.item(row, 5) else 'N/A'
                     
                     host_data = {
-                        'id': model.item(row, 0).text() if model.item(row, 0) else '',
+                        'id': model.item(row, 0).text() if model.item(row, 0) else str(row),
                         'ip': ip,
-                        'nom': model.item(row, 2).text() if model.item(row, 2) else '',
+                        'nom': model.item(row, 2).text() if model.item(row, 2) else ip,
                         'mac': model.item(row, 3).text() if model.item(row, 3) else '',
                         'port': model.item(row, 4).text() if model.item(row, 4) else '',
                         'latence': latence_text,
-                        'temp': model.item(row, 6).text() if model.item(row, 6) else '',
+                        'temp': model.item(row, 6).text() if model.item(row, 6) else '-',
                         'suivi': model.item(row, 7).text() if model.item(row, 7) else '',
                         'comm': model.item(row, 8).text() if model.item(row, 8) else '',
                         'excl': model.item(row, 9).text() if model.item(row, 9) else '',
                         'status': self._get_row_status(model, row)
                     }
                     
-                    # Récupérer les débits SNMP (uniquement pour les hôtes online)
-                    if ip and latence_text != 'HS' and SNMP_AVAILABLE:
-                        bandwidth = self._get_bandwidth_for_host(ip)
-                        host_data['debit_in'] = bandwidth['in']
-                        host_data['debit_out'] = bandwidth['out']
-                    else:
-                        host_data['debit_in'] = 'N/A'
-                        host_data['debit_out'] = 'N/A'
+                    # Désactiver temporairement SNMP pour éviter les problèmes de sérialisation
+                    # TODO: Réactiver après avoir résolu le problème de WebSocket
+                    host_data['debit_in'] = 'N/A'
+                    host_data['debit_out'] = 'N/A'
+                    
+                    # Vérifier que toutes les valeurs sont sérialisables
+                    for key, value in host_data.items():
+                        if value is None:
+                            host_data[key] = ''
+                        elif not isinstance(value, (str, int, float, bool)):
+                            host_data[key] = str(value)
                     
                     hosts.append(host_data)
-                    logger.debug(f"Hôte ajouté: IP={ip}, Nom={host_data['nom']}")
                     
                 except Exception as row_error:
                     logger.error(f"Erreur lors de l'extraction de la ligne {row}: {row_error}")
                     continue
-                    
-            logger.info(f"{len(hosts)} hôtes extraits du modèle")
             
         except Exception as e:
             logger.error(f"Erreur extraction données hôtes: {e}", exc_info=True)
@@ -282,7 +321,7 @@ class WebServer(QObject):
         
         try:
             hosts = self._get_hosts_data()
-            self.socketio.emit('hosts_update', hosts, broadcast=True)
+            self.socketio.emit('hosts_update', hosts, broadcast=True, namespace='/')
         except Exception as e:
             logger.error(f"Erreur diffusion mise à jour: {e}", exc_info=True)
     

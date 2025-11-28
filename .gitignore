@@ -67,8 +67,9 @@ Translate.md
 update.log
 creer requirement.txt
 
-# Test de parsing (script temporaire)
+# Scripts de test temporaires
 test_ping_parsing.py
+test_web_server.py
 
 # Windows
 Thumbs.db
