@@ -5347,3 +5347,5 @@ hook-pysnmp.py
 Ping_u.spec
 tabG
 .gitignore
+build-py313-full.ps1
+clean_and_build.ps1

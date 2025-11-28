@@ -8,10 +8,20 @@ from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import threading
 import socket
+import asyncio
 from PySide6.QtCore import QObject, Signal
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+# Import optionnel de SNMP
+try:
+    from src.utils.snmp_helper import snmp_helper
+    SNMP_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"SNMP non disponible pour le serveur web: {e}")
+    snmp_helper = None
+    SNMP_AVAILABLE = False
 
 
 class WebServer(QObject):
@@ -40,6 +50,9 @@ class WebServer(QObject):
                                 engineio_logger=False)
         self.server_thread = None
         self.running = False
+        
+        # Cache pour les débits SNMP (uniquement pour la page web)
+        self.traffic_cache = {}
         
         self._setup_routes()
         self._setup_socketio()
@@ -82,31 +95,87 @@ class WebServer(QObject):
             emit('hosts_update', hosts)
     
     def _get_hosts_data(self):
-        """Extrait les données du treeview"""
+        """Extrait les données du treeview et récupère les débits SNMP"""
         hosts = []
         try:
             model = self.main_window.treeIpModel
             for row in range(model.rowCount()):
+                ip = model.item(row, 1).text() if model.item(row, 1) else ''
+                latence_text = model.item(row, 5).text() if model.item(row, 5) else ''
+                
                 host_data = {
                     'id': model.item(row, 0).text() if model.item(row, 0) else '',
-                    'ip': model.item(row, 1).text() if model.item(row, 1) else '',
+                    'ip': ip,
                     'nom': model.item(row, 2).text() if model.item(row, 2) else '',
                     'mac': model.item(row, 3).text() if model.item(row, 3) else '',
                     'port': model.item(row, 4).text() if model.item(row, 4) else '',
-                    'latence': model.item(row, 5).text() if model.item(row, 5) else '',
+                    'latence': latence_text,
                     'temp': model.item(row, 6).text() if model.item(row, 6) else '',
                     'suivi': model.item(row, 7).text() if model.item(row, 7) else '',
                     'comm': model.item(row, 8).text() if model.item(row, 8) else '',
                     'excl': model.item(row, 9).text() if model.item(row, 9) else '',
-                    'debit_in': 'N/A',  # À implémenter si disponible via SNMP
-                    'debit_out': 'N/A',  # À implémenter si disponible via SNMP
                     'status': self._get_row_status(model, row)
                 }
+                
+                # Récupérer les débits SNMP (uniquement pour les hôtes online)
+                if ip and latence_text != 'HS' and SNMP_AVAILABLE:
+                    bandwidth = self._get_bandwidth_for_host(ip)
+                    host_data['debit_in'] = bandwidth['in']
+                    host_data['debit_out'] = bandwidth['out']
+                else:
+                    host_data['debit_in'] = 'N/A'
+                    host_data['debit_out'] = 'N/A'
+                
                 hosts.append(host_data)
         except Exception as e:
             logger.error(f"Erreur extraction données hôtes: {e}", exc_info=True)
         
         return hosts
+    
+    def _get_bandwidth_for_host(self, ip):
+        """
+        Récupère le débit pour un hôte (en utilisant le cache).
+        Cette fonction s'exécute de manière synchrone pour éviter les problèmes avec Flask.
+        """
+        try:
+            # Créer une boucle asyncio temporaire pour la requête SNMP
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            # Récupérer les données de trafic actuelles
+            current_data = loop.run_until_complete(
+                snmp_helper.get_interface_traffic(ip, interface_index=1)
+            )
+            
+            loop.close()
+            
+            if current_data is None:
+                return {'in': '-', 'out': '-'}
+            
+            # Récupérer les données précédentes du cache
+            previous_data = self.traffic_cache.get(ip)
+            
+            # Sauvegarder les données actuelles dans le cache
+            self.traffic_cache[ip] = current_data
+            
+            # Si pas de données précédentes, attendre le prochain cycle
+            if previous_data is None:
+                return {'in': '-', 'out': '-'}
+            
+            # Calculer le débit
+            bandwidth = snmp_helper.calculate_bandwidth(current_data, previous_data)
+            
+            if bandwidth:
+                return {
+                    'in': f"{bandwidth['in_mbps']:.2f} Mbps",
+                    'out': f"{bandwidth['out_mbps']:.2f} Mbps"
+                }
+            
+            return {'in': '-', 'out': '-'}
+            
+        except Exception as e:
+            logger.debug(f"Erreur récupération débit pour {ip}: {e}")
+            return {'in': '-', 'out': '-'}
     
     def _get_row_status(self, model, row):
         """Détermine le statut (online/offline) selon la colonne Latence"""

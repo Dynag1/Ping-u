@@ -391,7 +391,12 @@ class MainWindow(QMainWindow):
     def treeIpHeader(self, tree_view):
         self.tree_view = self.ui.treeIp
         self.treeIpModel = QStandardItemModel()
-        self.treeIpModel.setHorizontalHeaderLabels([self.tr("Id"), self.tr("IP"), self.tr("Nom"), self.tr("Mac"), self.tr("Port"), self.tr("Latence"), self.tr("Temp"), self.tr("Suivi"), self.tr("Comm"), self.tr("Excl")])
+        # 10 colonnes uniquement (SANS Débit IN/OUT)
+        self.treeIpModel.setHorizontalHeaderLabels([
+            self.tr("Id"), self.tr("IP"), self.tr("Nom"), self.tr("Mac"), 
+            self.tr("Port"), self.tr("Latence"), self.tr("Temp"), self.tr("Suivi"), 
+            self.tr("Comm"), self.tr("Excl")
+        ])
         
         # Utiliser un proxy model pour le tri numérique des IP
         self.proxyModel = IPSortProxyModel()
@@ -457,16 +462,16 @@ class MainWindow(QMainWindow):
 
     def on_add_row(self, i, ip, nom, mac, port, extra, is_ok):
         items = [
-            QStandardItem(i),
-            QStandardItem(ip),
-            QStandardItem(nom),
-            QStandardItem(mac),
-            QStandardItem(str(port)),
-            QStandardItem(extra),
-            QStandardItem(""),  # Temp (sera remplie par SNMP)
-            QStandardItem(""),
-            QStandardItem(""),
-            QStandardItem("")
+            QStandardItem(i),         # 0: Id
+            QStandardItem(ip),        # 1: IP
+            QStandardItem(nom),       # 2: Nom
+            QStandardItem(mac),       # 3: Mac
+            QStandardItem(str(port)), # 4: Port
+            QStandardItem(extra),     # 5: Latence
+            QStandardItem(""),        # 6: Temp (sera remplie par SNMP)
+            QStandardItem(""),        # 7: Suivi
+            QStandardItem(""),        # 8: Comm
+            QStandardItem("")         # 9: Excl
         ]
         # Rendre certaines colonnes non éditables
         for col in [0, 1, 3, 5, 6, 7, 9]:  # Id, IP, Mac, Latence, Temp, Suivi, Excl

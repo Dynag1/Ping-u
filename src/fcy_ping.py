@@ -26,14 +26,16 @@ class AsyncPingWorker(QThread):
     """
     Thread dédié à l'exécution de la boucle d'événements asyncio.
     """
-    result_signal = Signal(str, float, str, object)  # ip, latence, couleur, température
+    result_signal = Signal(str, float, str, object, object)  # ip, latence, couleur, température, bandwidth
     ups_alert_signal = Signal(str, str)  # ip, message d'alerte UPS
 
-    def __init__(self, ips):
+    def __init__(self, ips, traffic_cache=None):
         super().__init__()
         self.ips = ips
         self.is_running = True
         self.system = platform.system().lower()
+        # Cache pour stocker les données de trafic précédentes (pour calculer le débit)
+        self.traffic_cache = traffic_cache if traffic_cache is not None else {}
 
     def run(self):
         """Point d'entrée du thread."""
@@ -107,13 +109,28 @@ class AsyncPingWorker(QThread):
             logger.debug(f"Erreur ping {ip}: {e}")
             latency = 500.0
 
-        # Interrogation SNMP pour la température (si ping OK et SNMP disponible)
+        # Interrogation SNMP pour la température et les débits (si ping OK et SNMP disponible)
         temperature = None
+        bandwidth = None
         if latency < 500 and SNMP_AVAILABLE:
             try:
                 temperature = await snmp_helper.get_temperature(ip)
             except Exception as e:
                 logger.debug(f"Erreur SNMP température pour {ip}: {e}")
+            
+            # Récupération des débits réseau
+            try:
+                previous_data = self.traffic_cache.get(ip)
+                bandwidth_result = await snmp_helper.calculate_bandwidth(ip, interface_index=1, previous_data=previous_data)
+                if bandwidth_result:
+                    bandwidth = {
+                        'in_mbps': bandwidth_result['in_mbps'],
+                        'out_mbps': bandwidth_result['out_mbps']
+                    }
+                    # Sauvegarder les données brutes pour le prochain cycle
+                    self.traffic_cache[ip] = bandwidth_result['raw_data']
+            except Exception as e:
+                logger.debug(f"Erreur SNMP trafic pour {ip}: {e}")
             
             # Vérification UPS (onduleur)
             try:
@@ -128,7 +145,7 @@ class AsyncPingWorker(QThread):
         
         # Emission du résultat
         color = AppColors.get_latency_color(latency)
-        self.result_signal.emit(ip, latency, color, temperature)
+        self.result_signal.emit(ip, latency, color, temperature, bandwidth)
         
         # Mise à jour des listes (HS/OK)
         self.update_lists(ip, latency)
@@ -189,6 +206,8 @@ class PingManager(QObject):
         self.tree_model = tree_model
         self.worker = None
         self.timer = None
+        # Cache pour stocker les données de trafic entre les cycles
+        self.traffic_cache = {}
 
     def start(self):
         """Démarre le cycle de ping."""
@@ -228,7 +247,7 @@ class PingManager(QObject):
             return
 
         # Lancement du worker
-        self.worker = AsyncPingWorker(ips)
+        self.worker = AsyncPingWorker(ips, self.traffic_cache)
         self.worker.result_signal.connect(self.handle_result)
         self.worker.ups_alert_signal.connect(self.handle_ups_alert)
         self.worker.finished.connect(self.on_worker_finished)
@@ -252,7 +271,7 @@ class PingManager(QObject):
                 ips.append(item.text())
         return ips
 
-    def handle_result(self, ip, latency, color, temperature):
+    def handle_result(self, ip, latency, color, temperature, bandwidth):
         """Met à jour l'interface avec le résultat."""
         row = self.find_item_row(ip)
         if row == -1:
