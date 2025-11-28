@@ -99,34 +99,51 @@ class WebServer(QObject):
         hosts = []
         try:
             model = self.main_window.treeIpModel
-            for row in range(model.rowCount()):
-                ip = model.item(row, 1).text() if model.item(row, 1) else ''
-                latence_text = model.item(row, 5).text() if model.item(row, 5) else ''
-                
-                host_data = {
-                    'id': model.item(row, 0).text() if model.item(row, 0) else '',
-                    'ip': ip,
-                    'nom': model.item(row, 2).text() if model.item(row, 2) else '',
-                    'mac': model.item(row, 3).text() if model.item(row, 3) else '',
-                    'port': model.item(row, 4).text() if model.item(row, 4) else '',
-                    'latence': latence_text,
-                    'temp': model.item(row, 6).text() if model.item(row, 6) else '',
-                    'suivi': model.item(row, 7).text() if model.item(row, 7) else '',
-                    'comm': model.item(row, 8).text() if model.item(row, 8) else '',
-                    'excl': model.item(row, 9).text() if model.item(row, 9) else '',
-                    'status': self._get_row_status(model, row)
-                }
-                
-                # Récupérer les débits SNMP (uniquement pour les hôtes online)
-                if ip and latence_text != 'HS' and SNMP_AVAILABLE:
-                    bandwidth = self._get_bandwidth_for_host(ip)
-                    host_data['debit_in'] = bandwidth['in']
-                    host_data['debit_out'] = bandwidth['out']
-                else:
-                    host_data['debit_in'] = 'N/A'
-                    host_data['debit_out'] = 'N/A'
-                
-                hosts.append(host_data)
+            row_count = model.rowCount()
+            
+            logger.debug(f"Extraction des données: {row_count} lignes dans le modèle")
+            
+            if row_count == 0:
+                logger.warning("Le modèle treeIpModel est vide (0 lignes)")
+                return hosts
+            
+            for row in range(row_count):
+                try:
+                    ip = model.item(row, 1).text() if model.item(row, 1) else ''
+                    latence_text = model.item(row, 5).text() if model.item(row, 5) else ''
+                    
+                    host_data = {
+                        'id': model.item(row, 0).text() if model.item(row, 0) else '',
+                        'ip': ip,
+                        'nom': model.item(row, 2).text() if model.item(row, 2) else '',
+                        'mac': model.item(row, 3).text() if model.item(row, 3) else '',
+                        'port': model.item(row, 4).text() if model.item(row, 4) else '',
+                        'latence': latence_text,
+                        'temp': model.item(row, 6).text() if model.item(row, 6) else '',
+                        'suivi': model.item(row, 7).text() if model.item(row, 7) else '',
+                        'comm': model.item(row, 8).text() if model.item(row, 8) else '',
+                        'excl': model.item(row, 9).text() if model.item(row, 9) else '',
+                        'status': self._get_row_status(model, row)
+                    }
+                    
+                    # Récupérer les débits SNMP (uniquement pour les hôtes online)
+                    if ip and latence_text != 'HS' and SNMP_AVAILABLE:
+                        bandwidth = self._get_bandwidth_for_host(ip)
+                        host_data['debit_in'] = bandwidth['in']
+                        host_data['debit_out'] = bandwidth['out']
+                    else:
+                        host_data['debit_in'] = 'N/A'
+                        host_data['debit_out'] = 'N/A'
+                    
+                    hosts.append(host_data)
+                    logger.debug(f"Hôte ajouté: IP={ip}, Nom={host_data['nom']}")
+                    
+                except Exception as row_error:
+                    logger.error(f"Erreur lors de l'extraction de la ligne {row}: {row_error}")
+                    continue
+                    
+            logger.info(f"{len(hosts)} hôtes extraits du modèle")
+            
         except Exception as e:
             logger.error(f"Erreur extraction données hôtes: {e}", exc_info=True)
         
@@ -216,8 +233,15 @@ class WebServer(QObject):
             self.server_thread = threading.Thread(target=self._run_server, daemon=True)
             self.server_thread.start()
             
+            # Vérifier immédiatement le nombre d'hôtes
+            try:
+                row_count = self.main_window.treeIpModel.rowCount()
+                logger.info(f"Serveur web démarré avec {row_count} hôtes dans le modèle")
+            except Exception as e:
+                logger.warning(f"Impossible de vérifier le nombre d'hôtes: {e}")
+            
             local_ip = self._get_local_ip()
-            logger.info(f"Serveur web démarré sur http://{local_ip}:{self.port}")
+            logger.info(f"Serveur web accessible sur http://{local_ip}:{self.port}")
             logger.info(f"Accessible localement sur http://localhost:{self.port}")
             
             return True

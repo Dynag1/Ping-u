@@ -96,7 +96,7 @@ def mail(self, model):
                 Bonjour,<br><br>
                 <table border=1><tr><td width='50%' align=center>Nom</td><td width='50%' align=center>IP</td></tr>
                 """)
-        sujet = "Allerte sur le site " + var.nom_site
+        sujet = self.tr("Alerte sur le site ") + var.nom_site
         time.sleep(1)
         for key1, value1 in var.liste_mail.items():
             if int(value1) == int(var.nbrHs):

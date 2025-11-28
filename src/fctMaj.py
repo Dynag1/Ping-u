@@ -71,8 +71,8 @@ def testVersion(self):
         log(f"Nouvelle version détectée ({latest_version}), demande à l'utilisateur...")
         reponse = QMessageBox.question(
             self,
-            QCoreApplication.translate("MainWindow", 'Mise à jour'),
-            QCoreApplication.translate("MainWindow", 'Une mise à jour vers la version ') + latest_version + QCoreApplication.translate("MainWindow", " est disponible. \nVoulez-vous ouvrir la page de téléchargement ?"),
+            self.tr('Mise à jour'),
+            self.tr('Une mise à jour vers la version ') + latest_version + self.tr(" est disponible. \nVoulez-vous ouvrir la page de téléchargement ?"),
             QMessageBox.Yes | QMessageBox.No
         )
         if reponse == QMessageBox.Yes:
@@ -81,12 +81,12 @@ def testVersion(self):
             download_url = f"{var.site}/Pingu/Pingu_Setup.exe"
             webbrowser.open(download_url)
             log(f"Lien de téléchargement ouvert : {download_url}")
-            QMessageBox.information(self, "Mise à jour", "La page de téléchargement a été ouverte dans votre navigateur.")
+            QMessageBox.information(self, self.tr("Mise à jour"), self.tr("La page de téléchargement a été ouverte dans votre navigateur."))
         else:
             log("L'utilisateur a refusé la mise à jour.")
     else:
         log("Aucune mise à jour nécessaire.")
-        QMessageBox.warning(None, QCoreApplication.translate("MainWindow", "Mise à jour"), QCoreApplication.translate("MainWindow", "Votre logiciel est à jour"))
+        QMessageBox.warning(None, self.tr("Mise à jour"), self.tr("Votre logiciel est à jour"))
 
 def main(self):
     try:

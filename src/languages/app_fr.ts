@@ -233,10 +233,67 @@ Cordialement,
 Ping ü</translation>
     </message>
     <message>
-        <location filename="../threadLancement.py" line="178"/>
-        <location filename="../threadLancement.py" line="179"/>
+        <location filename="../threadLancement.py" line="148"/>
         <source>Alerte sur le site </source>
         <translation>Alerte sur le site </translation>
+    </message>
+    <message>
+        <location filename="../threadLancement.py" line="170"/>
+        <source>les hotes suivants sont HS : 
+</source>
+        <translation>les hotes suivants sont HS : 
+</translation>
+    </message>
+    <message>
+        <location filename="../threadLancement.py" line="174"/>
+        <source>les hotes suivants sont OK : 
+</source>
+        <translation>les hotes suivants sont OK : 
+</translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="74"/>
+        <location filename="../fctMaj.py" line="84"/>
+        <location filename="../fctMaj.py" line="89"/>
+        <source>Mise à jour</source>
+        <translation>Mise à jour</translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="75"/>
+        <source>Une mise à jour vers la version </source>
+        <translation>Une mise à jour vers la version </translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="75"/>
+        <source> est disponible. 
+Voulez-vous ouvrir la page de téléchargement ?</source>
+        <translation> est disponible. 
+Voulez-vous ouvrir la page de téléchargement ?</translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="84"/>
+        <source>La page de téléchargement a été ouverte dans votre navigateur.</source>
+        <translation>La page de téléchargement a été ouverte dans votre navigateur.</translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="89"/>
+        <source>Votre logiciel est à jour</source>
+        <translation>Votre logiciel est à jour</translation>
+    </message>
+    <message>
+        <location filename="../fctXls.py" line="110"/>
+        <source>Doublon</source>
+        <translation>Doublon</translation>
+    </message>
+    <message>
+        <location filename="../fctXls.py" line="110"/>
+        <source>L'adresse existe déjà</source>
+        <translation>L'adresse existe déjà</translation>
+    </message>
+    <message>
+        <location filename="../fctXls.py" line="133"/>
+        <source>Erreur lors de la lecture</source>
+        <translation>Erreur lors de la lecture</translation>
     </message>
     <message>
         <source>
@@ -482,88 +539,235 @@ Ping ü</translation>
         <translation></translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="288"/>
         <source>Ping ü version : </source>
-        <translation type="vanished">Ping ü version : </translation>
+        <translation>Ping ü version : </translation>
     </message>
     <message>
-        <source> jours</source>
-        <translation type="vanished"> jours</translation>
-    </message>
-    <message>
-        <source>Votre license est active pendant </source>
-        <translation type="vanished">Votre license est active pendant </translation>
-    </message>
-    <message>
+        <location filename="../../Pingu.py" line="289"/>
         <source>Vous n&apos;avez pas de license active</source>
-        <translation type="vanished">Vous n&apos;avez pas de license active</translation>
+        <translation>Vous n&apos;avez pas de license active</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="292"/>
+        <source>Votre license est active pendant </source>
+        <translation>Votre license est active pendant </translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="292"/>
+        <source> jours</source>
+        <translation> jours</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="297"/>
         <source>Alive</source>
-        <translation type="vanished">Répondant</translation>
+        <translation>Répondant</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="298"/>
         <source>Tout</source>
-        <translation type="vanished">Tout</translation>
+        <translation>Tout</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="299"/>
         <source>Site</source>
-        <translation type="vanished">Site</translation>
+        <translation>Site</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="396"/>
         <source>Id</source>
-        <translation type="vanished">Id</translation>
+        <translation>Id</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="396"/>
+        <source>IP</source>
+        <translation>IP</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="396"/>
         <source>Nom</source>
-        <translation type="vanished">Nom</translation>
+        <translation>Nom</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="396"/>
         <source>Mac</source>
-        <translation type="vanished">Mac</translation>
+        <translation>Mac</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="397"/>
         <source>Port</source>
-        <translation type="vanished">Port</translation>
+        <translation>Port</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="397"/>
         <source>Latence</source>
-        <translation type="vanished">Latence</translation>
+        <translation>Latence</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="397"/>
+        <source>Temp</source>
+        <translation>Temp</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="397"/>
         <source>Suivi</source>
-        <translation type="vanished">Suivi</translation>
+        <translation>Suivi</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="398"/>
         <source>Comm</source>
-        <translation type="vanished">Comm</translation>
+        <translation>Comm</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="398"/>
         <source>Excl</source>
-        <translation type="vanished">Excl</translation>
+        <translation>Excl</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="431"/>
         <source>Ouvrir dans le navigateur</source>
-        <translation type="vanished">Ouvrir dans le navigateur</translation>
+        <translation>Ouvrir dans le navigateur</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="432"/>
         <source>Supprimer</source>
-        <translation type="vanished">Supprimer</translation>
+        <translation>Supprimer</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="433"/>
         <source>Exclure</source>
-        <translation type="vanished">Exclure</translation>
+        <translation>Exclure</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="516"/>
         <source>Succès</source>
-        <translation type="vanished">Succès</translation>
+        <translation>Succès</translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="517"/>
         <source>Scan terminé, </source>
-        <translation type="vanished">Scan terminé, </translation>
+        <translation>Scan terminé, </translation>
     </message>
     <message>
+        <location filename="../../Pingu.py" line="517"/>
         <source> hôtes trouvés</source>
-        <translation type="vanished"> hôtes trouvés</translation>
+        <translation> hôtes trouvés</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="579"/>
+        <source>Serveur Web</source>
+        <translation>Serveur Web</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="581"/>
+        <source>Démarrer le serveur</source>
+        <translation>Démarrer le serveur</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="585"/>
+        <source>Ouvrir dans le navigateur</source>
+        <translation>Ouvrir dans le navigateur</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="590"/>
+        <source>Voir les URLs d&apos;accès</source>
+        <translation>Voir les URLs d&apos;accès</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="609"/>
+        <source>Arrêter le serveur</source>
+        <translation>Arrêter le serveur</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="614"/>
+        <source>Serveur web démarré avec succès !\n\n</source>
+        <translation>Serveur web démarré avec succès !\n\n</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="615"/>
+        <source>Accès local: </source>
+        <translation>Accès local: </translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="616"/>
+        <source>Accès réseau: </source>
+        <translation>Accès réseau: </translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="620"/>
+        <source>Erreur</source>
+        <translation>Erreur</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="621"/>
+        <source>Impossible de démarrer le serveur web.\nLe port 5000 est peut-être déjà utilisé.</source>
+        <translation>Impossible de démarrer le serveur web.\nLe port 5000 est peut-être déjà utilisé.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="630"/>
+        <source>Serveur web arrêté</source>
+        <translation>Serveur web arrêté</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="636"/>
+        <source>Erreur lors du démarrage/arrêt du serveur: </source>
+        <translation>Erreur lors du démarrage/arrêt du serveur: </translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="654"/>
+        <source>URLs d&apos;accès au serveur web:\n\n</source>
+        <translation>URLs d&apos;accès au serveur web:\n\n</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="655"/>
+        <source>Accès local (sur cet ordinateur):\n</source>
+        <translation>Accès local (sur cet ordinateur):\n</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="657"/>
+        <source>Accès réseau (depuis un autre PC):\n</source>
+        <translation>Accès réseau (depuis un autre PC):\n</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="659"/>
+        <source>Note: Assurez-vous que le pare-feu autorise les connexions sur le port 5000.</source>
+        <translation>Note: Assurez-vous que le pare-feu autorise les connexions sur le port 5000.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="660"/>
+        <source>URLs d&apos;accès</source>
+        <translation>URLs d&apos;accès</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="227"/>
+        <source>Alerte</source>
+        <translation>Alerte</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="558"/>
+        <location filename="../../Pingu.py" line="571"/>
+        <source>Logs</source>
+        <translation>Logs</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="558"/>
+        <source>Le fichier de logs n&apos;existe pas encore.</source>
+        <translation>Le fichier de logs n&apos;existe pas encore.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="569"/>
+        <source>Les logs ont été effacés.</source>
+        <translation>Les logs ont été effacés.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="571"/>
+        <source>Le fichier de logs n&apos;existe pas.</source>
+        <translation>Le fichier de logs n&apos;existe pas.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="574"/>
+        <source>Impossible d&apos;effacer les logs</source>
+        <translation>Impossible d&apos;effacer les logs</translation>
     </message>
 </context>
 <context>

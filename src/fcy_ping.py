@@ -52,13 +52,13 @@ class AsyncPingWorker(QThread):
         self.is_running = False
 
     async def ping_all(self, ips):
-        """Lance les pings par lots de 5 pour équilibrer vitesse et précision."""
-        batch_size = 5
+        """Lance les pings par lots de 20 pour équilibrer vitesse et précision."""
+        batch_size = 20  # Augmenté de 5 à 20 pour de meilleures performances
         for i in range(0, len(ips), batch_size):
             if not self.is_running:
                 break
             batch = ips[i:i + batch_size]
-            # Lance 5 pings en parallèle
+            # Lance les pings en parallèle
             tasks = [self.ping_host(ip) for ip in batch]
             await asyncio.gather(*tasks)
 
@@ -73,12 +73,12 @@ class AsyncPingWorker(QThread):
             # Commande selon l'OS
             if self.system == "windows":
                 # -n 1 : un seul ping
-                # -w 1000 : timeout 1000ms
-                cmd = ["ping", "-n", "1", "-w", "1000", ip]
+                # -w 2000 : timeout 2000ms (augmenté pour éviter les faux négatifs)
+                cmd = ["ping", "-n", "1", "-w", "2000", ip]
             else:
                 # -c 1 : un seul ping
-                # -W 1 : timeout 1s
-                cmd = ["ping", "-c", "1", "-W", "1", ip]
+                # -W 2 : timeout 2s
+                cmd = ["ping", "-c", "1", "-W", "2", ip]
 
             # Création du sous-processus
             # Sur Windows, masquer la fenêtre CMD
@@ -99,29 +99,55 @@ class AsyncPingWorker(QThread):
 
             stdout, stderr = await process.communicate()
             
-            if process.returncode == 0:
+            # Décoder la sortie avec l'encodage approprié pour Windows français
+            try:
+                # Windows français utilise souvent cp850 ou cp1252
+                if self.system == "windows":
+                    output = stdout.decode('cp850', errors='ignore')
+                else:
+                    output = stdout.decode('utf-8', errors='ignore')
+            except:
                 output = stdout.decode('utf-8', errors='ignore')
+            
+            # Parser la latence même si returncode != 0 (parfois le ping réussit mais returncode est différent)
+            if process.returncode == 0 or "TTL" in output or "ttl" in output:
                 latency = self.parse_latency(output)
+                # Si on a trouvé une latence valide (< 500), c'est que le ping a réussi
+                if latency >= 500 and ("TTL" in output or "ttl" in output):
+                    # Le ping a réussi mais on n'a pas pu parser la latence
+                    # On va logger la sortie complète pour debug
+                    logger.warning(f"Ping réussi mais parsing échoué pour {ip}. Sortie:\n{output}")
             else:
                 latency = 500.0
+                logger.debug(f"Ping échoué pour {ip}, returncode: {process.returncode}")
 
         except Exception as e:
             logger.debug(f"Erreur ping {ip}: {e}")
             latency = 500.0
 
         # Interrogation SNMP pour la température et les débits (si ping OK et SNMP disponible)
+        # NOTE: Les requêtes SNMP sont désormais limitées avec timeout pour ne pas ralentir les pings
         temperature = None
         bandwidth = None
         if latency < 500 and SNMP_AVAILABLE:
             try:
-                temperature = await snmp_helper.get_temperature(ip)
+                # Timeout de 2 secondes pour les requêtes SNMP
+                temperature = await asyncio.wait_for(
+                    snmp_helper.get_temperature(ip), 
+                    timeout=2.0
+                )
+            except asyncio.TimeoutError:
+                logger.debug(f"Timeout SNMP température pour {ip}")
             except Exception as e:
                 logger.debug(f"Erreur SNMP température pour {ip}: {e}")
             
             # Récupération des débits réseau
             try:
                 previous_data = self.traffic_cache.get(ip)
-                bandwidth_result = await snmp_helper.calculate_bandwidth(ip, interface_index=1, previous_data=previous_data)
+                bandwidth_result = await asyncio.wait_for(
+                    snmp_helper.calculate_bandwidth(ip, interface_index=1, previous_data=previous_data),
+                    timeout=2.0
+                )
                 if bandwidth_result:
                     bandwidth = {
                         'in_mbps': bandwidth_result['in_mbps'],
@@ -129,17 +155,24 @@ class AsyncPingWorker(QThread):
                     }
                     # Sauvegarder les données brutes pour le prochain cycle
                     self.traffic_cache[ip] = bandwidth_result['raw_data']
+            except asyncio.TimeoutError:
+                logger.debug(f"Timeout SNMP trafic pour {ip}")
             except Exception as e:
                 logger.debug(f"Erreur SNMP trafic pour {ip}: {e}")
             
             # Vérification UPS (onduleur)
             try:
-                ups_state = await ups_monitor.check_ups(ip)
+                ups_state = await asyncio.wait_for(
+                    ups_monitor.check_ups(ip),
+                    timeout=2.0
+                )
                 if ups_state and ups_state.get('alert_message'):
                     # Émettre un signal d'alerte UPS
                     logger.warning(ups_state['alert_message'])
                     # Émettre le signal pour déclencher les alertes (mail/popup/telegram)
                     self.ups_alert_signal.emit(ip, ups_state['alert_message'])
+            except asyncio.TimeoutError:
+                logger.debug(f"Timeout SNMP UPS pour {ip}")
             except Exception as e:
                 logger.debug(f"Erreur SNMP UPS pour {ip}: {e}")
         
@@ -154,12 +187,28 @@ class AsyncPingWorker(QThread):
         """Extrait la latence de la sortie du ping."""
         try:
             if self.system == "windows":
-                # Recherche "temps=XXms" ou "time=XXms"
-                match = re.search(r"(?:temps|time)[=<](\d+)", output, re.IGNORECASE)
+                # Méthode 1: Recherche "temps=XX" ou "time=XX" (français/anglais)
+                # Exemples: "temps=16 ms", "time=25ms", "temps<1ms"
+                match = re.search(r"(?:temps|time)\s*[=<]\s*(\d+(?:\.\d+)?)", output, re.IGNORECASE)
                 if match:
                     val = float(match.group(1))
-                    # logger.debug(f"Latence trouvée (Windows): {val} ms dans '{output.strip()}'")
+                    logger.debug(f"Latence trouvée (Windows): {val} ms")
                     return val
+                
+                # Méthode 2: Chercher "Moyenne = XXms" dans les statistiques
+                match_avg = re.search(r"Moyenne\s*=\s*(\d+(?:\.\d+)?)ms", output, re.IGNORECASE)
+                if match_avg:
+                    val = float(match_avg.group(1))
+                    logger.debug(f"Latence trouvée (Moyenne): {val} ms")
+                    return val
+                
+                # Méthode 3: Chercher "Average = XXms" (version anglaise)
+                match_avg_en = re.search(r"Average\s*=\s*(\d+(?:\.\d+)?)ms", output, re.IGNORECASE)
+                if match_avg_en:
+                    val = float(match_avg_en.group(1))
+                    logger.debug(f"Latence trouvée (Average): {val} ms")
+                    return val
+                
             else:
                 # Linux/Mac: time=XX.X ms
                 match = re.search(r"time=(\d+\.?\d*)", output, re.IGNORECASE)
@@ -169,7 +218,7 @@ class AsyncPingWorker(QThread):
             logger.error(f"Erreur parsing latence: {e}")
         
         # Si on arrive ici, c'est qu'on a pas trouvé la latence
-        # logger.debug(f"Pas de latence trouvée dans: {output[:100]}...")
+        logger.warning(f"Pas de latence trouvée pour cette sortie de ping:\n{output}")
         return 500.0
 
     def update_lists(self, ip, latency):

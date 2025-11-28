@@ -10,7 +10,7 @@ class AppColors:
     GOOD = "#FFFF00"       # < 10ms
     WARNING = "#FFA500"    # < 50ms
     CRITICAL = "#FF0000"   # >= 50ms
-    OFFLINE = "#787878"    # Timeout / HS
+    OFFLINE = "#4d4d4d"    # Timeout / HS (gris foncé)
     
     # Interface Utilisateur
     VERT_PALE = "#baf595"
@@ -27,14 +27,24 @@ class AppColors:
 
     @classmethod
     def get_latency_color(cls, latency_ms: float) -> str:
-        """Retourne la couleur hexadécimale correspondant à la latence."""
+        """
+        Retourne la couleur hexadécimale correspondant à la latence.
+        
+        Règles:
+        - < 50ms : vert pâle
+        - 50ms à 100ms : orange pâle
+        - > 100ms : rouge pâle
+        - >= 500ms (HS) : gris foncé
+        """
         if latency_ms >= 500:
-            return cls.OFFLINE
-        elif latency_ms < 2:
-            return cls.EXCELLENT
-        elif latency_ms < 10:
-            return cls.GOOD
-        elif latency_ms < 50:
-            return cls.WARNING
+            # Hors service (HS)
+            return cls.NOIR_GRIS
+        elif latency_ms > 100:
+            # Rouge pâle pour latence > 100ms
+            return cls.ROUGE_PALE
+        elif latency_ms >= 50:
+            # Orange pâle pour latence entre 50ms et 100ms
+            return cls.ORANGE_PALE
         else:
-            return cls.CRITICAL
+            # Vert pâle pour latence < 50ms
+            return cls.VERT_PALE

@@ -267,10 +267,98 @@
                          </translation>
     </message>
     <message>
-        <location filename="../threadLancement.py" line="178"/>
-        <location filename="../threadLancement.py" line="179"/>
+        <location filename="../threadLancement.py" line="148"/>
         <source>Alerte sur le site </source>
         <translation>Alert on site </translation>
+    </message>
+    <message>
+        <location filename="../threadLancement.py" line="170"/>
+        <source>les hotes suivants sont HS : 
+</source>
+        <translation>the following hosts are down: 
+</translation>
+    </message>
+    <message>
+        <location filename="../threadLancement.py" line="174"/>
+        <source>les hotes suivants sont OK : 
+</source>
+        <translation>the following hosts are OK: 
+</translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="74"/>
+        <location filename="../fctMaj.py" line="84"/>
+        <location filename="../fctMaj.py" line="89"/>
+        <source>Mise à jour</source>
+        <translation>Update</translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="75"/>
+        <source>Une mise à jour vers la version </source>
+        <translation>An update to version </translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="75"/>
+        <source> est disponible. 
+Voulez-vous ouvrir la page de téléchargement ?</source>
+        <translation> is available. 
+Do you want to open the download page?</translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="84"/>
+        <source>La page de téléchargement a été ouverte dans votre navigateur.</source>
+        <translation>The download page has been opened in your browser.</translation>
+    </message>
+    <message>
+        <location filename="../fctMaj.py" line="89"/>
+        <source>Votre logiciel est à jour</source>
+        <translation>Your software is up to date</translation>
+    </message>
+    <message>
+        <location filename="../fctXls.py" line="110"/>
+        <source>Doublon</source>
+        <translation>Duplicate</translation>
+    </message>
+    <message>
+        <location filename="../fctXls.py" line="110"/>
+        <source>L'adresse existe déjà</source>
+        <translation>The address already exists</translation>
+    </message>
+    <message>
+        <location filename="../fctXls.py" line="133"/>
+        <source>Erreur lors de la lecture</source>
+        <translation>Error reading file</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="227"/>
+        <source>Alerte</source>
+        <translation>Alert</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="558"/>
+        <location filename="../../Pingu.py" line="571"/>
+        <source>Logs</source>
+        <translation>Logs</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="558"/>
+        <source>Le fichier de logs n&apos;existe pas encore.</source>
+        <translation>The log file does not exist yet.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="569"/>
+        <source>Les logs ont été effacés.</source>
+        <translation>Logs have been cleared.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="571"/>
+        <source>Le fichier de logs n&apos;existe pas.</source>
+        <translation>The log file does not exist.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="574"/>
+        <source>Impossible d&apos;effacer les logs</source>
+        <translation>Unable to clear logs</translation>
     </message>
 </context>
 <context>
@@ -607,7 +695,87 @@
     <message>
         <location filename="../../Pingu.py" line="419"/>
         <source> hôtes trouvés</source>
-        <translation> found</translation>
+        <translation> hosts found</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="397"/>
+        <source>Temp</source>
+        <translation>Temp</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="579"/>
+        <source>Serveur Web</source>
+        <translation>Web Server</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="581"/>
+        <source>Démarrer le serveur</source>
+        <translation>Start server</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="590"/>
+        <source>Voir les URLs d&apos;accès</source>
+        <translation>Show access URLs</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="609"/>
+        <source>Arrêter le serveur</source>
+        <translation>Stop server</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="614"/>
+        <source>Serveur web démarré avec succès !\n\n</source>
+        <translation>Web server started successfully!\n\n</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="615"/>
+        <source>Accès local: </source>
+        <translation>Local access: </translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="616"/>
+        <source>Accès réseau: </source>
+        <translation>Network access: </translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="621"/>
+        <source>Impossible de démarrer le serveur web.\nLe port 5000 est peut-être déjà utilisé.</source>
+        <translation>Unable to start web server.\nPort 5000 may already be in use.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="630"/>
+        <source>Serveur web arrêté</source>
+        <translation>Web server stopped</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="636"/>
+        <source>Erreur lors du démarrage/arrêt du serveur: </source>
+        <translation>Error starting/stopping server: </translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="654"/>
+        <source>URLs d&apos;accès au serveur web:\n\n</source>
+        <translation>Web server access URLs:\n\n</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="655"/>
+        <source>Accès local (sur cet ordinateur):\n</source>
+        <translation>Local access (on this computer):\n</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="657"/>
+        <source>Accès réseau (depuis un autre PC):\n</source>
+        <translation>Network access (from another PC):\n</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="659"/>
+        <source>Note: Assurez-vous que le pare-feu autorise les connexions sur le port 5000.</source>
+        <translation>Note: Make sure the firewall allows connections on port 5000.</translation>
+    </message>
+    <message>
+        <location filename="../../Pingu.py" line="660"/>
+        <source>URLs d&apos;accès</source>
+        <translation>Access URLs</translation>
     </message>
 </context>
 <context>

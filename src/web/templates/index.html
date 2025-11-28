@@ -422,10 +422,6 @@
                         <div class="detail-value">${escapeHtml(host.mac) || '-'}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Latence</div>
-                        <div class="detail-value">${escapeHtml(host.latence) || '-'}</div>
-                    </div>
-                    <div class="detail-item">
                         <div class="detail-label">🌡️ Température</div>
                         <div class="detail-value">${escapeHtml(temperature)}</div>
                     </div>
@@ -470,26 +466,22 @@
             
             // Mettre à jour les valeurs détaillées
             const details = card.querySelectorAll('.detail-value');
-            if (details.length >= 5) {
-                // MAC
+            if (details.length >= 4) {
+                // MAC (index 0)
                 if (details[0].textContent !== (host.mac || '-')) {
                     details[0].textContent = host.mac || '-';
                 }
-                // Latence
-                if (details[1].textContent !== (host.latence || '-')) {
-                    details[1].textContent = host.latence || '-';
+                // Température (index 1)
+                if (details[1].textContent !== temperature) {
+                    details[1].textContent = temperature;
                 }
-                // Température
-                if (details[2].textContent !== temperature) {
-                    details[2].textContent = temperature;
+                // Débit IN (index 2)
+                if (details[2].textContent !== debitIn) {
+                    details[2].textContent = debitIn;
                 }
-                // Débit IN
-                if (details[3].textContent !== debitIn) {
-                    details[3].textContent = debitIn;
-                }
-                // Débit OUT
-                if (details[4].textContent !== debitOut) {
-                    details[4].textContent = debitOut;
+                // Débit OUT (index 3)
+                if (details[3].textContent !== debitOut) {
+                    details[3].textContent = debitOut;
                 }
             }
         }

@@ -224,7 +224,7 @@ class MainWindow(QMainWindow):
             qt_themes.set_theme("nord")
 
     def show_popup(self, mess):
-          QMessageBox.information(self, "Alerte", mess)
+          QMessageBox.information(self, self.tr("Alerte"), mess)
 
 # Language
 ## Path du langage ##
@@ -297,6 +297,9 @@ class MainWindow(QMainWindow):
         self.ui.txtAlive.addItem(self.tr("Alive"))
         self.ui.txtAlive.addItem(self.tr("Tout"))
         self.ui.txtAlive.addItem(self.tr("Site"))
+        
+        # Mise à jour du menu serveur web
+        self._update_web_server_menu_text()
 
 
 # Plugin #
@@ -552,7 +555,7 @@ class MainWindow(QMainWindow):
                 import subprocess
                 subprocess.call(['xdg-open', log_file])
         else:
-            QMessageBox.warning(self, "Logs", "Le fichier de logs n'existe pas encore.")
+            QMessageBox.warning(self, self.tr("Logs"), self.tr("Le fichier de logs n'existe pas encore."))
 
     def clear_logs(self):
         """Efface le contenu du fichier de logs."""
@@ -563,36 +566,63 @@ class MainWindow(QMainWindow):
                 with open(log_file, 'w') as f:
                     f.write('')
                 logger.info("Logs effacés par l'utilisateur")
-                QMessageBox.information(self, "Succès", "Les logs ont été effacés.")
+                QMessageBox.information(self, self.tr("Succès"), self.tr("Les logs ont été effacés."))
             else:
-                QMessageBox.warning(self, "Logs", "Le fichier de logs n'existe pas.")
+                QMessageBox.warning(self, self.tr("Logs"), self.tr("Le fichier de logs n'existe pas."))
         except Exception as e:
             logger.error(f"Erreur lors de l'effacement des logs: {e}", exc_info=True)
-            QMessageBox.critical(self, "Erreur", f"Impossible d'effacer les logs: {e}")
+            QMessageBox.critical(self, self.tr("Erreur"), f"{self.tr('Impossible d\'effacer les logs')}: {e}")
     
     # ============= Serveur Web =============
     
     def _setup_web_server_menu(self):
-        """Crée le menu pour le serveur web"""
+        """Crée le sous-menu Serveur Web dans le menu Fonction"""
         try:
-            web_menu = self.ui.menubar.addMenu(self.tr("Serveur Web"))
+            # Créer un sous-menu "Serveur Web" dans le menu "Fonction"
+            self.web_menu = QMenu(self.tr("Serveur Web"), self)
             
             self.action_toggle_web_server = QAction(self.tr("Démarrer le serveur"), self)
             self.action_toggle_web_server.triggered.connect(self.toggle_web_server)
-            web_menu.addAction(self.action_toggle_web_server)
+            self.web_menu.addAction(self.action_toggle_web_server)
             
             self.action_open_web_page = QAction(self.tr("Ouvrir dans le navigateur"), self)
             self.action_open_web_page.triggered.connect(self.open_web_page)
             self.action_open_web_page.setEnabled(False)
-            web_menu.addAction(self.action_open_web_page)
+            self.web_menu.addAction(self.action_open_web_page)
             
             self.action_show_web_urls = QAction(self.tr("Voir les URLs d'accès"), self)
             self.action_show_web_urls.triggered.connect(self.show_web_urls)
             self.action_show_web_urls.setEnabled(False)
-            web_menu.addAction(self.action_show_web_urls)
+            self.web_menu.addAction(self.action_show_web_urls)
+            
+            # Ajouter le sous-menu au menu "Fonction"
+            self.ui.menuFonctions.addSeparator()
+            self.ui.menuFonctions.addMenu(self.web_menu)
             
         except Exception as e:
             logger.error(f"Erreur création menu serveur web: {e}", exc_info=True)
+    
+    def _update_web_server_menu_text(self):
+        """Met à jour les textes du menu serveur web lors du changement de langue"""
+        try:
+            if hasattr(self, 'web_menu'):
+                self.web_menu.setTitle(self.tr("Serveur Web"))
+            
+            if hasattr(self, 'action_toggle_web_server'):
+                # Déterminer le texte en fonction de l'état du serveur
+                if self.web_server_running:
+                    self.action_toggle_web_server.setText(self.tr("Arrêter le serveur"))
+                else:
+                    self.action_toggle_web_server.setText(self.tr("Démarrer le serveur"))
+            
+            if hasattr(self, 'action_open_web_page'):
+                self.action_open_web_page.setText(self.tr("Ouvrir dans le navigateur"))
+            
+            if hasattr(self, 'action_show_web_urls'):
+                self.action_show_web_urls.setText(self.tr("Voir les URLs d'accès"))
+                
+        except Exception as e:
+            logger.error(f"Erreur mise à jour textes menu serveur web: {e}", exc_info=True)
     
     def toggle_web_server(self):
         """Démarre ou arrête le serveur web"""
