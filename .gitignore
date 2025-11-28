@@ -86,3 +86,4 @@ hooks/hook-PyngOuin.py
 installer/Ping_u_Setup.exe
 bd/Test.xlsx
 bd/TestIp.xlsx.xlsx
+debug_snmp.py

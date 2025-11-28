@@ -29,6 +29,12 @@ liste_hs = {}
 liste_mail = {}
 liste_telegram = {}
 
+# Cache SNMP - Stockage global des données de trafic réseau et des débits calculés
+# Format: {'ip': {'in': octets, 'out': octets, 'timestamp': float}}
+traffic_cache = {}
+# Format: {'ip': {'in_mbps': float, 'out_mbps': float}}
+bandwidth_cache = {}
+
 couleur_vert = AppColors.VERT_PALE
 couleur_jaune = AppColors.JAUNE_PALE
 couleur_orange = AppColors.ORANGE_PALE

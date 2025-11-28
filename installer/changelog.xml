@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<changelog>
+<version versionID="99.02.01">
+	  	<versio>
+	  		99.02.01
+	  	</versio>
+		  <change>
+				* Maj du code
+		  </change>
+  </version>
+
+
+	<version versionID="99.01.02">
+	  	<versio>
+	  		99.01.02
+	  	</versio>
+		  <change>
+				* Maj du code
+		  </change>
+  </version>
+
+	<version versionID="99.00.02">
+	  	<versio>
+	  		99.00.02
+	  	</versio>
+		  <change>
+				* Gestion des themes
+		  </change>
+  </version>
+
+
+
+	<version versionID="99.00.01">
+	  	<versio>
+	  		99.00.01
+	  	</versio>
+		  <change>
+				* Ajout de la gestion des langues (fr et en)
+		  </change>
+  </version>
+  <version versionID="03.00.00">
+	  	<versio>
+	  		03.00.00
+	  	</versio>
+		  <change>
+				* Refonte complete pour migration sur Qt
+		  </change>
+  </version>
+    
+</changelog>

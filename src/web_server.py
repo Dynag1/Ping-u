@@ -61,12 +61,18 @@ class WebServer(QObject):
                                 cors_allowed_origins="*",
                                 async_mode='threading',  # ← NE JAMAIS RETIRER !
                                 logger=False,
-                                engineio_logger=False)
+                                engineio_logger=False,
+                                # Paramètres pour éviter les erreurs de timeout
+                                ping_timeout=60,
+                                ping_interval=25,
+                                # Réessayer automatiquement en cas d'échec
+                                max_http_buffer_size=1000000)
         self.server_thread = None
         self.running = False
         
-        # Cache pour les débits SNMP (uniquement pour la page web)
+        # Cache partagé pour les débits SNMP (référence au cache du PingManager)
         self.traffic_cache = {}
+        self._bandwidth_cache = {}  # Cache des derniers débits calculés (IP -> {in_mbps, out_mbps})
         
         self._setup_routes()
         self._setup_socketio()
@@ -127,6 +133,14 @@ class WebServer(QObject):
             except Exception as e:
                 logger.error(f"Erreur lors de l'envoi: {e}", exc_info=True)
                 emit('hosts_update', [])
+        
+        @self.socketio.on_error_default
+        def default_error_handler(e):
+            """Gestionnaire d'erreur global pour Socket.IO"""
+            # Ignorer les erreurs bénignes de WebSocket
+            error_str = str(e)
+            if 'write() before start_response' not in error_str:
+                logger.debug(f"Erreur Socket.IO (ignorée): {error_str}")
     
     def _get_hosts_data(self):
         """Extrait les données du treeview"""
@@ -165,10 +179,10 @@ class WebServer(QObject):
                         'status': self._get_row_status(model, row)
                     }
                     
-                    # Désactiver temporairement SNMP pour éviter les problèmes de sérialisation
-                    # TODO: Réactiver après avoir résolu le problème de WebSocket
-                    host_data['debit_in'] = 'N/A'
-                    host_data['debit_out'] = 'N/A'
+                    # Récupération des débits depuis le cache (non bloquant)
+                    bandwidth = self._get_cached_bandwidth(ip)
+                    host_data['debit_in'] = bandwidth['in']
+                    host_data['debit_out'] = bandwidth['out']
                     
                     # Vérifier que toutes les valeurs sont sérialisables
                     for key, value in host_data.items():
@@ -188,50 +202,61 @@ class WebServer(QObject):
         
         return hosts
     
-    def _get_bandwidth_for_host(self, ip):
+    def _get_cached_bandwidth(self, ip):
         """
-        Récupère le débit pour un hôte (en utilisant le cache).
-        Cette fonction s'exécute de manière synchrone pour éviter les problèmes avec Flask.
+        Récupère le débit depuis le cache (non bloquant).
+        Les débits sont calculés par le PingManager pendant le monitoring.
         """
         try:
-            # Créer une boucle asyncio temporaire pour la requête SNMP
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # Vérifier si le PingManager existe et a un cache
+            if hasattr(self.main_window, 'main_controller') and \
+               self.main_window.main_controller and \
+               hasattr(self.main_window.main_controller, 'ping_manager') and \
+               self.main_window.main_controller.ping_manager:
+                
+                ping_manager = self.main_window.main_controller.ping_manager
+                
+                # Récupérer le cache de trafic du PingManager (persiste entre les cycles)
+                if hasattr(ping_manager, 'traffic_cache'):
+                    traffic_cache = ping_manager.traffic_cache
+                    
+                    # Vérifier si on a des données pour cette IP
+                    if ip in traffic_cache:
+                        # Calculer le débit depuis le cache
+                        current_data = traffic_cache.get(ip)
+                        previous_data = self.traffic_cache.get(ip)
+                        
+                        if current_data and previous_data and SNMP_AVAILABLE:
+                            bandwidth = snmp_helper.calculate_bandwidth_sync(current_data, previous_data)
+                            if bandwidth:
+                                # Sauvegarder dans notre cache
+                                self.traffic_cache[ip] = current_data
+                                self._bandwidth_cache[ip] = {
+                                    'in': f"{bandwidth['in_mbps']:.2f} Mbps",
+                                    'out': f"{bandwidth['out_mbps']:.2f} Mbps"
+                                }
+                                return self._bandwidth_cache[ip]
+                        
+                        # Sauvegarder les données actuelles pour le prochain calcul
+                        if current_data:
+                            self.traffic_cache[ip] = current_data
             
-            # Récupérer les données de trafic actuelles
-            current_data = loop.run_until_complete(
-                snmp_helper.get_interface_traffic(ip, interface_index=1)
-            )
-            
-            loop.close()
-            
-            if current_data is None:
-                return {'in': '-', 'out': '-'}
-            
-            # Récupérer les données précédentes du cache
-            previous_data = self.traffic_cache.get(ip)
-            
-            # Sauvegarder les données actuelles dans le cache
-            self.traffic_cache[ip] = current_data
-            
-            # Si pas de données précédentes, attendre le prochain cycle
-            if previous_data is None:
-                return {'in': '-', 'out': '-'}
-            
-            # Calculer le débit
-            bandwidth = snmp_helper.calculate_bandwidth(current_data, previous_data)
-            
-            if bandwidth:
-                return {
-                    'in': f"{bandwidth['in_mbps']:.2f} Mbps",
-                    'out': f"{bandwidth['out_mbps']:.2f} Mbps"
-                }
+            # Retourner le dernier débit connu ou '-'
+            if ip in self._bandwidth_cache:
+                return self._bandwidth_cache[ip]
             
             return {'in': '-', 'out': '-'}
             
         except Exception as e:
-            logger.debug(f"Erreur récupération débit pour {ip}: {e}")
+            logger.debug(f"Erreur récupération débit depuis cache pour {ip}: {e}")
             return {'in': '-', 'out': '-'}
+    
+    def _get_bandwidth_for_host(self, ip):
+        """
+        Méthode obsolète - conservée pour compatibilité.
+        Utiliser _get_cached_bandwidth() à la place.
+        """
+        return self._get_cached_bandwidth(ip)
     
     def _get_row_status(self, model, row):
         """Détermine le statut (online/offline) selon la colonne Latence"""
@@ -292,6 +317,11 @@ class WebServer(QObject):
     def _run_server(self):
         """Exécute le serveur Flask-SocketIO"""
         try:
+            # Désactiver les logs Werkzeug verbeux
+            import logging
+            log = logging.getLogger('werkzeug')
+            log.setLevel(logging.ERROR)  # Ne montrer que les vraies erreurs
+            
             self.socketio.run(self.app, 
                             host='0.0.0.0',
                             port=self.port, 

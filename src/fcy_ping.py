@@ -52,8 +52,8 @@ class AsyncPingWorker(QThread):
         self.is_running = False
 
     async def ping_all(self, ips):
-        """Lance les pings par lots de 20 pour équilibrer vitesse et précision."""
-        batch_size = 20  # Augmenté de 5 à 20 pour de meilleures performances
+        """Lance les pings par lots de 20 pour maximiser la stabilité avec SNMP."""
+        batch_size = 20  # Réduit pour garantir la stabilité avec requêtes SNMP
         for i in range(0, len(ips), batch_size):
             if not self.is_running:
                 break
@@ -115,8 +115,8 @@ class AsyncPingWorker(QThread):
                 # Si on a trouvé une latence valide (< 500), c'est que le ping a réussi
                 if latency >= 500 and ("TTL" in output or "ttl" in output):
                     # Le ping a réussi mais on n'a pas pu parser la latence
-                    # On va logger la sortie complète pour debug
-                    logger.warning(f"Ping réussi mais parsing échoué pour {ip}. Sortie:\n{output}")
+                    # On utilise debug au lieu de warning pour ne pas polluer les logs
+                    logger.debug(f"Ping réussi mais parsing échoué pour {ip}. Sortie:\n{output}")
             else:
                 latency = 500.0
                 logger.debug(f"Ping échoué pour {ip}, returncode: {process.returncode}")
@@ -125,13 +125,13 @@ class AsyncPingWorker(QThread):
             logger.debug(f"Erreur ping {ip}: {e}")
             latency = 500.0
 
-        # Interrogation SNMP pour la température et les débits (si ping OK et SNMP disponible)
-        # NOTE: Les requêtes SNMP sont désormais limitées avec timeout pour ne pas ralentir les pings
+        # Interrogation SNMP pour la température uniquement (optimisé pour beaucoup d'équipements)
+        # Les débits sont récupérés par le serveur web à la demande (non-bloquant)
         temperature = None
         bandwidth = None
         if latency < 500 and SNMP_AVAILABLE:
             try:
-                # Timeout de 2 secondes pour les requêtes SNMP
+                # Timeout optimisé de 2 secondes pour la température
                 temperature = await asyncio.wait_for(
                     snmp_helper.get_temperature(ip), 
                     timeout=2.0
@@ -141,11 +141,11 @@ class AsyncPingWorker(QThread):
             except Exception as e:
                 logger.debug(f"Erreur SNMP température pour {ip}: {e}")
             
-            # Récupération des débits réseau
+            # Récupération des débits réseau (avec filtrage intelligent et auto-détection interface)
             try:
                 previous_data = self.traffic_cache.get(ip)
                 bandwidth_result = await asyncio.wait_for(
-                    snmp_helper.calculate_bandwidth(ip, interface_index=1, previous_data=previous_data),
+                    snmp_helper.calculate_bandwidth(ip, interface_index=None, previous_data=previous_data),
                     timeout=2.0
                 )
                 if bandwidth_result:
@@ -153,28 +153,11 @@ class AsyncPingWorker(QThread):
                         'in_mbps': bandwidth_result['in_mbps'],
                         'out_mbps': bandwidth_result['out_mbps']
                     }
-                    # Sauvegarder les données brutes pour le prochain cycle
                     self.traffic_cache[ip] = bandwidth_result['raw_data']
             except asyncio.TimeoutError:
                 logger.debug(f"Timeout SNMP trafic pour {ip}")
             except Exception as e:
                 logger.debug(f"Erreur SNMP trafic pour {ip}: {e}")
-            
-            # Vérification UPS (onduleur)
-            try:
-                ups_state = await asyncio.wait_for(
-                    ups_monitor.check_ups(ip),
-                    timeout=2.0
-                )
-                if ups_state and ups_state.get('alert_message'):
-                    # Émettre un signal d'alerte UPS
-                    logger.warning(ups_state['alert_message'])
-                    # Émettre le signal pour déclencher les alertes (mail/popup/telegram)
-                    self.ups_alert_signal.emit(ip, ups_state['alert_message'])
-            except asyncio.TimeoutError:
-                logger.debug(f"Timeout SNMP UPS pour {ip}")
-            except Exception as e:
-                logger.debug(f"Erreur SNMP UPS pour {ip}: {e}")
         
         # Emission du résultat
         color = AppColors.get_latency_color(latency)
@@ -271,7 +254,7 @@ class PingManager(QObject):
         self.schedule_next_run()
 
     def stop(self):
-        """Arrête le cycle."""
+        """Arrête le cycle et nettoie le cache SNMP."""
         logger.info("Arrêt AsyncPingManager")
         if hasattr(self, '_timer_ref') and self._timer_ref:
             self._timer_ref.stop()
@@ -279,6 +262,11 @@ class PingManager(QObject):
         if self.worker and self.worker.isRunning():
             self.worker.stop()
             self.worker.wait()
+        
+        # Nettoyer le cache SNMP à l'arrêt (force une nouvelle détection au prochain démarrage)
+        if SNMP_AVAILABLE and snmp_helper:
+            snmp_helper.clear_cache()
+            logger.info("Cache SNMP nettoyé à l'arrêt du monitoring")
 
     def schedule_next_run(self):
         if not var.tourne:
@@ -338,7 +326,13 @@ class PingManager(QObject):
                 item.setText(f"{latency:.1f} ms" if latency < 500 else "HS")
             elif col == 6:  # Colonne Température
                 if temperature is not None:
-                    item.setText(f"{temperature:.1f}°C")
+                    try:
+                        # Convertir en float si c'est une string
+                        temp_value = float(temperature)
+                        item.setText(f"{temp_value:.1f}°C")
+                    except (ValueError, TypeError):
+                        # Si conversion échoue, afficher tel quel ou "-"
+                        item.setText(str(temperature) if temperature else "-")
                 else:
                     item.setText("-")
             # Colorie toute la ligne

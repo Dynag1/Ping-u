@@ -69,6 +69,18 @@ class UPSMonitor:
                 'alert_message': str
             }
         """
+        # Filtrage : Ne tester que si le type d'équipement peut être un UPS
+        # Import paresseux pour éviter dépendance circulaire
+        try:
+            from src.utils.snmp_helper import snmp_helper
+            device_type = await snmp_helper.get_device_type(ip)
+            if not snmp_helper.is_potential_ups(device_type):
+                logger.debug(f"Type d'équipement {device_type} n'est probablement pas un UPS, skip pour {ip}")
+                return None
+        except ImportError:
+            # Si snmp_helper n'est pas disponible, tester quand même
+            pass
+        
         # Vérifier si c'est un onduleur en interrogeant l'OID battery_status
         is_ups = await self._is_ups(ip)
         if not is_ups:
