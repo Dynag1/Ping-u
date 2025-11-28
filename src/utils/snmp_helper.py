@@ -574,5 +574,91 @@ class SNMPHelper:
             'out_mbps': round(out_mbps, 2)
         }
 
+    async def get_interface_traffic(self, ip, interface_index=1):
+        """
+        Récupère les compteurs de trafic IN/OUT via SNMP (pour page web uniquement).
+        
+        Args:
+            ip: Adresse IP de l'équipement
+            interface_index: Index de l'interface (1 par défaut)
+            
+        Returns:
+            dict: {'in': octets_in, 'out': octets_out, 'timestamp': time.time()} ou None
+        """
+        if not SNMP_AVAILABLE:
+            return None
+        
+        if ip in self._no_snmp_cache:
+            return None
+        
+        try:
+            import time
+            # OIDs pour les compteurs 64 bits (High Capacity)
+            oid_in_hc = f'1.3.6.1.2.1.31.1.1.1.6.{interface_index}'  # ifHCInOctets
+            oid_out_hc = f'1.3.6.1.2.1.31.1.1.1.10.{interface_index}'  # ifHCOutOctets
+            
+            # Essayer les OIDs 64 bits en premier
+            octets_in = await self._query_oid(ip, oid_in_hc)
+            octets_out = await self._query_oid(ip, oid_out_hc)
+            
+            # Si échec, essayer les OIDs 32 bits standards
+            if octets_in is None or octets_out is None:
+                oid_in = f'1.3.6.1.2.1.2.2.1.10.{interface_index}'  # ifInOctets
+                oid_out = f'1.3.6.1.2.1.2.2.1.16.{interface_index}'  # ifOutOctets
+                octets_in = await self._query_oid(ip, oid_in)
+                octets_out = await self._query_oid(ip, oid_out)
+            
+            if octets_in is not None and octets_out is not None:
+                return {
+                    'in': int(octets_in),
+                    'out': int(octets_out),
+                    'timestamp': time.time()
+                }
+            return None
+                
+        except Exception as e:
+            logger.debug(f"Erreur récupération trafic pour {ip}: {e}")
+            return None
+    
+    def calculate_bandwidth(self, current_data, previous_data):
+        """
+        Calcule la bande passante (débit) en Mbps entre deux mesures.
+        Utilisé UNIQUEMENT par le serveur web.
+        
+        Args:
+            current_data: Données actuelles (dict avec 'in', 'out', 'timestamp')
+            previous_data: Données précédentes (dict avec 'in', 'out', 'timestamp')
+            
+        Returns:
+            dict: {'in_mbps': float, 'out_mbps': float} ou None
+        """
+        if current_data is None or previous_data is None:
+            return None
+        
+        # Calculer le delta de temps (en secondes)
+        time_delta = current_data['timestamp'] - previous_data['timestamp']
+        
+        if time_delta <= 0:
+            return None
+        
+        # Calculer le delta d'octets
+        octets_in_delta = current_data['in'] - previous_data['in']
+        octets_out_delta = current_data['out'] - previous_data['out']
+        
+        # Gérer le wraparound (compteur qui déborde)
+        if octets_in_delta < 0:
+            octets_in_delta = 0
+        if octets_out_delta < 0:
+            octets_out_delta = 0
+        
+        # Convertir en Mbps (octets/sec -> bits/sec -> Mbits/sec)
+        in_mbps = (octets_in_delta * 8) / (time_delta * 1_000_000)
+        out_mbps = (octets_out_delta * 8) / (time_delta * 1_000_000)
+        
+        return {
+            'in_mbps': round(in_mbps, 2),
+            'out_mbps': round(out_mbps, 2)
+        }
+
 # Instance globale (peut être configurée depuis les paramètres)
 snmp_helper = SNMPHelper()

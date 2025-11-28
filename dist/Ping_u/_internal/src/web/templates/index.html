@@ -364,49 +364,134 @@
                 return (a.nom || a.ip).localeCompare(b.nom || b.ip);
             });
 
-            const hostsHTML = sortedHosts.map(host => createHostCard(host)).join('');
-            container.innerHTML = `<div class="hosts-grid">${hostsHTML}</div>`;
+            // Récupérer ou créer le conteneur grid
+            let grid = container.querySelector('.hosts-grid');
+            if (!grid) {
+                grid = document.createElement('div');
+                grid.className = 'hosts-grid';
+                container.innerHTML = '';
+                container.appendChild(grid);
+            }
+
+            // Mettre à jour ou créer chaque carte
+            sortedHosts.forEach((host, index) => {
+                const cardId = `host-card-${host.ip.replace(/\./g, '-')}`;
+                let card = document.getElementById(cardId);
+                
+                if (!card) {
+                    // Créer une nouvelle carte
+                    card = createHostCardElement(host, cardId);
+                    grid.appendChild(card);
+                } else {
+                    // Mettre à jour la carte existante sans recréer
+                    updateHostCard(card, host);
+                }
+            });
+
+            // Supprimer les cartes des hôtes qui n'existent plus
+            const currentCards = grid.querySelectorAll('[id^="host-card-"]');
+            const currentIPs = sortedHosts.map(h => h.ip.replace(/\./g, '-'));
+            currentCards.forEach(card => {
+                const cardIP = card.id.replace('host-card-', '');
+                if (!currentIPs.includes(cardIP)) {
+                    card.remove();
+                }
+            });
         }
 
-        function createHostCard(host) {
-            const statusClass = host.status === 'online' ? 'online' : 'offline';
-            const statusText = host.status === 'online' ? 'En ligne' : 'Hors ligne';
+        function createHostCardElement(host, cardId) {
+            const card = document.createElement('div');
+            card.id = cardId;
+            card.className = `host-card ${host.status}`;
+            
             const displayName = host.nom || 'Sans nom';
+            const statusText = host.status === 'online' ? 'En ligne' : 'Hors ligne';
             const temperature = host.temp || '-';
             const debitIn = host.debit_in || 'N/A';
             const debitOut = host.debit_out || 'N/A';
             
-            return `
-                <div class="host-card ${statusClass}">
-                    <div class="host-header">
-                        <div class="host-name">${escapeHtml(displayName)}</div>
-                        <div class="host-status ${statusClass}">${statusText}</div>
+            card.innerHTML = `
+                <div class="host-header">
+                    <div class="host-name">${escapeHtml(displayName)}</div>
+                    <div class="host-status ${host.status}">${statusText}</div>
+                </div>
+                <div class="host-ip">${escapeHtml(host.ip)}</div>
+                <div class="host-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MAC</div>
+                        <div class="detail-value">${escapeHtml(host.mac) || '-'}</div>
                     </div>
-                    <div class="host-ip">${escapeHtml(host.ip)}</div>
-                    <div class="host-details">
-                        <div class="detail-item">
-                            <div class="detail-label">MAC</div>
-                            <div class="detail-value">${escapeHtml(host.mac) || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Port</div>
-                            <div class="detail-value">${escapeHtml(host.port) || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">🌡️ Température</div>
-                            <div class="detail-value">${escapeHtml(temperature)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">📥 Débit IN</div>
-                            <div class="detail-value">${escapeHtml(debitIn)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">📤 Débit OUT</div>
-                            <div class="detail-value">${escapeHtml(debitOut)}</div>
-                        </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Latence</div>
+                        <div class="detail-value">${escapeHtml(host.latence) || '-'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">🌡️ Température</div>
+                        <div class="detail-value">${escapeHtml(temperature)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">📥 Débit IN</div>
+                        <div class="detail-value">${escapeHtml(debitIn)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">📤 Débit OUT</div>
+                        <div class="detail-value">${escapeHtml(debitOut)}</div>
                     </div>
                 </div>
             `;
+            
+            return card;
+        }
+
+        function updateHostCard(card, host) {
+            const displayName = host.nom || 'Sans nom';
+            const statusText = host.status === 'online' ? 'En ligne' : 'Hors ligne';
+            const temperature = host.temp || '-';
+            const debitIn = host.debit_in || 'N/A';
+            const debitOut = host.debit_out || 'N/A';
+            
+            // Mettre à jour la classe de statut
+            card.className = `host-card ${host.status}`;
+            
+            // Mettre à jour le nom
+            const nameEl = card.querySelector('.host-name');
+            if (nameEl && nameEl.textContent !== displayName) {
+                nameEl.textContent = displayName;
+            }
+            
+            // Mettre à jour le statut
+            const statusEl = card.querySelector('.host-status');
+            if (statusEl) {
+                statusEl.className = `host-status ${host.status}`;
+                if (statusEl.textContent !== statusText) {
+                    statusEl.textContent = statusText;
+                }
+            }
+            
+            // Mettre à jour les valeurs détaillées
+            const details = card.querySelectorAll('.detail-value');
+            if (details.length >= 5) {
+                // MAC
+                if (details[0].textContent !== (host.mac || '-')) {
+                    details[0].textContent = host.mac || '-';
+                }
+                // Latence
+                if (details[1].textContent !== (host.latence || '-')) {
+                    details[1].textContent = host.latence || '-';
+                }
+                // Température
+                if (details[2].textContent !== temperature) {
+                    details[2].textContent = temperature;
+                }
+                // Débit IN
+                if (details[3].textContent !== debitIn) {
+                    details[3].textContent = debitIn;
+                }
+                // Débit OUT
+                if (details[4].textContent !== debitOut) {
+                    details[4].textContent = debitOut;
+                }
+            }
         }
 
         function updateStats(hosts) {
