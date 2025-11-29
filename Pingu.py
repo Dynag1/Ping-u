@@ -2,6 +2,8 @@
 import sys
 import os
 import subprocess
+import signal
+import time
 from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
 from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QMenu
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QAction, QActionGroup
@@ -58,6 +60,8 @@ class IPSortProxyModel(QSortFilterProxyModel):
 class Communicate(QObject):
     addRow = Signal(str, str, str, str, str, str, bool)
     progress = Signal(int)
+    start_monitoring_signal = Signal()
+    stop_monitoring_signal = Signal()
     relaodWindow = Signal(bool)
 
 
@@ -83,6 +87,9 @@ class MainWindow(QMainWindow):
             # 2. Arrêter le monitoring via le contrôleur
             if hasattr(self, 'main_controller') and self.main_controller:
                 self.main_controller.stop_monitoring()
+                # Traiter les événements Qt pour laisser le temps aux threads de se terminer
+                from PySide6.QtCore import QCoreApplication
+                QCoreApplication.processEvents()
             
             # 3. Arrêter le serveur web
             if hasattr(self, 'web_server') and self.web_server:
@@ -97,9 +104,8 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.error(f"Erreur sauvegarde paramètres: {e}", exc_info=True)
                 
-            # 5. Attendre un peu pour que les threads se terminent
-            # Note: QTimer.singleShot n'est pas idéal ici car on est dans closeEvent
-            # On laisse le temps aux threads de voir var.tourne = False
+            # 5. Traiter les derniers événements Qt
+            QCoreApplication.processEvents()
             
         except Exception as e:
             logger.error(f"Erreur lors du nettoyage: {e}", exc_info=True)
@@ -197,6 +203,10 @@ class MainWindow(QMainWindow):
         self.ui.actionTout_effacer.triggered.connect(lambda: fct.clear(self, self.treeIpModel))
         # Fonction export excel
         self.ui.actionExporter_xls.triggered.connect(lambda: fctXls.saveExcel(self, self.treeIpModel))
+        
+        # Signaux pour l'API web (thread-safe)
+        self.comm.start_monitoring_signal.connect(self.main_controller.start_monitoring)
+        self.comm.stop_monitoring_signal.connect(self.main_controller.stop_monitoring)
         self.ui.actionImporter_xls.triggered.connect(lambda: fctXls.openExcel(self, self.treeIpModel))
         self.ui.actionSnyf_2.triggered.connect(lambda: snyf.main(self, self.comm))
         self.ui.actionCleGpg.triggered.connect(lambda: self.pgp())
@@ -703,16 +713,273 @@ class MainWindow(QMainWindow):
             self.web_server.broadcast_update()
 
 
+def run_headless_mode():
+    """Mode headless sans interface graphique (pour serveurs Linux)"""
+    import argparse
+    import signal
+    import time
+    from flask import Flask
+    
+    logger.info("[HEADLESS] Demarrage en mode headless (sans interface graphique)")
+    
+    # Créer le fichier PID
+    pid_file = 'pingu_headless.pid'
+    with open(pid_file, 'w') as f:
+        f.write(str(os.getpid()))
+    logger.info(f"PID: {os.getpid()} (fichier: {pid_file})")
+    
+    # Initialiser la base de données et les paramètres
+    try:
+        result = db.lire_param_gene()
+        if not result or len(result) < 3:
+            logger.warning("Paramètres généraux manquants, utilisation des valeurs par défaut.")
+    except Exception as e:
+        logger.warning(f"Erreur chargement paramètres: {e}")
+    
+    # Créer une application Qt minimale (nécessaire pour QStandardItemModel)
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+    
+    # Créer un modèle de données minimal
+    from PySide6.QtGui import QStandardItemModel
+    treeIpModel = QStandardItemModel()
+    treeIpModel.setHorizontalHeaderLabels([
+        "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "Comm", "Excl"
+    ])
+    
+    # Créer une fenêtre "virtuelle" pour le serveur web
+    class HeadlessWindow:
+        def __init__(self):
+            self.treeIpModel = treeIpModel
+            self.comm = Communicate()
+            self.web_server = None
+            self.web_server_running = False
+            
+            # Pseudo UI pour compatibilité (DOIT être créé AVANT MainController)
+            class PseudoUI:
+                class PseudoButton:
+                    def __init__(self):
+                        self._checked = False
+                    
+                    def isChecked(self):
+                        return self._checked
+                    
+                    def setChecked(self, value):
+                        self._checked = value
+                    
+                    def setStyleSheet(self, style):
+                        pass
+                    
+                    def setText(self, text):
+                        logger.info(f"Status: {text}")
+                
+                def __init__(self):
+                    self.butStart = self.PseudoButton()
+            
+            self.ui = PseudoUI()
+            
+            # Créer le contrôleur APRÈS self.ui
+            self.main_controller = MainController(self)
+        
+        def tr(self, text):
+            """Traduction minimale pour compatibilité Qt"""
+            return text
+        
+        def show_popup(self, message):
+            """Afficher popup - mode headless log seulement"""
+            logger.info(f"[POPUP] {message}")
+    
+    window = HeadlessWindow()
+    
+    # Connecter les signaux pour l'API web (thread-safe)
+    window.comm.start_monitoring_signal.connect(window.main_controller.start_monitoring)
+    window.comm.stop_monitoring_signal.connect(window.main_controller.stop_monitoring)
+    
+    # Charger les données existantes si disponibles
+    hosts_loaded = False
+    try:
+        if os.path.exists('bd'):
+            files = [f for f in os.listdir('bd') if f.endswith('.pin')]
+            if files:
+                latest_file = max([os.path.join('bd', f) for f in files], key=os.path.getmtime)
+                logger.info(f"Chargement des données depuis {latest_file}")
+                fct.load_csv(window, window.treeIpModel, latest_file)
+                hosts_loaded = window.treeIpModel.rowCount() > 0
+                if hosts_loaded:
+                    logger.info(f"{window.treeIpModel.rowCount()} hôte(s) chargé(s)")
+    except Exception as e:
+        logger.warning(f"Impossible de charger les données: {e}")
+    
+    # Démarrer le serveur web APRÈS le chargement des données
+    from src.web_server import WebServer
+    window.web_server = WebServer(window, port=5000)
+    if window.web_server.start():
+        window.web_server_running = True
+        logger.info("[HEADLESS] Serveur web demarre sur http://0.0.0.0:5000")
+    else:
+        logger.error("[HEADLESS] Impossible de demarrer le serveur web")
+        sys.exit(1)
+    
+    # Ne PAS démarrer le monitoring automatiquement
+    # L'utilisateur peut le démarrer via l'interface web admin
+    if hosts_loaded:
+        logger.info(f"Monitoring pret pour {window.treeIpModel.rowCount()} hôte(s)")
+        logger.info("Demarrez le monitoring via l'interface web: http://localhost:5000/admin")
+    else:
+        logger.info("Aucun hôte configuré. Configurez via l'interface web: http://localhost:5000/admin")
+    
+    # Gestionnaire de signal pour arrêt propre
+    def signal_handler(signum, frame):
+        logger.info(f"Signal {signum} reçu, arrêt de l'application...")
+        cleanup_and_exit()
+    
+    def cleanup_and_exit():
+        logger.info("[HEADLESS] Arret en cours...")
+        
+        # Arrêter le monitoring
+        if window.main_controller.ping_manager:
+            window.main_controller.stop_monitoring()
+        
+        # Arrêter le serveur web
+        if window.web_server:
+            window.web_server.stop()
+        
+        # Sauvegarder les paramètres
+        try:
+            db.save_param_db()
+            logger.info("Paramètres sauvegardés")
+        except Exception as e:
+            logger.error(f"Erreur sauvegarde paramètres: {e}")
+        
+        # Supprimer le fichier PID
+        try:
+            if os.path.exists(pid_file):
+                os.remove(pid_file)
+        except Exception as e:
+            logger.error(f"Erreur suppression PID: {e}")
+        
+        logger.info("[HEADLESS] Arret termine")
+        sys.exit(0)
+    
+    # Enregistrer les gestionnaires de signaux
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    logger.info("[HEADLESS] Application demarree en mode headless")
+    logger.info("[HEADLESS] Pour arreter: python Pingu.py -stop")
+    logger.info("[HEADLESS] Interface web admin: http://localhost:5000/admin")
+    logger.info("   Identifiants par défaut: admin / a")
+    
+    # Boucle principale
+    try:
+        while True:
+            # Vérifier si un fichier stop existe
+            if os.path.exists('pingu_headless.stop'):
+                logger.info("Fichier stop détecté, arrêt de l'application...")
+                os.remove('pingu_headless.stop')
+                cleanup_and_exit()
+            time.sleep(1)
+    except KeyboardInterrupt:
+        logger.info("Interruption clavier détectée")
+        cleanup_and_exit()
+
+
+def stop_headless_mode():
+    """Arrête l'application en mode headless"""
+    pid_file = 'pingu_headless.pid'
+    
+    if not os.path.exists(pid_file):
+        print("❌ Aucune instance headless en cours d'exécution")
+        return
+    
+    try:
+        with open(pid_file, 'r') as f:
+            pid = int(f.read().strip())
+        
+        print(f"🛑 Arrêt de l'application (PID: {pid})...")
+        
+        # Créer un fichier stop
+        with open('pingu_headless.stop', 'w') as f:
+            f.write('stop')
+        
+        # Attendre que l'application s'arrête
+        import time
+        for i in range(10):
+            if not os.path.exists(pid_file):
+                print("✅ Application arrêtée avec succès")
+                # Nettoyer le fichier stop si l'application l'a pas fait
+                if os.path.exists('pingu_headless.stop'):
+                    os.remove('pingu_headless.stop')
+                return
+            time.sleep(1)
+            print(".", end="", flush=True)
+        
+        print("\n⚠️  L'application ne répond pas, tentative d'arrêt forcé...")
+        
+        # Tenter un kill si nécessaire (Linux/Mac)
+        try:
+            import signal
+            os.kill(pid, signal.SIGTERM)
+            time.sleep(2)
+            if os.path.exists(pid_file):
+                os.remove(pid_file)
+            print("✅ Application arrêtée de force")
+        except Exception as e:
+            print(f"❌ Erreur lors de l'arrêt: {e}")
+            print("Vous pouvez essayer manuellement: kill {pid}")
+    
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+
+
 if __name__ == "__main__":
-    from PySide6.QtWidgets import QSplashScreen
-    from PySide6.QtGui import QPixmap
-    app = QApplication(sys.argv)  # Créer l'application Qt
-    pixmap = QPixmap(400, 200)
-    pixmap.fill(QColor("white"))
-    splash = QSplashScreen(pixmap)
-    splash.showMessage("Chargement...", alignment=Qt.AlignCenter)
-    splash.show()
-    window = MainWindow()         # Instancier la fenêtre principale
-    window.show()
-    splash.finish(window)
-    sys.exit(app.exec())
+    import argparse
+    
+    # Parser les arguments de ligne de commande
+    parser = argparse.ArgumentParser(
+        description='Ping ü - Monitoring réseau',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Exemples d'utilisation:
+  python Pingu.py                    Lancer avec interface graphique (mode normal)
+  python Pingu.py -start             Lancer en mode headless (sans interface, pour serveurs)
+  python Pingu.py --start            Lancer en mode headless (alias)
+  python Pingu.py -stop              Arrêter l'application en mode headless
+  python Pingu.py --stop             Arrêter l'application en mode headless (alias)
+
+Mode headless:
+  Le mode headless est idéal pour les serveurs Linux sans interface graphique.
+  L'application démarre le serveur web sur le port 5000.
+  Accédez à l'interface admin via: http://localhost:5000/admin
+  Identifiants par défaut: admin / a
+        """
+    )
+    
+    parser.add_argument('-start', '--start', action='store_true',
+                       help='Démarrer en mode headless (sans interface graphique)')
+    parser.add_argument('-stop', '--stop', action='store_true',
+                       help='Arrêter l\'application en mode headless')
+    
+    args = parser.parse_args()
+    
+    if args.stop:
+        # Mode stop
+        stop_headless_mode()
+    elif args.start:
+        # Mode headless
+        run_headless_mode()
+    else:
+        # Mode normal avec interface graphique
+        from PySide6.QtWidgets import QSplashScreen
+        from PySide6.QtGui import QPixmap
+        app = QApplication(sys.argv)  # Créer l'application Qt
+        pixmap = QPixmap(400, 200)
+        pixmap.fill(QColor("white"))
+        splash = QSplashScreen(pixmap)
+        splash.showMessage("Chargement...", alignment=Qt.AlignCenter)
+        splash.show()
+        window = MainWindow()         # Instancier la fenêtre principale
+        window.show()
+        splash.finish(window)
+        sys.exit(app.exec())

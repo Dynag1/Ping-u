@@ -49,13 +49,18 @@ class MainController:
             logger.info("Arrêt du monitoring via MainController")
             var.tourne = False
             
-            if self.ping_manager:
-                self.ping_manager.stop()
-                self.ping_manager = None
-                
+            # Arrêter d'abord l'alert manager (plus simple, juste un QTimer)
             if self.alert_manager:
                 self.alert_manager.stop()
                 self.alert_manager = None
+            
+            # Puis arrêter le ping manager (plus complexe, avec QThread)
+            if self.ping_manager:
+                self.ping_manager.stop()
+                # Traiter les événements Qt en attente pour laisser le temps au thread de se terminer
+                from PySide6.QtCore import QCoreApplication
+                QCoreApplication.processEvents()
+                self.ping_manager = None
                 
             # Mise à jour UI
             # On vérifie si l'UI existe encore (cas de fermeture)

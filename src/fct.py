@@ -22,7 +22,7 @@ def getIp(self):
         print("fct_ip - " + str(e))
 
 
-def save_csv(self, treeModel):
+def save_csv(self, treeModel, filepath=None, return_path=False):
     try:
         # Récupérer le modèle depuis le QTreeView
         model = treeModel
@@ -30,20 +30,23 @@ def save_csv(self, treeModel):
         if not isinstance(model, QAbstractItemModel):
             raise ValueError("Modèle invalide - doit hériter de QAbstractItemModel")
 
-        # Boîte de dialogue de sauvegarde Qt
-        filename, _ = QFileDialog.getSaveFileName(
-            parent=self,
-            caption=self.tr("Enregistrer le fichier"),
-            dir=os.getcwd() + os.sep + "bd",
-            filter=self.tr("Fichiers PIN (*.pin);;Tous fichiers (*.*)")
-        )
+        # Si pas de fichier spécifié, afficher la boîte de dialogue
+        if filepath is None:
+            filename, _ = QFileDialog.getSaveFileName(
+                parent=self,
+                caption=self.tr("Enregistrer le fichier"),
+                dir=os.getcwd() + os.sep + "bd",
+                filter=self.tr("Fichiers PIN (*.pin);;Tous fichiers (*.*)")
+            )
 
-        if not filename:
-            return
+            if not filename:
+                return None if return_path else None
 
-        # Forcer l'extension .pin si non précisée
-        if not filename.lower().endswith('.pin'):
-            filename += '.pin'
+            # Forcer l'extension .pin si non précisée
+            if not filename.lower().endswith('.pin'):
+                filename += '.pin'
+        else:
+            filename = filepath
 
         with open(filename, 'w', newline='', encoding='utf-8') as myfile:
             csvwriter = csv.writer(myfile, delimiter=',')
@@ -56,6 +59,10 @@ def save_csv(self, treeModel):
                     row_data.append(model.data(index))
                 csvwriter.writerow(row_data)
 
+        # Si return_path est True, retourner le chemin au lieu d'afficher la boîte de dialogue
+        if return_path:
+            return filename
+
         # Lancer l'alerte dans un thread séparé
         QMessageBox.information(
             self,
@@ -65,20 +72,26 @@ def save_csv(self, treeModel):
         )
     except Exception as e:
         print("design - " + str(e))
+        if return_path:
+            raise
         return
 
 
-def load_csv(self, treeModel):
+def load_csv(self, treeModel, filepath=None):
     try:
-        filename, _ = QFileDialog.getOpenFileName(
-            parent=self,
-            caption=self.tr("Ouvrir un fichier"),
-            dir=os.getcwd() + os.sep + "bd",
-            filter=self.tr("Fichiers PIN (*.pin);;Tous fichiers (*.*)")
-        )
+        # Si pas de fichier spécifié, afficher la boîte de dialogue
+        if filepath is None:
+            filename, _ = QFileDialog.getOpenFileName(
+                parent=self,
+                caption=self.tr("Ouvrir un fichier"),
+                dir=os.getcwd() + os.sep + "bd",
+                filter=self.tr("Fichiers PIN (*.pin);;Tous fichiers (*.*)")
+            )
 
-        if not filename:
-            return
+            if not filename:
+                return
+        else:
+            filename = filepath
 
         # Sauvegarde des en-têtes existants
         headers = [treeModel.horizontalHeaderItem(i).text()
@@ -98,10 +111,19 @@ def load_csv(self, treeModel):
             if headers and treeModel.columnCount() == 0:
                 treeModel.setHorizontalHeaderLabels(headers)
 
-        QMessageBox.information(self, self.tr("Succès"), self.tr("Données chargées avec succès"), QMessageBox.Ok)
+        # Afficher la boîte de dialogue seulement si on a une vraie fenêtre Qt (pas en mode headless)
+        from PySide6.QtWidgets import QWidget
+        if filepath is None and isinstance(self, QWidget):
+            QMessageBox.information(self, self.tr("Succès"), self.tr("Données chargées avec succès"), QMessageBox.Ok)
 
     except Exception as e:
-        QMessageBox.critical(self, self.tr("Erreur"), f"Erreur lors du chargement : {str(e)}", QMessageBox.Ok)
+        # Afficher l'erreur seulement si on a une vraie fenêtre Qt (pas en mode headless)
+        from PySide6.QtWidgets import QWidget
+        if filepath is None and isinstance(self, QWidget):
+            QMessageBox.critical(self, self.tr("Erreur"), f"Erreur lors du chargement : {str(e)}", QMessageBox.Ok)
+        else:
+            # En mode headless ou programmatique, juste lever l'exception
+            raise
 
 
 

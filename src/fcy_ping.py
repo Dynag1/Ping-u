@@ -261,7 +261,14 @@ class PingManager(QObject):
         
         if self.worker and self.worker.isRunning():
             self.worker.stop()
-            self.worker.wait()
+            # Attendre maximum 5 secondes que le thread se termine
+            if not self.worker.wait(5000):  # 5000 ms = 5 secondes
+                logger.warning("Le thread de ping n'a pas pu s'arrêter proprement dans le délai imparti")
+                # Forcer l'arrêt si nécessaire
+                self.worker.quit()
+                self.worker.wait(1000)  # Attendre encore 1 seconde
+            else:
+                logger.info("Thread de ping arrêté proprement")
         
         # Nettoyer le cache SNMP à l'arrêt (force une nouvelle détection au prochain démarrage)
         if SNMP_AVAILABLE and snmp_helper:

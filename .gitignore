@@ -17,6 +17,7 @@ build/
 dist/
 *.egg-info/
 .eggs/
+installer/
 
 # PyInstaller
 *.spec
@@ -94,4 +95,6 @@ installer/PingU_Setup.exe
 installer/changelog.xml
 installer/PingU_Setup.exe
 installer/changelog.xml
+installer/PingU_Setup.exe
+installer/PingU_Setup.exe
 installer/PingU_Setup.exe

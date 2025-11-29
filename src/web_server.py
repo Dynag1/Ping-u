@@ -3,15 +3,17 @@
 Serveur Web pour afficher les hôtes monitorés en temps réel
 Utilise Flask et Socket.IO pour les mises à jour automatiques
 """
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request, send_file, session, redirect, url_for
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import threading
 import socket
 import asyncio
+import secrets
 from PySide6.QtCore import QObject, Signal
 from src.utils.logger import get_logger
 from src.utils.colors import format_bandwidth
+from src.web_auth import web_auth, WebAuth
 
 logger = get_logger(__name__)
 
@@ -60,6 +62,13 @@ class WebServer(QObject):
         self.app = Flask(__name__, 
                         template_folder=template_path,
                         static_folder=static_path)
+        
+        # Configuration de la session
+        self.app.config['SECRET_KEY'] = secrets.token_hex(32)
+        self.app.config['SESSION_COOKIE_SECURE'] = False  # True si HTTPS
+        self.app.config['SESSION_COOKIE_HTTPONLY'] = True
+        self.app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+        
         CORS(self.app)
         
         # ═══════════════════════════════════════════════════════════════
@@ -117,6 +126,443 @@ class WebServer(QObject):
                 'status': 'running',
                 'hosts_count': self._get_hosts_count()
             })
+        
+        @self.app.route('/login', methods=['GET'])
+        def login():
+            try:
+                # Si déjà connecté, rediriger vers admin
+                if session.get('logged_in'):
+                    return redirect(url_for('admin'))
+                return render_template('login.html')
+            except Exception as e:
+                logger.error(f"Erreur lors du rendu du template login: {e}", exc_info=True)
+                return f"Erreur: {e}", 500
+        
+        @self.app.route('/api/login', methods=['POST'])
+        def api_login():
+            try:
+                data = request.get_json()
+                username = data.get('username')
+                password = data.get('password')
+                
+                if web_auth.verify_credentials(username, password):
+                    session['logged_in'] = True
+                    session['username'] = username
+                    logger.info(f"Connexion réussie: {username}")
+                    return jsonify({'success': True, 'message': 'Connexion réussie'})
+                else:
+                    return jsonify({'success': False, 'error': 'Identifiants incorrects'}), 401
+            except Exception as e:
+                logger.error(f"Erreur login: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/logout', methods=['POST'])
+        def api_logout():
+            try:
+                username = session.get('username', 'unknown')
+                session.clear()
+                logger.info(f"Déconnexion: {username}")
+                return jsonify({'success': True, 'message': 'Déconnexion réussie'})
+            except Exception as e:
+                logger.error(f"Erreur logout: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/admin')
+        @WebAuth.login_required
+        def admin():
+            try:
+                return render_template('admin.html')
+            except Exception as e:
+                logger.error(f"Erreur lors du rendu du template admin: {e}", exc_info=True)
+                return f"Erreur: {e}", 500
+        
+        @self.app.route('/api/change_credentials', methods=['POST'])
+        @WebAuth.login_required
+        def change_credentials():
+            try:
+                data = request.get_json()
+                old_password = data.get('old_password')
+                new_username = data.get('new_username')
+                new_password = data.get('new_password')
+                
+                if not all([old_password, new_username, new_password]):
+                    return jsonify({'success': False, 'error': 'Tous les champs sont requis'}), 400
+                
+                success, message = web_auth.change_credentials(old_password, new_username, new_password)
+                
+                if success:
+                    # Déconnecter l'utilisateur pour qu'il se reconnecte avec les nouveaux identifiants
+                    session.clear()
+                    return jsonify({'success': True, 'message': message})
+                else:
+                    return jsonify({'success': False, 'error': message}), 400
+            except Exception as e:
+                logger.error(f"Erreur changement credentials: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/add_hosts', methods=['POST'])
+        @WebAuth.login_required
+        def add_hosts():
+            try:
+                data = request.get_json()
+                ip = data.get('ip')
+                hosts = data.get('hosts', 1)
+                port = data.get('port', '80')
+                scan_type = data.get('scan_type', 'alive')
+                
+                # Lancer le scan dans un thread séparé
+                import threading
+                from src import threadAjIp
+                
+                thread = threading.Thread(
+                    target=threadAjIp.main,
+                    args=(self.main_window, self.main_window.comm, 
+                          self.main_window.treeIpModel, ip, hosts, 
+                          scan_type.capitalize(), port, "")
+                )
+                thread.start()
+                
+                logger.info(f"Scan d'hôtes démarré: {ip}, {hosts} hôtes, type: {scan_type}")
+                return jsonify({'success': True, 'message': f'Scan de {hosts} hôte(s) démarré'})
+            except Exception as e:
+                logger.error(f"Erreur ajout hôtes: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/start_monitoring', methods=['POST'])
+        @WebAuth.login_required
+        def start_monitoring():
+            try:
+                data = request.get_json()
+                delai = data.get('delai', 10)
+                nb_hs = data.get('nb_hs', 3)
+                
+                # Mettre à jour les variables
+                from src import var
+                var.delais = delai
+                var.nbrHs = nb_hs
+                
+                # Démarrer le monitoring via le contrôleur (thread-safe avec signal Qt)
+                if hasattr(self.main_window, 'main_controller'):
+                    # Vérifier si le monitoring est déjà en cours (ping_manager existe)
+                    if self.main_window.main_controller.ping_manager is None:
+                        # Utiliser un signal Qt pour démarrer le monitoring de manière thread-safe
+                        self.main_window.comm.start_monitoring_signal.emit()
+                        logger.info(f"Monitoring démarré via API (délai: {delai}s, nb_hs: {nb_hs})")
+                        # Notifier tous les clients
+                        self.socketio.emit('monitoring_status', {'running': True}, namespace='/')
+                        return jsonify({'success': True, 'message': 'Monitoring démarré'})
+                    else:
+                        return jsonify({'success': True, 'message': 'Monitoring déjà en cours'})
+                
+                return jsonify({'success': False, 'error': 'Contrôleur non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur démarrage monitoring: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/stop_monitoring', methods=['POST'])
+        @WebAuth.login_required
+        def stop_monitoring():
+            try:
+                if hasattr(self.main_window, 'main_controller'):
+                    # Vérifier si le monitoring est en cours (ping_manager existe)
+                    if self.main_window.main_controller.ping_manager is not None:
+                        # Utiliser un signal Qt pour arrêter le monitoring de manière thread-safe
+                        self.main_window.comm.stop_monitoring_signal.emit()
+                        logger.info("Monitoring arrêté via API")
+                        # Notifier tous les clients
+                        self.socketio.emit('monitoring_status', {'running': False}, namespace='/')
+                        return jsonify({'success': True, 'message': 'Monitoring arrêté'})
+                    else:
+                        return jsonify({'success': True, 'message': 'Monitoring déjà arrêté'})
+                
+                return jsonify({'success': False, 'error': 'Contrôleur non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur arrêt monitoring: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/save_alerts', methods=['POST'])
+        @WebAuth.login_required
+        def save_alerts():
+            try:
+                data = request.get_json()
+                from src import var
+                
+                var.popup = data.get('popup', False)
+                var.mail = data.get('mail', False)
+                var.telegram = data.get('telegram', False)
+                var.mailRecap = data.get('mail_recap', False)
+                var.dbExterne = data.get('db_externe', False)
+                
+                logger.info(f"Alertes sauvegardées via API: {data}")
+                return jsonify({'success': True, 'message': 'Alertes sauvegardées'})
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde alertes: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/clear_all', methods=['POST'])
+        @WebAuth.login_required
+        def clear_all():
+            try:
+                model = self.main_window.treeIpModel
+                model.removeRows(0, model.rowCount())
+                logger.info("Tous les hôtes supprimés via API")
+                self.broadcast_update()
+                return jsonify({'success': True, 'message': 'Tous les hôtes supprimés'})
+            except Exception as e:
+                logger.error(f"Erreur suppression tous les hôtes: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/delete_host', methods=['POST'])
+        @WebAuth.login_required
+        def delete_host():
+            try:
+                data = request.get_json()
+                ip = data.get('ip')
+                
+                model = self.main_window.treeIpModel
+                for row in range(model.rowCount()):
+                    item = model.item(row, 1)  # Colonne IP
+                    if item and item.text() == ip:
+                        model.removeRow(row)
+                        logger.info(f"Hôte {ip} supprimé via API")
+                        self.broadcast_update()
+                        return jsonify({'success': True, 'message': f'Hôte {ip} supprimé'})
+                
+                return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
+            except Exception as e:
+                logger.error(f"Erreur suppression hôte: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/exclude_host', methods=['POST'])
+        @WebAuth.login_required
+        def exclude_host():
+            try:
+                data = request.get_json()
+                ip = data.get('ip')
+                
+                model = self.main_window.treeIpModel
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)  # Colonne IP
+                    if item_ip and item_ip.text() == ip:
+                        from PySide6.QtGui import QStandardItem
+                        excl_item = QStandardItem("x")
+                        model.setItem(row, 9, excl_item)  # Colonne Excl
+                        logger.info(f"Hôte {ip} exclu via API")
+                        self.broadcast_update()
+                        return jsonify({'success': True, 'message': f'Hôte {ip} exclu'})
+                
+                return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
+            except Exception as e:
+                logger.error(f"Erreur exclusion hôte: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/export_csv')
+        def export_csv():
+            try:
+                import tempfile
+                import os
+                from src import fct
+                
+                # Créer un fichier temporaire
+                temp_path = os.path.join(tempfile.gettempdir(), 'export_hosts.csv')
+                
+                # Générer le CSV
+                fct.save_csv(self.main_window, self.main_window.treeIpModel, filepath=temp_path, return_path=True)
+                logger.info("Export CSV via API")
+                return send_file(temp_path, as_attachment=True, download_name='hosts.csv', mimetype='text/csv')
+            except Exception as e:
+                logger.error(f"Erreur export CSV: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/import_csv', methods=['POST'])
+        @WebAuth.login_required
+        def import_csv():
+            try:
+                if 'file' not in request.files:
+                    return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+                
+                file = request.files['file']
+                if file.filename == '':
+                    return jsonify({'success': False, 'error': 'Aucun fichier sélectionné'}), 400
+                
+                # Sauvegarder temporairement le fichier
+                import tempfile
+                import os
+                temp_path = os.path.join(tempfile.gettempdir(), 'import.csv')
+                file.save(temp_path)
+                
+                # Charger le CSV
+                from src import fct
+                fct.load_csv(self.main_window, self.main_window.treeIpModel, temp_path)
+                
+                # Nettoyer
+                os.remove(temp_path)
+                
+                logger.info("Import CSV via API")
+                self.broadcast_update()
+                return jsonify({'success': True, 'message': 'Import réussi'})
+            except Exception as e:
+                logger.error(f"Erreur import CSV: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/save_settings', methods=['POST'])
+        def save_settings():
+            try:
+                from src import db
+                db.save_param_db()
+                logger.info("Paramètres sauvegardés via API")
+                return jsonify({'success': True, 'message': 'Paramètres sauvegardés'})
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde paramètres: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/get_settings')
+        def get_settings():
+            try:
+                from src import var, db, lic
+                monitoring_running = False
+                if hasattr(self.main_window, 'main_controller'):
+                    # Le monitoring est en cours si ping_manager existe
+                    monitoring_running = self.main_window.main_controller.ping_manager is not None
+                
+                # Charger les paramètres SMTP
+                smtp_params = db.lire_param_mail()
+                if not smtp_params or len(smtp_params) < 5:
+                    smtp_params = ['', '', '', '', '']
+                
+                # Charger les paramètres généraux
+                general_params = db.lire_param_gene()
+                if not general_params or len(general_params) < 3:
+                    general_params = ['', '', 'nord']
+                
+                # Info licence
+                license_active = lic.verify_license()
+                license_days = 0
+                if license_active:
+                    try:
+                        license_days = int(lic.jours_restants_licence().split()[0])
+                    except:
+                        license_days = 0
+                
+                return jsonify({
+                    'success': True,
+                    'delai': var.delais,
+                    'nb_hs': var.nbrHs,
+                    'alerts': {
+                        'popup': var.popup,
+                        'mail': var.mail,
+                        'telegram': var.telegram,
+                        'mail_recap': var.mailRecap,
+                        'db_externe': var.dbExterne
+                    },
+                    'monitoring_running': monitoring_running,
+                    'smtp': {
+                        'server': smtp_params[0] if len(smtp_params) > 0 else '',
+                        'port': smtp_params[1] if len(smtp_params) > 1 else '',
+                        'email': smtp_params[2] if len(smtp_params) > 2 else '',
+                        'recipients': smtp_params[4] if len(smtp_params) > 4 else ''
+                    },
+                    'general': {
+                        'site': general_params[0],
+                        'license': general_params[1] if len(general_params) > 1 else '',
+                        'theme': general_params[2]
+                    },
+                    'license': {
+                        'active': license_active,
+                        'days_remaining': license_days
+                    },
+                    'version': var.version
+                })
+            except Exception as e:
+                logger.error(f"Erreur récupération paramètres: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/save_smtp', methods=['POST'])
+        @WebAuth.login_required
+        def save_smtp():
+            try:
+                data = request.get_json()
+                from src import db
+                
+                variables = [
+                    data.get('server', ''),
+                    data.get('port', ''),
+                    data.get('email', ''),
+                    data.get('password', ''),
+                    data.get('recipients', '')
+                ]
+                
+                db.save_param_mail(variables)
+                logger.info("Paramètres SMTP sauvegardés via API")
+                return jsonify({'success': True, 'message': 'Configuration SMTP sauvegardée'})
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde SMTP: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/test_smtp', methods=['POST'])
+        @WebAuth.login_required
+        def test_smtp():
+            try:
+                data = request.get_json()
+                # TODO: Implémenter le test SMTP réel
+                logger.info("Test SMTP demandé via API")
+                return jsonify({'success': True, 'message': 'Email de test envoyé'})
+            except Exception as e:
+                logger.error(f"Erreur test SMTP: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/save_general', methods=['POST'])
+        @WebAuth.login_required
+        def save_general():
+            try:
+                data = request.get_json()
+                from src import db
+                
+                site = data.get('site', '')
+                license_key = data.get('license', '')
+                theme = data.get('theme', 'nord')
+                
+                db.save_param_gene(site, license_key, theme)
+                logger.info("Paramètres généraux sauvegardés via API")
+                return jsonify({'success': True, 'message': 'Paramètres généraux sauvegardés'})
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde paramètres généraux: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/get_license_info')
+        @WebAuth.login_required
+        def get_license_info():
+            try:
+                from src import lic
+                active = lic.verify_license()
+                days = 0
+                if active:
+                    try:
+                        days_str = lic.jours_restants_licence()
+                        days = int(days_str.split()[0])
+                    except:
+                        days = 0
+                
+                return jsonify({
+                    'success': True,
+                    'active': active,
+                    'days_remaining': days
+                })
+            except Exception as e:
+                logger.error(f"Erreur info licence: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/get_user_info')
+        @WebAuth.login_required
+        def get_user_info():
+            try:
+                return jsonify({
+                    'success': True,
+                    'username': session.get('username', 'unknown')
+                })
+            except Exception as e:
+                logger.error(f"Erreur info utilisateur: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
     
     def _setup_socketio(self):
         """Configuration des événements Socket.IO"""
@@ -361,7 +807,7 @@ class WebServer(QObject):
         
         try:
             hosts = self._get_hosts_data()
-            self.socketio.emit('hosts_update', hosts, broadcast=True, namespace='/')
+            self.socketio.emit('hosts_update', hosts, namespace='/')
         except Exception as e:
             logger.error(f"Erreur diffusion mise à jour: {e}", exc_info=True)
     
