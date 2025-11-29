@@ -6,14 +6,15 @@ qt_material>=2.14  # Thèmes Material Design pour Qt
 pythonping>=1.1.0
 requests>=2.26.0
 
-# SNMP (surveillance température et onduleurs) - Compatible Python 3.13
+# SNMP (surveillance température et onduleurs)
 pysnmp>=6.0.0
-pyasn1>=0.4.8
+pyasn1>=0.4.8,<0.6.1
 pyasn1-modules>=0.2.8
 pycryptodomex>=3.15.0
 
 # Email et sécurité
 python-gnupg>=0.5.0
+cryptography>=39.0.0  # Pour le système de licence sécurisé
 
 # Fichiers Excel
 openpyxl>=3.1.0
