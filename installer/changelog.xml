@@ -2,6 +2,17 @@
 
 
 <changelog>
+
+<version versionID="99.02.02">
+	  	<versio>
+	  		99.02.02
+	  	</versio>
+		  <change>
+				* Version stable
+		  </change>
+  </version>
+
+
 <version versionID="99.02.01">
 	  	<versio>
 	  		99.02.01

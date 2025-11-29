@@ -2,7 +2,7 @@
 
 ![Ping ü](https://prog.dynag.co/PyngOuin/logoP50.png "Ping ü")
 
-[![Version](https://img.shields.io/badge/version-99.01.05-blue.svg)](https://github.com/yourusername/ping-u)
+[![Version](https://img.shields.io/badge/version-99.01.05-blue.svg)](https://github.com/Dynag1/ping-u)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt)
 [![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.8-orange.svg)](https://www.qt.io/qt-for-python)
@@ -11,7 +11,7 @@
 
 ## 📥 Téléchargement
 
-[📦 Installateur Windows (.exe)](https://prog.dynag.co/Pingu/Ping_u_Setup.exe)
+[📦 Installateur Windows (.exe)](https://prog.dynag.co/Pingu/PingU_Setup.exe)
 
 ---
 
@@ -78,7 +78,7 @@
 - .NET Framework 4.7.2 ou supérieur (pour l'installateur)
 
 ### Installation via l'installateur
-1. Téléchargez [Ping_u_Setup.exe](https://prog.dynag.co/Pingu/Ping_u_Setup.exe)
+1. Téléchargez [PingU_Setup.exe](https://prog.dynag.co/Pingu/PingU_Setup.exe)
 2. Exécutez l'installateur
 3. Suivez les instructions à l'écran
 4. Lancez Ping ü depuis le menu Démarrer
@@ -86,7 +86,7 @@
 ### Installation depuis les sources
 ```bash
 # Cloner le repository
-git clone https://github.com/yourusername/ping-u.git
+git clone https://github.com/Dynag1/ping-u.git
 cd ping-u
 
 # Installer les dépendances
@@ -160,31 +160,6 @@ Mot de passe : Mot de passe d'application
 
 ---
 
-## 🔌 Plugins
-
-### 📸 Snyf - Découverte de caméras
-Détecte automatiquement les caméras réseau via :
-- **UPnP** : Découverte universelle
-- **ONVIF** : Caméras compatibles ONVIF
-- **HikVision** : Protocole propriétaire HikVision
-- **Samsung** : Protocole Samsung
-
-**Version** : 0.0.2  
-**Téléchargement** : [Snyf.zip](https://prog.dynag.co/Ping-u/plugin/Snyf.zip)
-
-### 🌡️ Temp - Monitoring température
-Surveillance de la température du processeur avec alertes configurables.
-
-**Version** : 0.0.3  
-**Téléchargement** : [Temp.zip](https://prog.dynag.co/Ping-i/plugin/Temp.zip)
-
-### Installation d'un plugin
-1. Téléchargez le fichier `.zip`
-2. Extrayez dans `fichier/plugin/`
-3. Redémarrez Ping ü
-4. Menu → Plugin → Sélectionnez votre plugin
-
----
 
 ## 🛠️ Technologies utilisées
 

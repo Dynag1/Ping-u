@@ -4,7 +4,7 @@
 #     pass
 from src.utils.colors import AppColors
 
-version = "99.02.01"
+version = "99.02.02"
 
 nom = "Ping ü"
 nom_logiciel = "Pingu"

@@ -13,10 +13,10 @@ class AppColors:
     OFFLINE = "#4d4d4d"    # Timeout / HS (gris foncé)
     
     # Interface Utilisateur
-    VERT_PALE = "#baf595"
+    VERT_PALE = "#baf595"   # Vert clair pour IP OK
     JAUNE_PALE = "#fffd6a"
     ORANGE_PALE = "#ffb845"
-    ROUGE_PALE = "#f97e7e"
+    ROUGE_PALE = "#f97e7e"  # Rouge pour IP DOWN
     NOIR_GRIS = "#6d6d6d"
     
     # Thème par défaut (Nord-ish)
@@ -30,21 +30,60 @@ class AppColors:
         """
         Retourne la couleur hexadécimale correspondant à la latence.
         
-        Règles:
-        - < 50ms : vert pâle
-        - 50ms à 100ms : orange pâle
-        - > 100ms : rouge pâle
-        - >= 500ms (HS) : gris foncé
+        Règles simplifiées:
+        - < 500ms : vert clair (IP OK)
+        - >= 500ms (HS) : rouge (IP DOWN)
         """
         if latency_ms >= 500:
-            # Hors service (HS)
-            return cls.NOIR_GRIS
-        elif latency_ms > 100:
-            # Rouge pâle pour latence > 100ms
+            # Hors service (HS) - rouge pour IP DOWN
             return cls.ROUGE_PALE
-        elif latency_ms >= 50:
-            # Orange pâle pour latence entre 50ms et 100ms
-            return cls.ORANGE_PALE
         else:
-            # Vert pâle pour latence < 50ms
+            # Vert clair pour IP OK (latence < 500ms)
             return cls.VERT_PALE
+
+
+def format_bandwidth(value_mbps: float) -> str:
+    """
+    Formate automatiquement le débit avec l'unité appropriée.
+    
+    Args:
+        value_mbps: Valeur en Mbps (Megabits par seconde)
+    
+    Returns:
+        Chaîne formatée avec l'unité appropriée (bps, Kbps, Mbps, Gbps)
+    
+    Examples:
+        >>> format_bandwidth(0.0005)
+        '500 bps'
+        >>> format_bandwidth(0.5)
+        '500 Kbps'
+        >>> format_bandwidth(50)
+        '50 Mbps'
+        >>> format_bandwidth(1500)
+        '1.5 Gbps'
+    """
+    if value_mbps is None or value_mbps < 0:
+        return '-'
+    
+    # Seuil pour considérer comme 0 (< 0.1 bps = activité réseau insignifiante)
+    if value_mbps < 0.0000001:  # < 0.1 bps
+        return '-'
+    
+    # Convertir Mbps en bps pour calculer l'unité appropriée
+    bps = value_mbps * 1_000_000
+    
+    if bps >= 1_000_000_000:
+        # Gbps (Gigabits par seconde)
+        return f"{bps / 1_000_000_000:.2f} Gbps"
+    elif bps >= 1_000_000:
+        # Mbps (Megabits par seconde)
+        return f"{bps / 1_000_000:.2f} Mbps"
+    elif bps >= 1_000:
+        # Kbps (Kilobits par seconde)
+        return f"{bps / 1_000:.2f} Kbps"
+    elif bps >= 1:
+        # bps (bits par seconde) - afficher avec 1 décimale
+        return f"{bps:.1f} bps"
+    else:
+        # Très petites valeurs (< 1 bps mais > 0.1 bps)
+        return f"{bps:.2f} bps"

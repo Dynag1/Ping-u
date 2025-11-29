@@ -11,6 +11,7 @@ import socket
 import asyncio
 from PySide6.QtCore import QObject, Signal
 from src.utils.logger import get_logger
+from src.utils.colors import format_bandwidth
 
 logger = get_logger(__name__)
 
@@ -38,14 +39,23 @@ class WebServer(QObject):
         import os
         import sys
         if getattr(sys, 'frozen', False):
-            # Mode PyInstaller
+            # Mode PyInstaller - les fichiers sont copiés dans src/web/templates
             base_path = sys._MEIPASS
+            template_path = os.path.join(base_path, 'src', 'web', 'templates')
+            static_path = os.path.join(base_path, 'src', 'web', 'static')
         else:
             # Mode développement
             base_path = os.path.dirname(os.path.abspath(__file__))
+            template_path = os.path.join(base_path, 'web', 'templates')
+            static_path = os.path.join(base_path, 'web', 'static')
         
-        template_path = os.path.join(base_path, 'web', 'templates')
-        static_path = os.path.join(base_path, 'web', 'static')
+        # Log des chemins utilisés pour le débogage
+        logger.info(f"Mode frozen: {getattr(sys, 'frozen', False)}")
+        logger.info(f"Template path: {template_path}")
+        logger.info(f"Static path: {static_path}")
+        logger.info(f"Template path exists: {os.path.exists(template_path)}")
+        if os.path.exists(template_path):
+            logger.info(f"Files in template path: {os.listdir(template_path)}")
         
         self.app = Flask(__name__, 
                         template_folder=template_path,
@@ -229,11 +239,11 @@ class WebServer(QObject):
                         if current_data and previous_data and SNMP_AVAILABLE:
                             bandwidth = snmp_helper.calculate_bandwidth_sync(current_data, previous_data)
                             if bandwidth:
-                                # Sauvegarder dans notre cache
+                                # Sauvegarder dans notre cache avec formatage automatique des unités
                                 self.traffic_cache[ip] = current_data
                                 self._bandwidth_cache[ip] = {
-                                    'in': f"{bandwidth['in_mbps']:.2f} Mbps",
-                                    'out': f"{bandwidth['out_mbps']:.2f} Mbps"
+                                    'in': format_bandwidth(bandwidth['in_mbps']),
+                                    'out': format_bandwidth(bandwidth['out_mbps'])
                                 }
                                 return self._bandwidth_cache[ip]
                         

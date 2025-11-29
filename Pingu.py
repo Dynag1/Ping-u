@@ -21,6 +21,7 @@ import platform
 
 
 from src.utils.logger import setup_logging, get_logger
+from src.utils.colors import AppColors
 
 # Initialisation du logging
 setup_logging()
@@ -480,8 +481,8 @@ class MainWindow(QMainWindow):
         for col in [0, 1, 3, 5, 6, 7, 9]:  # Id, IP, Mac, Latence, Temp, Suivi, Excl
             items[col].setFlags(items[col].flags() & ~Qt.ItemIsEditable)
 
-        # Coloration selon is_ok
-        couleur = QColor("#1f8137") if is_ok else QColor("#A9A9A9")
+        # Coloration selon is_ok : vert clair pour IP OK, rouge pour IP DOWN
+        couleur = QColor(AppColors.VERT_PALE) if is_ok else QColor(AppColors.ROUGE_PALE)
         for item in items:
             item.setBackground(couleur)
 

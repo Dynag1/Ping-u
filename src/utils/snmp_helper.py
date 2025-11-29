@@ -755,10 +755,10 @@ class SNMPHelper:
         octets_out_delta = current_data['out'] - previous_data['out']
         
         # Log détaillé pour debug
-        logger.debug(f"📊 Calcul débit pour {ip}:")
-        logger.debug(f"   Temps delta: {time_delta:.1f}s")
-        logger.debug(f"   IN  - Avant: {previous_data['in']:,} | Après: {current_data['in']:,} | Delta: {octets_in_delta:,} octets")
-        logger.debug(f"   OUT - Avant: {previous_data['out']:,} | Après: {current_data['out']:,} | Delta: {octets_out_delta:,} octets")
+        logger.info(f"📊 Calcul débit pour {ip}:")
+        logger.info(f"   Temps delta: {time_delta:.1f}s")
+        logger.info(f"   IN  - Avant: {previous_data['in']:,} | Après: {current_data['in']:,} | Delta: {octets_in_delta:,} octets")
+        logger.info(f"   OUT - Avant: {previous_data['out']:,} | Après: {current_data['out']:,} | Delta: {octets_out_delta:,} octets")
         
         # Gérer le wraparound (compteur qui déborde)
         if octets_in_delta < 0:
@@ -772,11 +772,12 @@ class SNMPHelper:
         in_mbps = (octets_in_delta * 8) / (time_delta * 1_000_000)
         out_mbps = (octets_out_delta * 8) / (time_delta * 1_000_000)
         
-        logger.debug(f"   ✅ Débit calculé: IN={in_mbps:.2f} Mbps, OUT={out_mbps:.2f} Mbps")
+        logger.info(f"   ✅ Débit calculé: IN={in_mbps:.6f} Mbps, OUT={out_mbps:.6f} Mbps")
         
+        # Utiliser 6 décimales pour capturer même les très petits débits (quelques bps)
         return {
-            'in_mbps': round(in_mbps, 2),
-            'out_mbps': round(out_mbps, 2),
+            'in_mbps': round(in_mbps, 6),
+            'out_mbps': round(out_mbps, 6),
             'raw_data': current_data
         }
     
@@ -816,9 +817,11 @@ class SNMPHelper:
         in_mbps = (octets_in_delta * 8) / (time_delta * 1_000_000)
         out_mbps = (octets_out_delta * 8) / (time_delta * 1_000_000)
         
+        # Utiliser 6 décimales pour capturer même les très petits débits (quelques bps)
+        # Le formatage automatique s'occupera d'afficher l'unité appropriée
         return {
-            'in_mbps': round(in_mbps, 2),
-            'out_mbps': round(out_mbps, 2)
+            'in_mbps': round(in_mbps, 6),
+            'out_mbps': round(out_mbps, 6)
         }
     
     def clear_cache(self, ip=None):
