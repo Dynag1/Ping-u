@@ -485,12 +485,22 @@ class SNMPHelper:
             logger.debug(f"Exception SNMP pour {ip}: {e}")
             return None
         finally:
-            # Fermeture propre du SnmpEngine pour éviter les fuites de ressources
+            # Fermeture propre du SnmpEngine pour éviter les fuites de ressources et erreurs "Unregistered transport"
             if snmp_engine is not None:
                 try:
-                    snmp_engine.transportDispatcher.closeDispatcher()
-                except:
-                    pass
+                    # Fermer le dispatcher
+                    if snmp_engine.transportDispatcher:
+                        snmp_engine.transportDispatcher.closeDispatcher()
+                        # Désenregistrer explicitement le transport si possible
+                        # Cela évite que des callbacks soient appelés après la fermeture de la boucle
+                        try:
+                            # Tenter de désenregistrer tous les transports connus
+                            for transport_domain in list(snmp_engine.transportDispatcher.transports.keys()):
+                                snmp_engine.transportDispatcher.unregisterTransport(transport_domain)
+                        except:
+                            pass
+                except Exception as e:
+                    logger.debug(f"Erreur nettoyage SNMP: {e}")
 
     async def find_best_interface(self, ip):
         """

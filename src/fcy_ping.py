@@ -72,13 +72,13 @@ class AsyncPingWorker(QThread):
         try:
             # Commande selon l'OS
             if self.system == "windows":
-                # -n 1 : un seul ping
-                # -w 2000 : timeout 2000ms (augmenté pour éviter les faux négatifs)
-                cmd = ["ping", "-n", "1", "-w", "2000", ip]
+                # -n 2 : deux pings pour confirmer la perte et éviter les faux positifs
+                # -w 2000 : timeout 2000ms
+                cmd = ["ping", "-n", "2", "-w", "2000", ip]
             else:
-                # -c 1 : un seul ping
+                # -c 2 : deux pings
                 # -W 2 : timeout 2s
-                cmd = ["ping", "-c", "1", "-W", "2", ip]
+                cmd = ["ping", "-c", "2", "-W", "2", ip]
 
             # Création du sous-processus
             # Sur Windows, masquer la fenêtre CMD
@@ -109,17 +109,31 @@ class AsyncPingWorker(QThread):
             except:
                 output = stdout.decode('utf-8', errors='ignore')
             
-            # Parser la latence même si returncode != 0 (parfois le ping réussit mais returncode est différent)
-            if process.returncode == 0 or "TTL" in output or "ttl" in output:
+            # Analyse robuste du résultat
+            # On considère le ping réussi si :
+            # 1. Le code de retour est 0 (standard)
+            # 2. OU si on trouve "TTL=" dans la sortie (même si le code est != 0, ça arrive)
+            # 3. ET qu'on n'a pas 100% de perte de paquets
+            
+            has_ttl = "TTL=" in output.upper() or "ttl=" in output.lower()
+            
+            # Recherche de perte de paquets (100% perte = HS)
+            # Supporte français ("100% perte"), anglais ("100% packet loss"), etc.
+            loss_match = re.search(r"(\d+)% [^,\n]*?(perte|loss)", output, re.IGNORECASE)
+            is_100_percent_loss = False
+            if loss_match and loss_match.group(1) == "100":
+                is_100_percent_loss = True
+
+            if (process.returncode == 0 or has_ttl) and not is_100_percent_loss:
                 latency = self.parse_latency(output)
-                # Si on a trouvé une latence valide (< 500), c'est que le ping a réussi
-                if latency >= 500 and ("TTL" in output or "ttl" in output):
-                    # Le ping a réussi mais on n'a pas pu parser la latence
-                    # On utilise debug au lieu de warning pour ne pas polluer les logs
-                    logger.debug(f"Ping réussi mais parsing échoué pour {ip}. Sortie:\n{output}")
+                # Si le ping a réussi (TTL présent) mais parsing latence échoué (retourne 500)
+                if latency >= 500 and has_ttl:
+                    # On force une latence "vivante" pour ne pas déclarer HS un hôte qui répond
+                    latency = 10.0 
+                    logger.debug(f"Ping OK (TTL présent) mais latence illisible pour {ip}. Forcé à 10ms.")
             else:
                 latency = 500.0
-                logger.debug(f"Ping échoué pour {ip}, returncode: {process.returncode}")
+                # logger.debug(f"Ping échoué pour {ip}")
 
         except Exception as e:
             logger.debug(f"Erreur ping {ip}: {e}")

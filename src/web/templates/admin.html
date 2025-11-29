@@ -696,6 +696,13 @@
                                 <div style="font-size: 13px; color: #6b7280;" id="license-days"></div>
                             </div>
                         </div>
+                        <div style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 5px;">Code d'activation (Hardware ID) à envoyer :</div>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="activation-code" readonly style="background: #e5e7eb; color: #374151; font-family: monospace; font-size: 14px;" onclick="this.select()">
+                                <button class="btn btn-secondary btn-small" onclick="navigator.clipboard.writeText(document.getElementById('activation-code').value); showNotification('Copié !', 'success')">📋</button>
+                            </div>
+                        </div>
                     </div>
                     <form id="form-license">
                         <div class="form-group">
@@ -798,6 +805,10 @@
         socket.on('monitoring_status', function(data) {
             monitoringRunning = data.running;
             updateMonitoringStatus(data.running);
+        });
+
+        socket.on('notification', function(data) {
+            showNotification(data.message, data.type || 'info');
         });
 
         // ==================== Update Functions ====================
@@ -1089,25 +1100,6 @@
                     document.getElementById('general-theme').value = result.general.theme || 'nord';
                 }
                 
-                // Licence
-                if (result.license) {
-                    const icon = document.getElementById('license-icon');
-                    const status = document.getElementById('license-status');
-                    const days = document.getElementById('license-days');
-                    
-                    if (result.license.active) {
-                        icon.textContent = '✅';
-                        status.textContent = 'Licence active';
-                        days.textContent = `${result.license.days_remaining} jours restants`;
-                        status.style.color = '#10b981';
-                    } else {
-                        icon.textContent = '❌';
-                        status.textContent = 'Pas de licence active';
-                        days.textContent = 'Certaines fonctionnalités sont limitées';
-                        status.style.color = '#ef4444';
-                    }
-                }
-                
                 // Version système
                 if (result.version) {
                     document.getElementById('system-version').textContent = result.version;
@@ -1261,8 +1253,32 @@
                 const icon = document.getElementById('license-icon');
                 const status = document.getElementById('license-status');
                 const days = document.getElementById('license-days');
+                const codeInput = document.getElementById('activation-code');
                 
-                if (result.active) {
+                if (result.activation_code) {
+                    codeInput.value = result.activation_code;
+                }
+                
+                const isLicenseActive = result.active;
+                
+                // Gestion des champs d'alerte (seul Popup est gratuit)
+                const paidAlerts = ['check-mail', 'check-telegram', 'check-mail-recap', 'check-db-externe'];
+                paidAlerts.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.disabled = !isLicenseActive;
+                        if (!isLicenseActive) {
+                            el.checked = false;
+                            el.parentElement.title = "Nécessite une licence active";
+                            el.parentElement.style.opacity = "0.6";
+                        } else {
+                            el.parentElement.title = "";
+                            el.parentElement.style.opacity = "1";
+                        }
+                    }
+                });
+
+                if (isLicenseActive) {
                     icon.textContent = '✅';
                     status.textContent = 'Licence active';
                     days.textContent = `${result.days_remaining} jours restants`;
@@ -1270,7 +1286,7 @@
                 } else {
                     icon.textContent = '❌';
                     status.textContent = 'Pas de licence active';
-                    days.textContent = '';
+                    days.textContent = 'Certaines fonctionnalités sont limitées (Alertes)';
                     status.style.color = '#ef4444';
                 }
             } catch (error) {

@@ -98,3 +98,4 @@ installer/changelog.xml
 installer/PingU_Setup.exe
 installer/PingU_Setup.exe
 installer/PingU_Setup.exe
+src/__pycache__/web_server.cpython-312.pyc

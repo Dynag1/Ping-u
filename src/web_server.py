@@ -245,6 +245,11 @@ class WebServer(QObject):
                 if hasattr(self.main_window, 'main_controller'):
                     # Vérifier si le monitoring est déjà en cours (ping_manager existe)
                     if self.main_window.main_controller.ping_manager is None:
+                        # Mise à jour des variables AVANT de démarrer
+                        logger.info(f"Configuration reçue: Délai={delai}s, Nb HS={nb_hs}")
+                        var.delais = delai
+                        var.nbrHs = int(nb_hs) # Force int conversion
+                        
                         # Utiliser un signal Qt pour démarrer le monitoring de manière thread-safe
                         self.main_window.comm.start_monitoring_signal.emit()
                         logger.info(f"Monitoring démarré via API (délai: {delai}s, nb_hs: {nb_hs})")
@@ -534,8 +539,18 @@ class WebServer(QObject):
         def get_license_info():
             try:
                 from src import lic
+                from src import lic_secure
+                
                 active = lic.verify_license()
                 days = 0
+                activation_code = ""
+                
+                try:
+                    activation_code = lic_secure.generate_activation_code()
+                except Exception as e:
+                    logger.error(f"Erreur génération code activation: {e}")
+                    activation_code = "Erreur"
+
                 if active:
                     try:
                         days_str = lic.jours_restants_licence()
@@ -546,7 +561,8 @@ class WebServer(QObject):
                 return jsonify({
                     'success': True,
                     'active': active,
-                    'days_remaining': days
+                    'days_remaining': days,
+                    'activation_code': activation_code
                 })
             except Exception as e:
                 logger.error(f"Erreur info licence: {e}", exc_info=True)

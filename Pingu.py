@@ -730,9 +730,33 @@ def run_headless_mode():
     
     # Initialiser la base de données et les paramètres
     try:
-        result = db.lire_param_gene()
-        if not result or len(result) < 3:
+        # Paramètres généraux
+        result_gene = db.lire_param_gene()
+        if not result_gene or len(result_gene) < 3:
             logger.warning("Paramètres généraux manquants, utilisation des valeurs par défaut.")
+        else:
+            db.nom_site() # Charge nom_site et license dans var
+            
+        # Paramètres alertes et délais
+        result_db = db.lire_param_db()
+        if result_db and len(result_db) >= 7:
+            from src import var
+            var.delais = result_db[0]
+            try:
+                var.nbrHs = int(result_db[1])
+            except (ValueError, TypeError):
+                var.nbrHs = 3
+                logger.warning(f"Valeur invalide pour nbrHs ({result_db[1]}), utilisation de la valeur par défaut: 3")
+            
+            var.popup = result_db[2]
+            var.mail = result_db[3]
+            var.telegram = result_db[4]
+            var.mailRecap = result_db[5]
+            var.dbExterne = result_db[6]
+            logger.info(f"Paramètres chargés: Délai={var.delais}s, Mail={var.mail}, Telegram={var.telegram}, Popup={var.popup}")
+        else:
+            logger.warning("Paramètres d'alertes manquants ou incomplets")
+            
     except Exception as e:
         logger.warning(f"Erreur chargement paramètres: {e}")
     
@@ -789,12 +813,40 @@ def run_headless_mode():
         def show_popup(self, message):
             """Afficher popup - mode headless log seulement"""
             logger.info(f"[POPUP] {message}")
+            # Envoyer la notification au client web si possible
+            if self.web_server and self.web_server.socketio:
+                try:
+                    self.web_server.socketio.emit('notification', {'message': message, 'type': 'warning'}, namespace='/')
+                except Exception as e:
+                    logger.error(f"Erreur envoi notification web: {e}")
+            
+        def on_add_row(self, i, ip, nom, mac, port, extra, is_ok):
+            """Ajoute une ligne au modèle (appelé par le thread de scan)"""
+            from PySide6.QtGui import QStandardItem
+            items = [
+                QStandardItem(str(i)),    # 0: Id
+                QStandardItem(ip),        # 1: IP
+                QStandardItem(nom),       # 2: Nom
+                QStandardItem(mac),       # 3: Mac
+                QStandardItem(str(port)), # 4: Port
+                QStandardItem(extra),     # 5: Latence
+                QStandardItem(""),        # 6: Temp
+                QStandardItem(""),        # 7: Suivi
+                QStandardItem(""),        # 8: Comm
+                QStandardItem("")         # 9: Excl
+            ]
+            self.treeIpModel.appendRow(items)
+            logger.info(f"Hôte ajouté: {ip} ({nom})")
+            # Diffuser la mise à jour aux clients web
+            if self.web_server:
+                self.web_server.broadcast_update()
     
     window = HeadlessWindow()
     
-    # Connecter les signaux pour l'API web (thread-safe)
+    # Connecter les signaux
     window.comm.start_monitoring_signal.connect(window.main_controller.start_monitoring)
     window.comm.stop_monitoring_signal.connect(window.main_controller.stop_monitoring)
+    window.comm.addRow.connect(window.on_add_row)
     
     # Charger les données existantes si disponibles
     hosts_loaded = False
@@ -871,18 +923,31 @@ def run_headless_mode():
     logger.info("[HEADLESS] Interface web admin: http://localhost:5000/admin")
     logger.info("   Identifiants par défaut: admin / a")
     
-    # Boucle principale
-    try:
-        while True:
-            # Vérifier si un fichier stop existe
-            if os.path.exists('pingu_headless.stop'):
-                logger.info("Fichier stop détecté, arrêt de l'application...")
-                os.remove('pingu_headless.stop')
-                cleanup_and_exit()
-            time.sleep(1)
-    except KeyboardInterrupt:
-        logger.info("Interruption clavier détectée")
-        cleanup_and_exit()
+    # Gestionnaire pour la boucle principale
+    def check_stop_file():
+        if os.path.exists('pingu_headless.stop'):
+            logger.info("Fichier stop détecté, arrêt de l'application...")
+            os.remove('pingu_headless.stop')
+            app.quit()
+    
+    # Timer pour vérifier le fichier stop toutes les secondes
+    from PySide6.QtCore import QTimer
+    stop_check_timer = QTimer()
+    stop_check_timer.timeout.connect(check_stop_file)
+    stop_check_timer.start(1000)
+    
+    logger.info("[HEADLESS] Application demarree en mode headless")
+    logger.info("[HEADLESS] Pour arreter: python Pingu.py -stop")
+    logger.info("[HEADLESS] Interface web admin: http://localhost:5000/admin")
+    logger.info("   Identifiants par défaut: admin / a")
+    
+    # Lancer la boucle d'événements Qt
+    # C'est nécessaire pour que les signaux (start_monitoring) et les QThread fonctionnent
+    exit_code = app.exec()
+    
+    # Nettoyage après la fin de la boucle
+    cleanup_and_exit()
+    sys.exit(exit_code)
 
 
 def stop_headless_mode():
