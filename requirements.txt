@@ -7,8 +7,9 @@ qt_material>=2.14  # Thèmes Material Design pour Qt
 requests>=2.26.0
 
 # SNMP (surveillance température et onduleurs)
-pysnmp>=6.0.0
-pyasn1>=0.4.8,<0.6.1
+# Note: pysnmp original est abandonné, utiliser pysnmp-lextudio (fork maintenu et compatible)
+pysnmp-lextudio>=5.0.0
+pyasn1>=0.4.8
 pyasn1-modules>=0.2.8
 pycryptodomex>=3.15.0
 

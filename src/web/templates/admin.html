@@ -1105,6 +1105,12 @@
                     document.getElementById('smtp-recipients').value = result.smtp.recipients || '';
                 }
                 
+                // Telegram
+                if (result.telegram) {
+                    document.getElementById('telegram-token').value = result.telegram.token || '';
+                    document.getElementById('telegram-chatid').value = result.telegram.chatid || '';
+                }
+                
                 // Paramètres généraux
                 if (result.general) {
                     document.getElementById('general-site').value = result.general.site || '';
@@ -1225,8 +1231,8 @@
 
         async function testSMTP() {
             try {
-                const result = await apiCall('/api/test_smtp', 'POST');
-                showNotification('Email de test envoyé', 'success');
+                const result = await apiCall('/api/test_smtp', 'POST', {});
+                showNotification(result.message || 'Email de test envoyé', 'success');
             } catch (error) {
                 // Erreur déjà affichée
             }
@@ -1242,7 +1248,7 @@
             };
 
             try {
-                // TODO: Ajouter la route API pour Telegram
+                const result = await apiCall('/api/save_telegram', 'POST', data);
                 showNotification('Configuration Telegram sauvegardée', 'success');
             } catch (error) {
                 // Erreur déjà affichée
@@ -1251,8 +1257,8 @@
 
         async function testTelegram() {
             try {
-                // TODO: Ajouter la route API pour test Telegram
-                showNotification('Message de test envoyé sur Telegram', 'success');
+                const result = await apiCall('/api/test_telegram', 'POST', {});
+                showNotification(result.message || 'Message de test envoyé sur Telegram', 'success');
             } catch (error) {
                 // Erreur déjà affichée
             }

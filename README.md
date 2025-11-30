@@ -73,6 +73,18 @@
 
 ## 🚀 Installation
 
+**Guides d'installation par système d'exploitation** :
+
+📘 **[Windows](INSTALL_WINDOWS.md)** - Guide complet pour Windows 10/11  
+📗 **[Linux](INSTALL_LINUX.md)** - Guide complet pour Ubuntu, Debian, Fedora, etc.  
+📙 **[Raspberry Pi](INSTALL_RASPBERRY.md)** - Guide complet pour Raspberry Pi OS
+
+---
+
+### Installation rapide
+
+#### Windows
+
 ### Prérequis
 - Windows 10/11 (64-bit)
 - .NET Framework 4.7.2 ou supérieur (pour l'installateur)

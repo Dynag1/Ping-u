@@ -468,6 +468,10 @@ class WebServer(QObject):
                         'email': smtp_params[2] if len(smtp_params) > 2 else '',
                         'recipients': smtp_params[4] if len(smtp_params) > 4 else ''
                     },
+                    'telegram': {
+                        'token': '5584289469:AAHYRhZhDCXKE5l1v1UbLs-MUKGPoimMYAQ',
+                        'chatid': smtp_params[5] if len(smtp_params) > 5 else ''
+                    },
                     'general': {
                         'site': general_params[0],
                         'license': general_params[1] if len(general_params) > 1 else '',
@@ -505,14 +509,116 @@ class WebServer(QObject):
                 logger.error(f"Erreur sauvegarde SMTP: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
+        @self.app.route('/api/save_telegram', methods=['POST'])
+        @WebAuth.login_required
+        def save_telegram():
+            try:
+                data = request.get_json()
+                from src import db
+                
+                token = data.get('token', '')
+                chatid = data.get('chatid', '')
+                
+                # Charger les paramètres mail actuels
+                smtp_params = db.lire_param_mail()
+                if not smtp_params or len(smtp_params) < 6:
+                    smtp_params = ['', '', '', '', '', '']
+                
+                # Mettre à jour le chat_id (index 5)
+                smtp_params_list = list(smtp_params)
+                if len(smtp_params_list) > 5:
+                    smtp_params_list[5] = chatid
+                else:
+                    # Étendre la liste si nécessaire
+                    while len(smtp_params_list) < 5:
+                        smtp_params_list.append('')
+                    smtp_params_list.append(chatid)
+                
+                # Sauvegarder
+                db.save_param_mail(smtp_params_list)
+                
+                logger.info(f"Configuration Telegram sauvegardée: chat_id={chatid}")
+                return jsonify({'success': True, 'message': 'Configuration Telegram sauvegardée'})
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde Telegram: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/test_telegram', methods=['POST'])
+        @WebAuth.login_required
+        def test_telegram():
+            try:
+                from src import thread_telegram
+                
+                # Envoyer un message de test
+                test_message = "✅ Test - Ping ü\n\nSi vous recevez ce message, votre configuration Telegram fonctionne correctement !\n\n🤖 Bot Telegram configuré avec succès."
+                
+                thread_telegram.main(test_message)
+                
+                logger.info("Message de test Telegram envoyé")
+                return jsonify({'success': True, 'message': 'Message de test envoyé sur Telegram'})
+            except Exception as e:
+                logger.error(f"Erreur test Telegram: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': f'Erreur: {str(e)}'}), 500
+        
         @self.app.route('/api/test_smtp', methods=['POST'])
         @WebAuth.login_required
         def test_smtp():
             try:
-                data = request.get_json()
-                # TODO: Implémenter le test SMTP réel
-                logger.info("Test SMTP demandé via API")
-                return jsonify({'success': True, 'message': 'Email de test envoyé'})
+                # Pas besoin de données JSON pour un simple test
+                # Charger les paramètres SMTP depuis la config
+                from src import db
+                smtp_params = db.lire_param_mail()
+                
+                if not smtp_params or len(smtp_params) < 5:
+                    return jsonify({'success': False, 'error': 'Configuration SMTP non trouvée'}), 400
+                
+                smtp_server = smtp_params[0]
+                smtp_port = smtp_params[1]
+                smtp_email = smtp_params[2]
+                smtp_password = smtp_params[3]
+                recipients = smtp_params[4]
+                
+                if not smtp_server or not smtp_email or not recipients:
+                    return jsonify({'success': False, 'error': 'Configuration SMTP incomplète'}), 400
+                
+                # Envoyer un email de test
+                import smtplib
+                from email.mime.text import MIMEText
+                from email.mime.multipart import MIMEMultipart
+                
+                message = MIMEMultipart()
+                message['From'] = smtp_email
+                message['To'] = recipients.split(',')[0].strip()  # Premier destinataire
+                message['Subject'] = 'Test - Ping ü'
+                
+                body = f"""
+Ceci est un email de test envoyé depuis Ping ü.
+
+Si vous recevez ce message, votre configuration SMTP fonctionne correctement !
+
+Serveur SMTP : {smtp_server}:{smtp_port}
+Email expéditeur : {smtp_email}
+
+---
+Ping ü - Monitoring Réseau
+"""
+                message.attach(MIMEText(body, 'plain'))
+                
+                # Connexion et envoi
+                with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
+                    server.starttls()
+                    server.login(smtp_email, smtp_password)
+                    server.send_message(message)
+                
+                logger.info(f"Email de test SMTP envoyé à {recipients}")
+                return jsonify({'success': True, 'message': f'Email de test envoyé à {recipients.split(",")[0].strip()}'})
+                
+            except smtplib.SMTPAuthenticationError:
+                logger.error("Erreur d'authentification SMTP")
+                return jsonify({'success': False, 'error': 'Erreur d\'authentification SMTP (vérifiez l\'email et le mot de passe)'}), 400
+            except smtplib.SMTPException as e:
+                logger.error(f"Erreur SMTP: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': f'Erreur SMTP: {str(e)}'}), 500
             except Exception as e:
                 logger.error(f"Erreur test SMTP: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
