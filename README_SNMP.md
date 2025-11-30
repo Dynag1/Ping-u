@@ -12,7 +12,7 @@ Version avec monitoring SNMP : Température, Débits réseau et Détection UPS
 - **Types supportés** : Synology, QNAP, Raspberry Pi, Switchs (Cisco, HP, Dell, Ubiquiti, MikroTik), Serveurs
 
 ### 📊 Débits réseau
-- **Affichage** : Page web uniquement (http://localhost:5000)
+- **Affichage** : Page web uniquement (http://localhost:6666)
 - **Support** : OIDs standards 32/64 bits
 - **Auto-détection** : Trouve automatiquement la bonne interface réseau
 - **Types supportés** : NAS, Switchs, Routeurs
@@ -30,7 +30,7 @@ Version avec monitoring SNMP : Température, Débits réseau et Détection UPS
 1. **Activer SNMP** sur vos équipements (communauté "public")
 2. **Lancer Ping ü** et démarrer le monitoring (Start)
 3. **Température** : Affichée immédiatement dans colonne "Temp"
-4. **Débits** : Menu Fonctions > Serveur Web > Démarrer, puis http://localhost:5000
+4. **Débits** : Menu Fonctions > Serveur Web > Démarrer, puis http://localhost:6666
 
 ### Configuration SNMP par équipement
 

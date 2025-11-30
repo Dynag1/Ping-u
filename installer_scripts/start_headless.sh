@@ -9,7 +9,7 @@ echo "Demarrage de l'application en mode headless..."
 
 echo
 echo "[OK] Application demarree en arriere-plan (PID: $!)"
-echo "    Interface web: http://localhost:5000/admin"
+echo "    Interface web: http://localhost:6666/admin"
 echo "    Identifiants: admin / a"
 echo
 echo "Pour arreter: ./stop_headless.sh"

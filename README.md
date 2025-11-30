@@ -127,8 +127,8 @@ python Pingu.py
 
 #### 4. Lancer le serveur web
 - Menu → Fonction → Serveur Web → Démarrer
-- Ouvrez votre navigateur : `http://localhost:5000`
-- Accès réseau : `http://[votre-ip]:5000`
+- Ouvrez votre navigateur : `http://localhost:6666`
+- Accès réseau : `http://[votre-ip]:6666`
 
 ---
 
@@ -213,8 +213,8 @@ Ping-u/
 
 ### Le serveur web ne démarre pas
 ```bash
-# Vérifier que le port 5000 est libre
-netstat -ano | findstr :5000
+# Vérifier que le port 6666 est libre
+netstat -ano | findstr :6666
 
 # Si occupé, arrêter le processus ou changer le port dans le code
 ```

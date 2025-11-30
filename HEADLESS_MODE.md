@@ -25,7 +25,7 @@ Avant de démarrer en mode headless :
    pip install -r requirements.txt
    ```
 
-2. **Port 5000** : Le port 5000 doit être libre (interface web admin)
+2. **Port 6666** : Le port 6666 doit être libre (interface web admin)
 
 ---
 
@@ -96,8 +96,8 @@ python Pingu.py -stop
 
 Une fois l'application démarrée :
 
-- **URL locale** : `http://localhost:5000/admin`
-- **URL réseau** : `http://<ip-du-serveur>:5000/admin`
+- **URL locale** : `http://localhost:6666/admin`
+- **URL réseau** : `http://<ip-du-serveur>:6666/admin`
 
 **Identifiants par défaut** :
 - Utilisateur : `admin`
@@ -220,7 +220,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 5000
+EXPOSE 6666
 
 CMD ["python", "Pingu.py", "-start"]
 ```
@@ -230,7 +230,7 @@ CMD ["python", "Pingu.py", "-start"]
 docker build -t pingu .
 
 # Run
-docker run -d -p 5000:5000 --name pingu pingu
+docker run -d -p 6666:6666 --name pingu pingu
 
 # Logs
 docker logs -f pingu
@@ -254,7 +254,7 @@ docker stop pingu
 ### Variables d'environnement (optionnel)
 
 ```bash
-export PINGU_PORT=5000          # Port du serveur web
+export PINGU_PORT=6666          # Port du serveur web
 export PINGU_WEB_USER=admin     # Utilisateur par défaut
 export PINGU_WEB_PASS=password  # Mot de passe par défaut
 ```
@@ -267,7 +267,7 @@ export PINGU_WEB_PASS=password  # Mot de passe par défaut
 
 1. **Changez les identifiants par défaut** immédiatement
 2. Utilisez un **reverse proxy** (nginx, Apache) avec HTTPS
-3. Configurez un **pare-feu** pour limiter l'accès au port 5000
+3. Configurez un **pare-feu** pour limiter l'accès au port 6666
 4. Utilisez des **mots de passe forts**
 5. Activez les **logs de connexion**
 
@@ -282,7 +282,7 @@ server {
     ssl_certificate_key /path/to/key.pem;
 
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://localhost:6666;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -374,8 +374,8 @@ cat pingu_headless.log
 cat logs/app.log
 
 # Vérifier si le port est occupé
-lsof -i :5000  # Linux/Mac
-netstat -ano | findstr :5000  # Windows
+lsof -i :6666  # Linux/Mac
+netstat -ano | findstr :6666  # Windows
 ```
 
 ### Impossible de se connecter à l'interface web
@@ -385,7 +385,7 @@ netstat -ano | findstr :5000  # Windows
 cat pingu_headless.pid
 
 # Vérifier le pare-feu
-sudo ufw allow 5000  # Linux
+sudo ufw allow 6666  # Linux
 ```
 
 ### L'arrêt ne fonctionne pas

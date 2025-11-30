@@ -52,7 +52,7 @@ cd ~/ping-u
 tail -f pingu_headless.log
 ```
 
-L'interface web est accessible à : `http://[IP_RASPBERRY]:5000`
+L'interface web est accessible à : `http://[IP_RASPBERRY]:6666`
 
 **Identifiants par défaut** : `admin` / `admin`
 
@@ -197,23 +197,23 @@ ping -c 1 8.8.8.8
 # 2. Processus actif ?
 ps aux | grep Pingu
 
-# 3. Port 5000 ouvert ?
-netstat -tlnp | grep 5000
+# 3. Port 6666 ouvert ?
+netstat -tlnp | grep 6666
 # ou
-ss -tlnp | grep 5000
+ss -tlnp | grep 6666
 
 # 4. Logs OK ?
 tail -20 pingu_headless.log
 
 # 5. Accès web ?
-curl http://localhost:5000/api/status
+curl http://localhost:6666/api/status
 ```
 
 ### Résolution des problèmes courants
 
 ```bash
 # Port déjà utilisé
-sudo lsof -i :5000
+sudo lsof -i :6666
 # Tuer le processus si nécessaire
 sudo kill -9 [PID]
 
@@ -238,23 +238,23 @@ rm -f pingu_headless.log
 
 ## 📊 Configuration avancée
 
-### Changer le port par défaut (5000 → autre)
+### Changer le port par défaut (6666 → autre)
 
 Éditer `Pingu.py` et modifier :
 
 ```python
 # Ligne ~740
-web_server = WebServer(window, port=5000)  # Changer 5000
+web_server = WebServer(window, port=6666)  # Changer 6666
 ```
 
 ### Accès depuis l'extérieur (Internet)
 
 ```bash
 # 1. Configurer le pare-feu
-sudo ufw allow 5000
+sudo ufw allow 6666
 
 # 2. Redirection de port sur votre routeur
-# Port externe: 8080 → Port interne: 5000 (IP du Raspberry)
+# Port externe: 8080 → Port interne: 6666 (IP du Raspberry)
 
 # 3. Utiliser un reverse proxy (nginx)
 sudo apt install nginx
@@ -269,7 +269,7 @@ server {
     server_name monitoring.local;
 
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://localhost:6666;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_http_version 1.1;
@@ -309,14 +309,14 @@ sudo systemctl restart nginx
 
 - [ ] Changer le mot de passe par défaut (`admin` / `admin`)
 - [ ] Utiliser HTTPS (reverse proxy nginx)
-- [ ] Configurer le pare-feu (limiter l'accès au port 5000)
+- [ ] Configurer le pare-feu (limiter l'accès au port 6666)
 - [ ] Mettre à jour régulièrement : `pip3 install --upgrade -r requirements.txt`
 - [ ] Sauvegarder les fichiers de configuration
 - [ ] Surveiller les logs : `tail -f logs/app.log`
 
 ### Changer les identifiants web
 
-Via l'interface web : `http://[IP]:5000/admin` → Onglet "Identifiants"
+Via l'interface web : `http://[IP]:6666/admin` → Onglet "Identifiants"
 
 Ou manuellement :
 

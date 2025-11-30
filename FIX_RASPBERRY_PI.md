@@ -49,7 +49,7 @@ import pickle
 with open('tab', 'wb') as f:
     pickle.dump(['', '', '', ''], f)
 
-# Créer tabG (paramètres généraux)
+# Créer tabG (paramètres généraux)  
 with open('tabG', 'wb') as f:
     pickle.dump(['MonSite', 'fr', 'light'], f)
 

@@ -639,7 +639,7 @@ class MainWindow(QMainWindow):
         """Démarre ou arrête le serveur web"""
         try:
             if not self.web_server_running:
-                self.web_server = WebServer(self, port=5000)
+                self.web_server = WebServer(self, port=6666)
                 if self.web_server.start():
                     self.web_server_running = True
                     self.action_toggle_web_server.setText(self.tr("Arrêter le serveur"))
@@ -654,7 +654,7 @@ class MainWindow(QMainWindow):
                     logger.info("Serveur web démarré")
                 else:
                     QMessageBox.critical(self, self.tr("Erreur"), 
-                                       self.tr("Impossible de démarrer le serveur web.\nLe port 5000 est peut-être déjà utilisé."))
+                                       self.tr("Impossible de démarrer le serveur web.\nLe port 6666 est peut-être déjà utilisé."))
             else:
                 if self.web_server:
                     self.web_server.stop()
@@ -692,7 +692,7 @@ class MainWindow(QMainWindow):
                 msg += urls['local'] + "\n\n"
                 msg += self.tr("Accès réseau (depuis un autre PC):\n")
                 msg += urls['network'] + "\n\n"
-                msg += self.tr("Note: Assurez-vous que le pare-feu autorise les connexions sur le port 5000.")
+                msg += self.tr("Note: Assurez-vous que le pare-feu autorise les connexions sur le port 6666.")
                 QMessageBox.information(self, self.tr("URLs d'accès"), msg)
             except Exception as e:
                 logger.error(f"Erreur affichage URLs: {e}", exc_info=True)
@@ -865,10 +865,10 @@ def run_headless_mode():
     
     # Démarrer le serveur web APRÈS le chargement des données
     from src.web_server import WebServer
-    window.web_server = WebServer(window, port=5000)
+    window.web_server = WebServer(window, port=6666)
     if window.web_server.start():
         window.web_server_running = True
-        logger.info("[HEADLESS] Serveur web demarre sur http://0.0.0.0:5000")
+        logger.info("[HEADLESS] Serveur web demarre sur http://0.0.0.0:6666")
     else:
         logger.error("[HEADLESS] Impossible de demarrer le serveur web")
         sys.exit(1)
@@ -877,9 +877,9 @@ def run_headless_mode():
     # L'utilisateur peut le démarrer via l'interface web admin
     if hosts_loaded:
         logger.info(f"Monitoring pret pour {window.treeIpModel.rowCount()} hôte(s)")
-        logger.info("Demarrez le monitoring via l'interface web: http://localhost:5000/admin")
+        logger.info("Demarrez le monitoring via l'interface web: http://localhost:6666/admin")
     else:
-        logger.info("Aucun hôte configuré. Configurez via l'interface web: http://localhost:5000/admin")
+        logger.info("Aucun hôte configuré. Configurez via l'interface web: http://localhost:6666/admin")
     
     # Gestionnaire de signal pour arrêt propre
     def signal_handler(signum, frame):
@@ -920,7 +920,7 @@ def run_headless_mode():
     
     logger.info("[HEADLESS] Application demarree en mode headless")
     logger.info("[HEADLESS] Pour arreter: python Pingu.py -stop")
-    logger.info("[HEADLESS] Interface web admin: http://localhost:5000/admin")
+    logger.info("[HEADLESS] Interface web admin: http://localhost:6666/admin")
     logger.info("   Identifiants par défaut: admin / a")
     
     # Gestionnaire pour la boucle principale
@@ -938,7 +938,7 @@ def run_headless_mode():
     
     logger.info("[HEADLESS] Application demarree en mode headless")
     logger.info("[HEADLESS] Pour arreter: python Pingu.py -stop")
-    logger.info("[HEADLESS] Interface web admin: http://localhost:5000/admin")
+    logger.info("[HEADLESS] Interface web admin: http://localhost:6666/admin")
     logger.info("   Identifiants par défaut: admin / a")
     
     # Lancer la boucle d'événements Qt
@@ -1015,8 +1015,8 @@ Exemples d'utilisation:
 
 Mode headless:
   Le mode headless est idéal pour les serveurs Linux sans interface graphique.
-  L'application démarre le serveur web sur le port 5000.
-  Accédez à l'interface admin via: http://localhost:5000/admin
+  L'application démarre le serveur web sur le port 6666.
+  Accédez à l'interface admin via: http://localhost:6666/admin
   Identifiants par défaut: admin / a
         """
     )
