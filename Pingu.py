@@ -902,30 +902,48 @@ def run_headless_mode():
     def cleanup_and_exit():
         logger.info("[HEADLESS] Arret en cours...")
         
-        # Arrêter le monitoring
-        if window.main_controller.ping_manager:
-            window.main_controller.stop_monitoring()
-        
-        # Arrêter le serveur web
-        if window.web_server:
-            window.web_server.stop()
-        
-        # Sauvegarder les paramètres
         try:
-            db.save_param_db()
-            logger.info("Paramètres sauvegardés")
+            # Arrêter le monitoring
+            if window.main_controller and window.main_controller.ping_manager:
+                logger.info("Arrêt du monitoring...")
+                window.main_controller.stop_monitoring()
+                time.sleep(1)  # Attendre que le monitoring s'arrête
+            
+            # Arrêter le serveur web
+            if window.web_server:
+                logger.info("Arrêt du serveur web...")
+                window.web_server.stop()
+                time.sleep(2)  # Attendre que le serveur libère le port
+            
+            # Sauvegarder les paramètres
+            try:
+                db.save_param_db()
+                logger.info("Paramètres sauvegardés")
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde paramètres: {e}")
+            
+            # Supprimer le fichier PID
+            try:
+                if os.path.exists(pid_file):
+                    os.remove(pid_file)
+                    logger.info("Fichier PID supprimé")
+            except Exception as e:
+                logger.error(f"Erreur suppression PID: {e}")
+            
+            # Supprimer le fichier stop s'il existe
+            try:
+                if os.path.exists('pingu_headless.stop'):
+                    os.remove('pingu_headless.stop')
+            except:
+                pass
+            
+            logger.info("[HEADLESS] Arret termine proprement")
+            
         except Exception as e:
-            logger.error(f"Erreur sauvegarde paramètres: {e}")
-        
-        # Supprimer le fichier PID
-        try:
-            if os.path.exists(pid_file):
-                os.remove(pid_file)
-        except Exception as e:
-            logger.error(f"Erreur suppression PID: {e}")
-        
-        logger.info("[HEADLESS] Arret termine")
-        sys.exit(0)
+            logger.error(f"Erreur lors du nettoyage: {e}", exc_info=True)
+        finally:
+            # Force la fermeture
+            os._exit(0)
     
     # Enregistrer les gestionnaires de signaux
     signal.signal(signal.SIGINT, signal_handler)
@@ -969,6 +987,8 @@ def stop_headless_mode():
     
     if not os.path.exists(pid_file):
         print("❌ Aucune instance headless en cours d'exécution")
+        print("💡 Si le port 9090 est toujours utilisé, exécutez:")
+        print("   bash cleanup_raspberry.sh")
         return
     
     try:
@@ -983,32 +1003,61 @@ def stop_headless_mode():
         
         # Attendre que l'application s'arrête
         import time
-        for i in range(10):
+        for i in range(15):  # Augmenté à 15 secondes
             if not os.path.exists(pid_file):
                 print("✅ Application arrêtée avec succès")
                 # Nettoyer le fichier stop si l'application l'a pas fait
                 if os.path.exists('pingu_headless.stop'):
-                    os.remove('pingu_headless.stop')
+                    try:
+                        os.remove('pingu_headless.stop')
+                    except:
+                        pass
+                # Attendre que le port soit libéré
+                time.sleep(2)
                 return
             time.sleep(1)
-            print(".", end="", flush=True)
+            if i % 3 == 0:
+                print(".", end="", flush=True)
         
         print("\n⚠️  L'application ne répond pas, tentative d'arrêt forcé...")
         
-        # Tenter un kill si nécessaire (Linux/Mac)
+        # Tenter un kill si nécessaire
         try:
             import signal
+            # D'abord SIGTERM (arrêt propre)
             os.kill(pid, signal.SIGTERM)
-            time.sleep(2)
+            time.sleep(3)
+            
+            # Vérifier si le processus existe toujours
+            try:
+                os.kill(pid, 0)  # Test si le processus existe
+                # Le processus existe encore, forcer avec SIGKILL
+                print("⚠️  Force kill (SIGKILL)...")
+                os.kill(pid, signal.SIGKILL)
+                time.sleep(1)
+            except OSError:
+                # Le processus n'existe plus
+                pass
+            
+            # Nettoyer les fichiers
             if os.path.exists(pid_file):
                 os.remove(pid_file)
+            if os.path.exists('pingu_headless.stop'):
+                os.remove('pingu_headless.stop')
+            
             print("✅ Application arrêtée de force")
+            print("💡 Attendez 5 secondes avant de relancer pour que le port soit libéré")
+            time.sleep(2)
+            
         except Exception as e:
             print(f"❌ Erreur lors de l'arrêt: {e}")
-            print("Vous pouvez essayer manuellement: kill {pid}")
+            print(f"💡 Vous pouvez essayer manuellement:")
+            print(f"   kill -9 {pid}")
+            print("   Ou utilisez: bash cleanup_raspberry.sh")
     
     except Exception as e:
         print(f"❌ Erreur: {e}")
+        print("💡 Utilisez le script de nettoyage: bash cleanup_raspberry.sh")
 
 
 if __name__ == "__main__":
