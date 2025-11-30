@@ -19,10 +19,19 @@ def getmac(ip):
         try:
                 my_os = platform.system()
                 if my_os == "Windows":
-                        # grep with a space at the end of IP address to make sure you get a single line
-                        fields = os.popen('arp -a ' + ip).read().split()
-                        if len(fields) == 12 and fields[10] != "00:00:00:00:00:00":
-                                mac = fields[10]
+                        # Utiliser subprocess.run au lieu de os.popen pour éviter les fenêtres CMD
+                        result = subprocess.run(
+                                ["arp", "-a", ip],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                timeout=2,
+                                creationflags=subprocess.CREATE_NO_WINDOW,
+                                text=True
+                        )
+                        if result.returncode == 0:
+                                fields = result.stdout.split()
+                                if len(fields) >= 11 and fields[10] != "00:00:00:00:00:00":
+                                        mac = fields[10]
         except Exception as e:
                 print(str(e))
                 pass
@@ -65,11 +74,13 @@ def ipPing(ip):
                 my_os = platform.system()
                 if my_os == "Windows":
                         # Windows: ping -n 1 -w 1000 (1 paquet, timeout 1000ms)
+                        # CREATE_NO_WINDOW empêche l'ouverture de fenêtres CMD
                         result = subprocess.run(
                                 ["ping", "-n", "1", "-w", "1000", ip],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
-                                timeout=2
+                                timeout=2,
+                                creationflags=subprocess.CREATE_NO_WINDOW
                         )
                 else:
                         # Linux/Mac: ping -c 1 -W 1 (1 paquet, timeout 1s)
