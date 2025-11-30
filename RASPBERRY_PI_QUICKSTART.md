@@ -52,7 +52,7 @@ cd ~/ping-u
 tail -f pingu_headless.log
 ```
 
-L'interface web est accessible à : `http://[IP_RASPBERRY]:6666`
+L'interface web est accessible à : `http://[IP_RASPBERRY]:9090`
 
 **Identifiants par défaut** : `admin` / `admin`
 
@@ -197,23 +197,23 @@ ping -c 1 8.8.8.8
 # 2. Processus actif ?
 ps aux | grep Pingu
 
-# 3. Port 6666 ouvert ?
-netstat -tlnp | grep 6666
+# 3. Port 9090 ouvert ?
+netstat -tlnp | grep 9090
 # ou
-ss -tlnp | grep 6666
+ss -tlnp | grep 9090
 
 # 4. Logs OK ?
 tail -20 pingu_headless.log
 
 # 5. Accès web ?
-curl http://localhost:6666/api/status
+curl http://localhost:9090/api/status
 ```
 
 ### Résolution des problèmes courants
 
 ```bash
 # Port déjà utilisé
-sudo lsof -i :6666
+sudo lsof -i :9090
 # Tuer le processus si nécessaire
 sudo kill -9 [PID]
 
@@ -238,23 +238,23 @@ rm -f pingu_headless.log
 
 ## 📊 Configuration avancée
 
-### Changer le port par défaut (6666 → autre)
+### Changer le port par défaut (9090 → autre)
 
 Éditer `Pingu.py` et modifier :
 
 ```python
 # Ligne ~740
-web_server = WebServer(window, port=6666)  # Changer 6666
+web_server = WebServer(window, port=9090)  # Changer 9090
 ```
 
 ### Accès depuis l'extérieur (Internet)
 
 ```bash
 # 1. Configurer le pare-feu
-sudo ufw allow 6666
+sudo ufw allow 9090
 
 # 2. Redirection de port sur votre routeur
-# Port externe: 8080 → Port interne: 6666 (IP du Raspberry)
+# Port externe: 8888 → Port interne: 9090 (IP du Raspberry)
 
 # 3. Utiliser un reverse proxy (nginx)
 sudo apt install nginx
@@ -269,7 +269,7 @@ server {
     server_name monitoring.local;
 
     location / {
-        proxy_pass http://localhost:6666;
+        proxy_pass http://localhost:9090;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_http_version 1.1;
@@ -309,14 +309,14 @@ sudo systemctl restart nginx
 
 - [ ] Changer le mot de passe par défaut (`admin` / `admin`)
 - [ ] Utiliser HTTPS (reverse proxy nginx)
-- [ ] Configurer le pare-feu (limiter l'accès au port 6666)
+- [ ] Configurer le pare-feu (limiter l'accès au port 9090)
 - [ ] Mettre à jour régulièrement : `pip3 install --upgrade -r requirements.txt`
 - [ ] Sauvegarder les fichiers de configuration
 - [ ] Surveiller les logs : `tail -f logs/app.log`
 
 ### Changer les identifiants web
 
-Via l'interface web : `http://[IP]:6666/admin` → Onglet "Identifiants"
+Via l'interface web : `http://[IP]:9090/admin` → Onglet "Identifiants"
 
 Ou manuellement :
 

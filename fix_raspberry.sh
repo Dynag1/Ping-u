@@ -75,7 +75,7 @@ echo "   3. Vérifier les logs:"
 echo "      tail -f pingu_headless.log"
 echo ""
 echo "   4. Accéder à l'interface web:"
-echo "      http://$(hostname -I | awk '{print $1}'):6666"
+echo "      http://$(hostname -I | awk '{print $1}'):9090"
 echo "      Identifiants: admin / admin"
 echo ""
 

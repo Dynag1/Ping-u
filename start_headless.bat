@@ -31,7 +31,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [OK] Application demarree en arriere-plan
-echo     Interface web: http://localhost:6666/admin
+echo     Interface web: http://localhost:9090/admin
 echo     Identifiants: admin / a
 echo.
 echo Pour arreter: stop_headless.bat

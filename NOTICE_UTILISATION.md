@@ -22,9 +22,9 @@ Pour lancer l'application en arrière-plan sans fenêtre :
 
 ### Accès à l'interface
 Ouvrez votre navigateur web et allez à l'adresse :
-👉 **http://localhost:6666/admin**
+👉 **http://localhost:9090/admin**
 
-*Si vous êtes sur un autre PC du réseau, remplacez `localhost` par l'adresse IP du PC où Ping ü est installé (ex: `http://192.168.1.15:6666/admin`).*
+*Si vous êtes sur un autre PC du réseau, remplacez `localhost` par l'adresse IP du PC où Ping ü est installé (ex: `http://192.168.1.15:9090/admin`).*
 
 ### Arrêt
 Pour arrêter proprement l'application :
@@ -107,7 +107,7 @@ Certaines fonctionnalités avancées (envoi de mails, Telegram) nécessitent une
 
 ## 5. Dépannage
 
-* **L'interface ne s'ouvre pas ?** Vérifiez que le port **6666** n'est pas bloqué par un pare-feu.
+* **L'interface ne s'ouvre pas ?** Vérifiez que le port **9090** n'est pas bloqué par un pare-feu.
 * **Mot de passe perdu ?** Supprimez le fichier `web_users.json` dans le dossier d'installation pour remettre les identifiants par défaut (`admin`/`a`).
 * **Logs** : En cas de problème, consultez le fichier `logs/app.log`.
 

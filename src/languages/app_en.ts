@@ -739,8 +739,8 @@ Do you want to open the download page?</translation>
     </message>
     <message>
         <location filename="../../Pingu.py" line="621"/>
-        <source>Impossible de démarrer le serveur web.\nLe port 6666 est peut-être déjà utilisé.</source>
-        <translation>Unable to start web server.\nPort 6666 may already be in use.</translation>
+        <source>Impossible de démarrer le serveur web.\nLe port 9090 est peut-être déjà utilisé.</source>
+        <translation>Unable to start web server.\nPort 9090 may already be in use.</translation>
     </message>
     <message>
         <location filename="../../Pingu.py" line="630"/>
@@ -769,8 +769,8 @@ Do you want to open the download page?</translation>
     </message>
     <message>
         <location filename="../../Pingu.py" line="659"/>
-        <source>Note: Assurez-vous que le pare-feu autorise les connexions sur le port 6666.</source>
-        <translation>Note: Make sure the firewall allows connections on port 6666.</translation>
+        <source>Note: Assurez-vous que le pare-feu autorise les connexions sur le port 9090.</source>
+        <translation>Note: Make sure the firewall allows connections on port 9090.</translation>
     </message>
     <message>
         <location filename="../../Pingu.py" line="660"/>

@@ -32,7 +32,7 @@ class WebServer(QObject):
     
     data_updated = Signal(dict)
     
-    def __init__(self, main_window, port=6666):
+    def __init__(self, main_window, port=9090):
         super().__init__()
         self.main_window = main_window
         self.port = port

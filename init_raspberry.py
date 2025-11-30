@@ -115,7 +115,7 @@ def create_config_files():
     print("   2. Lancer l'application:")
     print("      ./start_headless.sh")
     print("   3. Accéder à l'interface web:")
-    print("      http://[IP_RASPBERRY]:6666")
+    print("      http://[IP_RASPBERRY]:9090")
     print("      (identifiants: admin / admin)")
     
     return True

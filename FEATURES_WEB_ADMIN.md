@@ -167,14 +167,14 @@
 
 ### Accès Local
 ```
-http://localhost:6666/          # Page de monitoring
-http://localhost:6666/admin     # Page d'administration
-http://localhost:6666/login     # Page de connexion
+http://localhost:9090/          # Page de monitoring
+http://localhost:9090/admin     # Page d'administration
+http://localhost:9090/login     # Page de connexion
 ```
 
 ### Accès Réseau
 ```
-http://<ip-serveur>:6666/admin
+http://<ip-serveur>:9090/admin
 ```
 
 ### Identifiants Par Défaut
