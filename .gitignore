@@ -107,3 +107,5 @@ RESUME_CORRECTIONS_RASPBERRY.md
 installer/
 installer_script/
 pingu_headless.pid
+src/__pycache__/web_server.cpython-312.pyc
+src/__pycache__/web_server.cpython-312.pyc
