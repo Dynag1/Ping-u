@@ -105,7 +105,8 @@ class WebServer(QObject):
                 return render_template('index.html')
             except Exception as e:
                 logger.error(f"Erreur lors du rendu du template: {e}", exc_info=True)
-                return f"Erreur: {e}", 500
+                # Retourner une réponse JSON en cas d'erreur pour éviter write() before start_response
+                return jsonify({'error': 'Template introuvable', 'message': str(e)}), 500
         
         @self.app.route('/test')
         def test_page():
@@ -113,7 +114,7 @@ class WebServer(QObject):
                 return render_template('test_simple.html')
             except Exception as e:
                 logger.error(f"Erreur lors du rendu du template de test: {e}", exc_info=True)
-                return f"Erreur: {e}", 500
+                return jsonify({'error': 'Template introuvable', 'message': str(e)}), 500
         
         @self.app.route('/api/hosts')
         def get_hosts():
@@ -136,7 +137,7 @@ class WebServer(QObject):
                 return render_template('login.html')
             except Exception as e:
                 logger.error(f"Erreur lors du rendu du template login: {e}", exc_info=True)
-                return f"Erreur: {e}", 500
+                return jsonify({'error': 'Template introuvable', 'message': str(e)}), 500
         
         @self.app.route('/api/login', methods=['POST'])
         def api_login():
@@ -174,7 +175,7 @@ class WebServer(QObject):
                 return render_template('admin.html')
             except Exception as e:
                 logger.error(f"Erreur lors du rendu du template admin: {e}", exc_info=True)
-                return f"Erreur: {e}", 500
+                return jsonify({'error': 'Template introuvable', 'message': str(e)}), 500
         
         @self.app.route('/api/change_credentials', methods=['POST'])
         @WebAuth.login_required

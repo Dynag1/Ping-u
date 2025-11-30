@@ -293,6 +293,74 @@ server {
 
 ---
 
+## 🍓 Installation spécifique Raspberry Pi
+
+### Problème: "[Errno 1] Operation not permitted" lors des pings
+
+Sur Raspberry Pi, les pings ICMP nécessitent des privilèges spéciaux. Utilisez le script de correction :
+
+```bash
+# Télécharger les fichiers sur votre Raspberry Pi
+cd ~/ping-u
+
+# Rendre le script exécutable
+chmod +x fix_raspberry.sh
+
+# Exécuter le script de correction (nécessite sudo pour les permissions ping)
+./fix_raspberry.sh
+```
+
+### OU Configuration manuelle
+
+#### 1. Autoriser les pings sans root
+```bash
+# Configuration temporaire
+sudo sysctl -w net.ipv4.ping_group_range="0 2147483647"
+
+# Configuration permanente
+echo "net.ipv4.ping_group_range=0 2147483647" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
+
+#### 2. Créer les fichiers de configuration
+```bash
+# Utiliser le script d'initialisation
+python3 init_raspberry.py
+```
+
+#### 3. Vérifier que tout fonctionne
+```bash
+# Test de ping
+ping -c 1 8.8.8.8
+
+# Démarrer l'application
+./start_headless.sh
+
+# Vérifier les logs
+tail -f pingu_headless.log
+```
+
+### Problèmes courants sur Raspberry Pi
+
+**Fichiers "tab" et "tabG" non trouvés** :
+```bash
+python3 init_raspberry.py
+```
+
+**"write() before start_response" (erreur Flask)** :
+Cette erreur a été corrigée dans la dernière version. Assurez-vous d'avoir la dernière version du code.
+
+**Pas assez de mémoire** :
+```bash
+# Augmenter la swap si nécessaire
+sudo dphys-swapfile swapoff
+sudo nano /etc/dphys-swapfile  # Augmenter CONF_SWAPSIZE à 1024
+sudo dphys-swapfile setup
+sudo dphys-swapfile swapon
+```
+
+---
+
 ## 🐛 Dépannage
 
 ### L'application ne démarre pas
