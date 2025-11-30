@@ -10,6 +10,7 @@ import queue
 
 
 
+
 ################s###########################################################################
 #####   Fonction principale d'ajout de ip.pin   				    				  #####
 ###########################################################################################
@@ -31,10 +32,10 @@ def worker(q, thread_no):
 
 def threadIp(self, comm, model, ip, tout, i, hote, port):
     # Vérifie si l'IP existe déjà dans le modèle
-    var.u = 0
     ipexist = False
     for row in range(model.rowCount()):
-        if model.item(row, 1).text() == ip:
+        item = model.item(row, 1)
+        if item and item.text() == ip:
             # Affiche une alerte (à adapter selon ton système)
             print(f"L'adresse {ip} existe déjà")
             ipexist = True
@@ -48,7 +49,14 @@ def threadIp(self, comm, model, ip, tout, i, hote, port):
         port_val = port
         extra = ""
         is_ok = (result == "OK")
-        if tout == self.tr("Tout"):
+        
+        # Normaliser le type de scan (accepter français et anglais de l'API web)
+        tout_lower = str(tout).lower()
+        is_all = (tout == self.tr("Tout") or tout_lower == "all")
+        is_site = (tout == self.tr("Site") or tout_lower == "site")
+        
+        if is_all:
+            # Mode "Tous" : Ajoute TOUS les hôtes (UP et DOWN)
             if is_ok:
                 try:
                     nom = fct_ip.socket.gethostbyaddr(ip)[0]
@@ -61,16 +69,19 @@ def threadIp(self, comm, model, ip, tout, i, hote, port):
                 if port:
                     port_val = fct_ip.check_port(ip, port)
             else:
-                nom = ""
+                # Hôte DOWN : Mettre au moins l'IP comme nom
+                nom = ip
                 port_val = ""
                 mac = ""
-            # Ajoute la ligne via le signal
+            # Ajoute la ligne via le signal (UP ou DOWN)
             comm.addRow.emit(i, ip, nom, mac, str(port_val), extra, is_ok)
             var.u += 1
-        elif tout == self.tr("Site"):
+        elif is_site:
+            # Mode "Site" : Ajoute sans ping
             comm.addRow.emit(i, ip, ip, "", "", "", False)
             var.u += 1
         else:
+            # Mode "Alive" : Ajoute UNIQUEMENT les hôtes UP
             if is_ok:
                 try:
                     nom = fct_ip.socket.gethostbyaddr(ip)[0]

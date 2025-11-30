@@ -22,6 +22,7 @@ import importlib
 import platform
 
 
+
 from src.utils.logger import setup_logging, get_logger
 from src.utils.colors import AppColors
 
@@ -564,7 +565,7 @@ class MainWindow(QMainWindow):
             subprocess.run(["xdg-open", chemin])
 
     def notice(self):
-        webbrowser.open("https://github.com/Atypi/Ping-u/blob/main/Notice.md")
+        webbrowser.open("https://github.com/Dynag1/Ping-u/blob/main/Notice.md")
 
     def open_logs(self):
         """Ouvre le fichier de logs dans l'éditeur par défaut."""

@@ -10,6 +10,13 @@ import sys
 # Import optionnel de GPG (peut échouer dans l'exécutable PyInstaller)
 try:
     import gnupg
+    import platform
+    
+    
+    # Désactiver GPG sur Linux car gpg.exe n'existe pas
+    if platform.system() == 'Linux':
+        raise ImportError("GPG désactivé sur Linux")
+    
     gpg_path = os.path.join(os.path.dirname(__file__), "gpg", "gpg.exe")
     gpg = gnupg.GPG(gpgbinary=gpg_path)
     GPG_AVAILABLE = True
@@ -80,11 +87,22 @@ def envoie_mail(messageRecep, sujet):
             message.attach(MIMEText(message_chiffre, "plain"))
             print("Envoi chiffré à :", ", ".join(destinataires_chiffres))
             try:
-                context = ssl.create_default_context()
-                with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
-                    server.login(destinateur, password)
-                    server.sendmail(destinateur, destinataires_chiffres, message.as_string())
-                    print("Mail chiffré envoyé avec succès")
+                # Convertir le port en entier
+                port_int = int(port)
+                
+                # Utiliser SMTP_SSL pour le port 465, SMTP + STARTTLS pour les autres
+                if port_int == 465:
+                    context = ssl.create_default_context()
+                    with smtplib.SMTP_SSL(smtp_server, port_int, context=context, timeout=10) as server:
+                        server.login(destinateur, password)
+                        server.sendmail(destinateur, destinataires_chiffres, message.as_string())
+                        print("Mail chiffré envoyé avec succès (SSL)")
+                else:
+                    with smtplib.SMTP(smtp_server, port_int, timeout=10) as server:
+                        server.starttls()
+                        server.login(destinateur, password)
+                        server.sendmail(destinateur, destinataires_chiffres, message.as_string())
+                        print("Mail chiffré envoyé avec succès (STARTTLS)")
             except Exception as e:
                 print("Erreur d'envoi chiffré :", str(e))
         else:
@@ -104,11 +122,24 @@ def envoie_mail(messageRecep, sujet):
         message2.attach(mimetext_html)
         print("Envoi en clair à :", ", ".join(destinataires_non_chiffres))
         try:
-            context = ssl.create_default_context()
-            with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
-                server.login(destinateur, password)
-                server.sendmail(destinateur, destinataires_non_chiffres, message2.as_string())
-                print("Mail en clair envoyé avec succès")
+            # Convertir le port en entier
+            port_int = int(port)
+            
+            # Utiliser SMTP_SSL pour le port 465, SMTP + STARTTLS pour les autres
+            if port_int == 465:
+                # Port 465 : Connexion SSL directe
+                context = ssl.create_default_context()
+                with smtplib.SMTP_SSL(smtp_server, port_int, context=context, timeout=10) as server:
+                    server.login(destinateur, password)
+                    server.sendmail(destinateur, destinataires_non_chiffres, message2.as_string())
+                    print("Mail en clair envoyé avec succès (SSL)")
+            else:
+                # Port 587 ou autre : STARTTLS
+                with smtplib.SMTP(smtp_server, port_int, timeout=10) as server:
+                    server.starttls()
+                    server.login(destinateur, password)
+                    server.sendmail(destinateur, destinataires_non_chiffres, message2.as_string())
+                    print("Mail en clair envoyé avec succès (STARTTLS)")
         except Exception as e:
             print("Erreur d'envoi en clair :", str(e))
 

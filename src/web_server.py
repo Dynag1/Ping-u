@@ -15,6 +15,7 @@ from src.utils.logger import get_logger
 from src.utils.colors import format_bandwidth
 from src.web_auth import web_auth, WebAuth
 
+
 logger = get_logger(__name__)
 
 # Import optionnel de SNMP
@@ -362,6 +363,30 @@ class WebServer(QObject):
                 logger.error(f"Erreur exclusion hôte: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
+        @self.app.route('/api/update_host_name', methods=['POST'])
+        @WebAuth.login_required
+        def update_host_name():
+            try:
+                data = request.get_json()
+                ip = data.get('ip')
+                new_name = data.get('name', '')
+                
+                model = self.main_window.treeIpModel
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)  # Colonne IP
+                    if item_ip and item_ip.text() == ip:
+                        from PySide6.QtGui import QStandardItem
+                        name_item = QStandardItem(new_name)
+                        model.setItem(row, 2, name_item)  # Colonne Nom
+                        logger.info(f"Nom de l'hôte {ip} modifié en '{new_name}' via API")
+                        self.broadcast_update()
+                        return jsonify({'success': True, 'message': f'Nom modifié pour {ip}'})
+                
+                return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
+            except Exception as e:
+                logger.error(f"Erreur modification nom hôte: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
         @self.app.route('/api/export_csv')
         def export_csv():
             try:
@@ -704,6 +729,98 @@ Ping ü - Monitoring Réseau
                 })
             except Exception as e:
                 logger.error(f"Erreur info utilisateur: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/get_mail_recap_settings')
+        @WebAuth.login_required
+        def get_mail_recap_settings():
+            try:
+                from src import db
+                settings = db.lire_param_mail_recap()
+                
+                if not settings or len(settings) < 8:
+                    # Valeurs par défaut
+                    from datetime import time
+                    return jsonify({
+                        'success': True,
+                        'heure': '08:00',
+                        'lundi': False,
+                        'mardi': False,
+                        'mercredi': False,
+                        'jeudi': False,
+                        'vendredi': False,
+                        'samedi': False,
+                        'dimanche': False
+                    })
+                
+                # Convertir l'heure en chaîne
+                heure_str = settings[0].strftime('%H:%M') if hasattr(settings[0], 'strftime') else str(settings[0])
+                
+                return jsonify({
+                    'success': True,
+                    'heure': heure_str,
+                    'lundi': bool(settings[1]),
+                    'mardi': bool(settings[2]),
+                    'mercredi': bool(settings[3]),
+                    'jeudi': bool(settings[4]),
+                    'vendredi': bool(settings[5]),
+                    'samedi': bool(settings[6]),
+                    'dimanche': bool(settings[7])
+                })
+            except Exception as e:
+                logger.error(f"Erreur récupération paramètres mail recap: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/save_mail_recap', methods=['POST'])
+        @WebAuth.login_required
+        def save_mail_recap():
+            try:
+                data = request.get_json()
+                from src import db
+                from datetime import time
+                
+                # Convertir l'heure
+                heure_str = data.get('heure', '08:00')
+                heure_parts = heure_str.split(':')
+                heure = time(int(heure_parts[0]), int(heure_parts[1]))
+                
+                variables = [
+                    heure,
+                    data.get('lundi', False),
+                    data.get('mardi', False),
+                    data.get('mercredi', False),
+                    data.get('jeudi', False),
+                    data.get('vendredi', False),
+                    data.get('samedi', False),
+                    data.get('dimanche', False)
+                ]
+                
+                db.save_param_mail_recap(variables)
+                logger.info(f"Paramètres mail recap sauvegardés: {heure_str}, jours actifs")
+                return jsonify({'success': True, 'message': 'Paramètres mail récapitulatif sauvegardés'})
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde mail recap: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/send_test_recap', methods=['POST'])
+        @WebAuth.login_required
+        def send_test_recap():
+            try:
+                from src import email_sender
+                
+                # Récupérer les données des hôtes
+                hosts_data = self._get_hosts_data()
+                
+                # Envoyer l'email recap de test
+                result = email_sender.send_recap_email(hosts_data, test_mode=True)
+                
+                if result:
+                    logger.info("Email récapitulatif de test envoyé")
+                    return jsonify({'success': True, 'message': 'Email récapitulatif de test envoyé'})
+                else:
+                    return jsonify({'success': False, 'error': 'Erreur lors de l\'envoi de l\'email'}), 500
+            except Exception as e:
+                logger.error(f"Erreur test email recap: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
     
     def _setup_socketio(self):
