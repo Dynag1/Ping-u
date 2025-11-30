@@ -540,10 +540,22 @@ class MainWindow(QMainWindow):
         window.show()
 
     def pgp(self):
+        systeme = platform.system()
+        
+        # GPG n'est pas disponible sur Linux dans cette application
+        if systeme == "Linux":
+            QMessageBox.warning(
+                self,
+                self.tr("GPG non disponible"),
+                self.tr("La fonctionnalité GPG n'est pas disponible sur Linux.\nLes emails seront envoyés en clair."),
+                QMessageBox.Ok
+            )
+            return
+        
         chemin = os.path.abspath("cle")
         if not os.path.exists(chemin):
-            raise FileNotFoundError(f"Le dossier {chemin} n'existe pas.")
-        systeme = platform.system()
+            os.makedirs(chemin, exist_ok=True)
+        
         if systeme == "Windows":
             os.startfile(chemin)
         elif systeme == "Darwin":
