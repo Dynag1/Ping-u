@@ -33,7 +33,7 @@ sudo apt install -y python3 python3-pip python3-venv git
 
 ```bash
 # Cloner le dépôt (ou transférer via SCP)
-git clone [URL_DU_REPO] ~/ping-u
+git clone https://github.com/Dynag1/Ping-u.git ~/ping-u
 cd ~/ping-u
 
 # Installer les dépendances
@@ -120,6 +120,17 @@ pip3 install -r requirements.txt
 
 ---
 
+## Mise a jour
+
+### Démarrage
+
+```bash
+cd ~/ping-u
+git pull https://github.com/Dynag1/Ping-u.git
+```
+
+---
+
 ## 🌐 Interface Web
 
 ### Démarrage
@@ -183,20 +194,20 @@ After=network.target
 
 [Service]
 Type=simple
-User=dynag
-WorkingDirectory=/home/dynag/ping-u
-ExecStart=/usr/bin/python3 /home/dynag/ping-u/Pingu.py --headless
-ExecStop=/usr/bin/python3 /home/dynag/ping-u/Pingu.py -stop
+User=pingu
+WorkingDirectory=/home/pingu/ping-u
+ExecStart=/usr/bin/python3 /home/pingu/ping-u/Pingu.py --headless
+ExecStop=/usr/bin/python3 /home/pingu/ping-u/Pingu.py -stop
 Restart=on-failure
 RestartSec=10
-StandardOutput=append:/home/dynag/ping-u/pingu_headless.log
-StandardError=append:/home/dynag/ping-u/pingu_headless.log
+StandardOutput=append:/home/pingu/ping-u/pingu_headless.log
+StandardError=append:/home/pingu/ping-u/pingu_headless.log
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-⚠️ Remplacez `dynag` par votre nom d'utilisateur
+⚠️ Remplacez `pingu` par votre nom d'utilisateur
 
 ### 3. Activer et démarrer
 
@@ -490,7 +501,7 @@ chmod +x ~/backup_pingu.sh
 
 # Crontab (tous les jours à 2h)
 crontab -e
-# Ajouter: 0 2 * * * /home/dynag/backup_pingu.sh
+# Ajouter: 0 2 * * * /home/user/backup_pingu.sh
 ```
 
 ### Monitoring des performances
@@ -583,10 +594,10 @@ static domain_name_servers=192.168.1.1 8.8.8.8
 
 ```bash
 # Depuis votre PC
-ssh dynag@[IP_RASPBERRY]
+ssh user@[IP_RASPBERRY]
 
 # Copier des fichiers
-scp fichier.txt dynag@[IP_RASPBERRY]:~/ping-u/
+scp fichier.txt user@[IP_RASPBERRY]:~/ping-u/
 ```
 
 ---
