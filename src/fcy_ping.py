@@ -78,7 +78,8 @@ class AsyncPingWorker(QThread):
             else:
                 # -c 2 : deux pings
                 # -W 2 : timeout 2s
-                cmd = ["ping", "-c", "2", "-W", "2", ip]
+                # Utiliser le chemin complet de ping pour éviter les problèmes de permissions
+                cmd = ["/bin/ping", "-c", "2", "-W", "2", ip]
 
             # Création du sous-processus
             # Sur Windows, masquer la fenêtre CMD
