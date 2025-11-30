@@ -604,11 +604,20 @@ Ping ü - Monitoring Réseau
 """
                 message.attach(MIMEText(body, 'plain'))
                 
-                # Connexion et envoi
-                with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
-                    server.starttls()
-                    server.login(smtp_email, smtp_password)
-                    server.send_message(message)
+                # Connexion et envoi (gérer port 465 SSL et port 587 STARTTLS)
+                port_int = int(smtp_port)
+                
+                if port_int == 465:
+                    # Port 465 : Connexion SSL directe
+                    with smtplib.SMTP_SSL(smtp_server, port_int, timeout=10) as server:
+                        server.login(smtp_email, smtp_password)
+                        server.send_message(message)
+                else:
+                    # Port 587 ou autre : STARTTLS
+                    with smtplib.SMTP(smtp_server, port_int, timeout=10) as server:
+                        server.starttls()
+                        server.login(smtp_email, smtp_password)
+                        server.send_message(message)
                 
                 logger.info(f"Email de test SMTP envoyé à {recipients}")
                 return jsonify({'success': True, 'message': f'Email de test envoyé à {recipients.split(",")[0].strip()}'})
@@ -616,6 +625,16 @@ Ping ü - Monitoring Réseau
             except smtplib.SMTPAuthenticationError:
                 logger.error("Erreur d'authentification SMTP")
                 return jsonify({'success': False, 'error': 'Erreur d\'authentification SMTP (vérifiez l\'email et le mot de passe)'}), 400
+            except smtplib.SMTPServerDisconnected as e:
+                logger.error(f"Connexion SMTP fermée: {e}")
+                error_msg = 'Connexion fermée par le serveur. '
+                if port_int == 587:
+                    error_msg += 'Essayez le port 465 (SSL/TLS) ou vérifiez que le serveur supporte STARTTLS.'
+                elif port_int == 465:
+                    error_msg += 'Essayez le port 587 (STARTTLS) ou vérifiez la configuration SSL.'
+                else:
+                    error_msg += f'Port {port_int} inhabituel. Utilisez 587 (STARTTLS) ou 465 (SSL).'
+                return jsonify({'success': False, 'error': error_msg}), 500
             except smtplib.SMTPException as e:
                 logger.error(f"Erreur SMTP: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': f'Erreur SMTP: {str(e)}'}), 500
