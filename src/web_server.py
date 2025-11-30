@@ -828,6 +828,17 @@ class WebServer(QObject):
         except Exception as e:
             logger.error(f"Erreur diffusion mise à jour: {e}", exc_info=True)
     
+    def emit_scan_complete(self, hosts_count):
+        """Émet un événement quand le scan est terminé"""
+        if not self.running:
+            return
+        
+        try:
+            self.socketio.emit('scan_complete', {'count': hosts_count}, namespace='/')
+            logger.info(f"Scan terminé: {hosts_count} hôte(s) scanné(s)")
+        except Exception as e:
+            logger.error(f"Erreur émission scan complete: {e}", exc_info=True)
+    
     def _is_port_available(self, port):
         """Vérifie si un port est disponible"""
         try:

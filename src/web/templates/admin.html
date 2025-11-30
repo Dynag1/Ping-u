@@ -811,6 +811,17 @@
             showNotification(data.message, data.type || 'info');
         });
 
+        socket.on('scan_complete', function(data) {
+            console.log('📡 Scan terminé:', data.count, 'hôte(s)');
+            showNotification(`Scan terminé ! ${data.count} hôte(s) scanné(s)`, 'success');
+            
+            // Notification navigateur
+            showBrowserNotification('Scan terminé', `${data.count} hôte(s) scanné(s)`);
+            
+            // Actualiser les données
+            socket.emit('request_update');
+        });
+
         // ==================== Update Functions ====================
         function updateStats(hosts) {
             const total = hosts.length;
@@ -1120,6 +1131,47 @@
                 notification.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
+        }
+
+        // Notification navigateur (popup système)
+        function showBrowserNotification(title, body) {
+            // Vérifier si les notifications sont supportées
+            if (!("Notification" in window)) {
+                console.log("Ce navigateur ne supporte pas les notifications");
+                return;
+            }
+
+            // Vérifier la permission
+            if (Notification.permission === "granted") {
+                // Permission accordée, afficher la notification
+                new Notification(title, {
+                    body: body,
+                    icon: '/static/favicon.ico',
+                    badge: '/static/favicon.ico',
+                    tag: 'scan-complete',
+                    requireInteraction: false
+                });
+            } else if (Notification.permission !== "denied") {
+                // Demander la permission
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === "granted") {
+                        new Notification(title, {
+                            body: body,
+                            icon: '/static/favicon.ico',
+                            badge: '/static/favicon.ico',
+                            tag: 'scan-complete'
+                        });
+                    }
+                });
+            }
+        }
+
+        // Demander la permission de notification au chargement
+        if ("Notification" in window && Notification.permission === "default") {
+            // Attendre 2 secondes après le chargement pour ne pas être intrusif
+            setTimeout(() => {
+                Notification.requestPermission();
+            }, 2000);
         }
 
         function escapeHtml(text) {

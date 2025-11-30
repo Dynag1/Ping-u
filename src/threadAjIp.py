@@ -121,6 +121,9 @@ def main(self, comm, model,ip, hote, tout, port, mac):
         u = 0
         i = 0
         if int(hote) > 500:
+            # Émettre la fin du scan via le serveur web si disponible
+            if hasattr(self, 'web_server') and self.web_server:
+                self.web_server.emit_scan_complete(hote)
             return
         while i < int(hote):
             ip2 = ip1[0] + "." + ip1[1] + "."
@@ -135,6 +138,14 @@ def main(self, comm, model,ip, hote, tout, port, mac):
                 u = u + 1
             t = i
             q.put(threading.Thread(target=threadIp, args=(self, comm, model,ip2, tout, i, hote, port)).start())
+        
+        # Scan terminé - émettre la notification
+        if hasattr(self, 'web_server') and self.web_server:
+            self.web_server.emit_scan_complete(hote)
     else:
         ip2=ip
         q.put(threading.Thread(target=threadIp, args=(self, comm, model,ip2, tout, i, hote, port)).start())
+        
+        # Scan terminé - émettre la notification
+        if hasattr(self, 'web_server') and self.web_server:
+            self.web_server.emit_scan_complete(1)
