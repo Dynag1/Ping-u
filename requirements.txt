@@ -3,7 +3,7 @@ PySide6>=6.5.0
 qt_material>=2.14  # Thèmes Material Design pour Qt
 
 # Réseau et ping
-pythonping>=1.1.0
+# pythonping>=1.1.0  # Remplacé par subprocess ping système (plus fiable)
 requests>=2.26.0
 
 # SNMP (surveillance température et onduleurs)
