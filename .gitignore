@@ -104,3 +104,6 @@ CORRECTIONS_LINUX_SMTP.md
 NOUVELLES_FONCTIONNALITES.md
 src/__pycache__/web_server.cpython-312.pyc
 RESUME_CORRECTIONS_RASPBERRY.md
+installer/
+installer_script/
+pingu_headless.pid
