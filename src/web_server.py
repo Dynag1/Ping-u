@@ -15,7 +15,6 @@ from src.utils.logger import get_logger
 from src.utils.colors import format_bandwidth
 from src.web_auth import web_auth, WebAuth
 
-
 logger = get_logger(__name__)
 
 # Import optionnel de SNMP
@@ -459,7 +458,10 @@ class WebServer(QObject):
                 # Charger les paramètres SMTP
                 smtp_params = db.lire_param_mail()
                 if not smtp_params or len(smtp_params) < 5:
-                    smtp_params = ['', '', '', '', '']
+                    smtp_params = ['', '', '', '', '', '']
+                
+                # Ordre dans la DB (sFenetre.py):
+                # [0]=email, [1]=password, [2]=port, [3]=server, [4]=recipients, [5]=telegram_chatid
                 
                 # Charger les paramètres généraux
                 general_params = db.lire_param_gene()
@@ -488,9 +490,9 @@ class WebServer(QObject):
                     },
                     'monitoring_running': monitoring_running,
                     'smtp': {
-                        'server': smtp_params[0] if len(smtp_params) > 0 else '',
-                        'port': smtp_params[1] if len(smtp_params) > 1 else '',
-                        'email': smtp_params[2] if len(smtp_params) > 2 else '',
+                        'server': smtp_params[3] if len(smtp_params) > 3 else '',
+                        'port': smtp_params[2] if len(smtp_params) > 2 else '',
+                        'email': smtp_params[0] if len(smtp_params) > 0 else '',
                         'recipients': smtp_params[4] if len(smtp_params) > 4 else ''
                     },
                     'telegram': {
@@ -519,12 +521,20 @@ class WebServer(QObject):
                 data = request.get_json()
                 from src import db
                 
+                # Ordre correct pour correspondre à l'interface Qt (sFenetre.py):
+                # [0]=email, [1]=password, [2]=port, [3]=server, [4]=recipients, [5]=telegram_chatid
+                
+                # Charger les paramètres actuels pour garder le telegram_chatid
+                current_params = db.lire_param_mail()
+                telegram_chatid = current_params[5] if current_params and len(current_params) > 5 else ''
+                
                 variables = [
-                    data.get('server', ''),
-                    data.get('port', ''),
-                    data.get('email', ''),
-                    data.get('password', ''),
-                    data.get('recipients', '')
+                    data.get('email', ''),      # 0: email expéditeur
+                    data.get('password', ''),   # 1: password
+                    data.get('port', ''),       # 2: port
+                    data.get('server', ''),     # 3: serveur SMTP
+                    data.get('recipients', ''), # 4: destinataires
+                    telegram_chatid             # 5: telegram chat_id (conservé)
                 ]
                 
                 db.save_param_mail(variables)
@@ -597,10 +607,12 @@ class WebServer(QObject):
                 if not smtp_params or len(smtp_params) < 5:
                     return jsonify({'success': False, 'error': 'Configuration SMTP non trouvée'}), 400
                 
-                smtp_server = smtp_params[0]
-                smtp_port = smtp_params[1]
-                smtp_email = smtp_params[2]
-                smtp_password = smtp_params[3]
+                # Ordre dans la DB (sFenetre.py):
+                # [0]=email, [1]=password, [2]=port, [3]=server, [4]=recipients, [5]=telegram_chatid
+                smtp_email = smtp_params[0]
+                smtp_password = smtp_params[1]
+                smtp_port = smtp_params[2]
+                smtp_server = smtp_params[3]
                 recipients = smtp_params[4]
                 
                 if not smtp_server or not smtp_email or not recipients:

@@ -12,7 +12,6 @@ try:
     import gnupg
     import platform
     
-    
     # Désactiver GPG sur Linux car gpg.exe n'existe pas
     if platform.system() == 'Linux':
         raise ImportError("GPG désactivé sur Linux")
@@ -47,12 +46,20 @@ def chiffrer_message(message, fingerprints):
     return str(encrypted_data) if encrypted_data.ok else None
 
 def envoie_mail(messageRecep, sujet):
-    variables = param_mail.lire_param_mail()
-    destinateur = variables[0]
-    password = variables[1]
-    port = variables[2]
-    smtp_server = variables[3]
-    destinataires = [d.strip() for d in variables[4].split(",")]
+    try:
+        variables = param_mail.lire_param_mail()
+        # Ordre correct des paramètres dans la DB (sFenetre.py):
+        # [0]=email, [1]=password, [2]=port, [3]=server, [4]=recipients, [5]=telegram_chatid
+        destinateur = variables[0]
+        password = variables[1]
+        port = variables[2]
+        smtp_server = variables[3]
+        destinataires = [d.strip() for d in variables[4].split(",")]
+    except Exception as e:
+        print(f"Erreur chargement paramètres mail: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
     dossier_cles = "cle"
     fingerprints = []
@@ -111,17 +118,18 @@ def envoie_mail(messageRecep, sujet):
 
     # 4. Envoi en clair pour ceux qui n'ont pas de clé
     if destinataires_non_chiffres:
-        message2 = MIMEMultipart('alternative')
-        message2['Subject'] = sujet
-        message2['From'] = destinateur
-        message2['To'] = ", ".join(destinataires_non_chiffres)
-        message2['Date'] = formatdate(localtime=True)
-        mimetext_texte = MIMEText(messageRecep, "plain")
-        mimetext_html = MIMEText(messageRecep, "html")
-        message2.attach(mimetext_texte)
-        message2.attach(mimetext_html)
-        print("Envoi en clair à :", ", ".join(destinataires_non_chiffres))
         try:
+            message2 = MIMEMultipart('alternative')
+            message2['Subject'] = sujet
+            message2['From'] = destinateur
+            message2['To'] = ", ".join(destinataires_non_chiffres)
+            message2['Date'] = formatdate(localtime=True)
+            mimetext_texte = MIMEText(messageRecep, "plain")
+            mimetext_html = MIMEText(messageRecep, "html")
+            message2.attach(mimetext_texte)
+            message2.attach(mimetext_html)
+            print("Envoi en clair à :", ", ".join(destinataires_non_chiffres))
+            
             # Convertir le port en entier
             port_int = int(port)
             
@@ -140,8 +148,14 @@ def envoie_mail(messageRecep, sujet):
                     server.login(destinateur, password)
                     server.sendmail(destinateur, destinataires_non_chiffres, message2.as_string())
                     print("Mail en clair envoyé avec succès (STARTTLS)")
+            return True
         except Exception as e:
-            print("Erreur d'envoi en clair :", str(e))
+            print(f"Erreur d'envoi en clair : {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    return True
 
 if __name__ == "__main__":
     envoie_mail("Ceci est un message secret envoyé en PGP si possible !", "Message sécurisé")
