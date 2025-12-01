@@ -98,4 +98,3 @@ RESUME_CORRECTIONS_RASPBERRY.md
 installer/
 installer_script/
 pingu_headless.pid
-src/core/__pycache__/alert_manager.cpython-312.pyc
