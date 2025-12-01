@@ -95,6 +95,8 @@ SOLUTIONS_RASPBERRY.md
 CORRECTIONS_LINUX_SMTP.md
 NOUVELLES_FONCTIONNALITES.md
 RESUME_CORRECTIONS_RASPBERRY.md
+pingu_headless.pid
+
+# Dossiers d'installation et de build
 installer/
 installer_script/
-pingu_headless.pid
