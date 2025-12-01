@@ -234,7 +234,12 @@ class AsyncPingWorker(QThread):
 
     def list_increment(self, liste, ip):
         if ip in liste:
-            if int(liste[ip]) < int(var.nbrHs):
+            current_count = int(liste[ip])
+            # Ne jamais incrémenter les états spéciaux (10 = alerte envoyée, 20 = retour OK détecté)
+            if current_count >= 10:
+                return
+            # Incrémenter seulement si on n'a pas atteint le seuil
+            if current_count < int(var.nbrHs):
                 liste[ip] += 1
         else:
             liste[ip] = 1

@@ -991,6 +991,7 @@ Ping ü - Monitoring Réseau
         """
         Nettoie les listes d'alertes pour s'adapter au nouveau seuil.
         Si un compteur dépasse le nouveau seuil, il est ramené au nouveau seuil - 1.
+        Les états spéciaux (10 et 20) sont préservés.
         Cela évite les alertes immédiates lors du changement de configuration.
         """
         try:
@@ -1000,8 +1001,12 @@ Ping ü - Monitoring Réseau
             def clean_list(liste, list_name):
                 cleaned_count = 0
                 for ip, count in list(liste.items()):
-                    # Si le compteur dépasse le nouveau seuil, on le limite
-                    if int(count) >= new_threshold and int(count) < 10:
+                    count_int = int(count)
+                    # Les états spéciaux (10 = alerte envoyée, 20 = retour OK) ne doivent jamais être modifiés
+                    if count_int >= 10:
+                        continue
+                    # Si le compteur dépasse ou égale le nouveau seuil, on le limite
+                    if count_int >= new_threshold:
                         liste[ip] = max(1, new_threshold - 1)
                         cleaned_count += 1
                 return cleaned_count
