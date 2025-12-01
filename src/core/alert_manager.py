@@ -97,43 +97,78 @@ class AlertManager(QObject):
             logger.error(f"Erreur process popup: {e}", exc_info=True)
 
     def process_mail(self):
-        """Traite les alertes mail."""
+        """Traite les alertes mail avec templates HTML modernes."""
         try:
-            erase = []
-            ip_hs_html = ""
-            ip_ok_html = ""
-            send_mail = False
+            from src import email_sender
             
-            message = self.main_window.tr("""\
-                Bonjour,<br><br>
-                <table border=1><tr><td width='50%' align=center>Nom</td><td width='50%' align=center>IP</td></tr>
-                """)
-            sujet = "Alerte sur le site " + var.nom_site
+            erase = []
+            hosts_down = []
+            hosts_up = []
             
             for key, value in list(var.liste_mail.items()):
                 if int(value) == int(var.nbrHs):
+                    # Hôte qui vient de tomber
                     nom = db.lireNom(key, self.model) or "Inconnu"
-                    ip_hs_html += f"<tr><td align=center>{nom}</td><td bgcolor={AppColors.NOIR_GRIS} align=center>{key}</td></tr>"
+                    
+                    # Récupérer les infos de l'hôte depuis le modèle
+                    mac = ""
+                    latence = "HS"
+                    for row in range(self.model.rowCount()):
+                        item_ip = self.model.item(row, 1)
+                        if item_ip and item_ip.text() == key:
+                            mac_item = self.model.item(row, 3)
+                            mac = mac_item.text() if mac_item else ""
+                            break
+                    
+                    host_info = {
+                        'ip': key,
+                        'nom': nom,
+                        'mac': mac,
+                        'latence': latence
+                    }
+                    hosts_down.append(host_info)
                     var.liste_mail[key] = 10
+                    
                 elif value == 20:
+                    # Hôte qui revient en ligne
                     nom = db.lireNom(key, self.model) or "Inconnu"
-                    ip_ok_html += f"<tr><td align=center>{nom}</td><td bgcolor={AppColors.VERT_PALE} align=center>{key}</td></tr>"
+                    
+                    # Récupérer les infos de l'hôte
+                    mac = ""
+                    latence = "OK"
+                    for row in range(self.model.rowCount()):
+                        item_ip = self.model.item(row, 1)
+                        if item_ip and item_ip.text() == key:
+                            mac_item = self.model.item(row, 3)
+                            latence_item = self.model.item(row, 5)
+                            mac = mac_item.text() if mac_item else ""
+                            latence = latence_item.text() if latence_item else "OK"
+                            break
+                    
+                    host_info = {
+                        'ip': key,
+                        'nom': nom,
+                        'mac': mac,
+                        'latence': latence
+                    }
+                    hosts_up.append(host_info)
                     erase.append(key)
             
             for cle in erase:
                 var.liste_mail.pop(cle, None)
-                
-            if ip_hs_html:
-                send_mail = True
-                message += self.main_window.tr("Les hôtes suivants sont <font color=red>HS</font><br>") + ip_hs_html
-                
-            if ip_ok_html:
-                send_mail = True
-                message += self.main_window.tr("Les hôtes suivants sont <font color=green>revenus</font><br>") + ip_ok_html
-                
-            if send_mail:
-                message += "</table><br><br>Cordialement,"
-                threading.Thread(target=thread_mail.envoie_mail, args=(message, sujet)).start()
+            
+            # Envoyer les alertes avec les nouveaux templates
+            for host_down in hosts_down:
+                threading.Thread(
+                    target=email_sender.send_alert_email,
+                    args=(host_down, 'down')
+                ).start()
+            
+            for host_up in hosts_up:
+                threading.Thread(
+                    target=email_sender.send_alert_email,
+                    args=(host_up, 'up')
+                ).start()
                 
         except Exception as e:
             logger.error(f"Erreur process mail: {e}", exc_info=True)

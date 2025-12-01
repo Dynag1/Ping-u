@@ -28,43 +28,38 @@ def jour_demande():
 
 
 def prepaMail(self, tree_model):
-    sujet = self.tr("""\
-    Compte rendu du site """)+var.nom_site
-    message = self.tr("""\
-        Bonjour,<br><br>
-        Voici le compte rendu des équipements sous surveillance : <br><br>""")
-
-
-    message = message + self.tr("""<table border="1"><tr><th>Nom</th><th>IP</th><th>Statut</th></tr>""")
-    # Parcours du modèle
-    for row in range(tree_model.rowCount()):
-        index_nom = tree_model.index(row, 2)  # Colonne Nom
-        index_ip = tree_model.index(row, 1)   # Colonne IP
-        index_statut = tree_model.index(row, 5)  # Colonne Statut
-
-        nom = tree_model.data(index_nom)
-        ip = tree_model.data(index_ip)
-        statut = tree_model.data(index_statut)
-
-        # Logique de coloration
-        color = var.couleur_noir if statut == "HS" else var.couleur_vert
-
-        message += self.tr(f"""
-        <tr>
-            <td bgcolor="{color}">{nom}</td>
-            <td bgcolor="{color}">{ip}</td>
-            <td bgcolor="{color}">{statut}</td>
-        </tr>""")
-
-    message = message + self.tr("""\
-    </table><br><br>
-    Cordialement,<br><br>
-    <b>PyngOuin<b>
-    """)
+    """Prépare et envoie l'email récapitulatif avec template HTML moderne."""
     try:
-        thread_mail.envoie_mail(message, sujet)
+        from src import email_sender
+        
+        # Collecter les données des hôtes
+        hosts_data = []
+        for row in range(tree_model.rowCount()):
+            index_nom = tree_model.index(row, 2)  # Colonne Nom
+            index_ip = tree_model.index(row, 1)   # Colonne IP
+            index_statut = tree_model.index(row, 5)  # Colonne Latence/Statut
+
+            nom = tree_model.data(index_nom) or "Inconnu"
+            ip = tree_model.data(index_ip) or "N/A"
+            statut_text = tree_model.data(index_statut) or "N/A"
+            
+            # Déterminer le statut
+            status = 'offline' if statut_text == "HS" else 'online'
+            
+            hosts_data.append({
+                'ip': ip,
+                'nom': nom,
+                'status': status,
+                'latence': statut_text
+            })
+        
+        # Envoyer l'email avec le nouveau template
+        email_sender.send_recap_email(hosts_data, test_mode=False)
+        
     except Exception as inst:
-        print(inst)
+        print(f"Erreur prepaMail: {inst}")
+        import traceback
+        traceback.print_exc()
 
 
 def main(self, tree_model):

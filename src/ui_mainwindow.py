@@ -415,9 +415,9 @@ class Ui_MainWindow(object):
         self.menuFonctions.setObjectName(u"menuFonctions")
         self.menu = QMenu(self.menubar)
         self.menu.setObjectName(u"menu")
-        self.menuPlugin = QMenu(self.menubar)
-        self.menuPlugin.setObjectName(u"menuPlugin")
-        MainWindow.setMenuBar(self.menubar)
+        #self.menuPlugin = QMenu(self.menubar)
+        #self.menuPlugin.setObjectName(u"menuPlugin")
+        #MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
         MainWindow.setStatusBar(self.statusbar)
@@ -425,7 +425,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuParametres.menuAction())
         self.menubar.addAction(self.menuFonctions.menuAction())
-        self.menubar.addAction(self.menuPlugin.menuAction())
+        #self.menubar.addAction(self.menuPlugin.menuAction())
         self.menubar.addAction(self.menu.menuAction())
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionSauvegarder)
@@ -451,8 +451,8 @@ class Ui_MainWindow(object):
         self.menu.addSeparator()
         self.menu.addAction(self.actionMaj)
         self.menu.addAction(self.actionNotice)
-        self.menuPlugin.addAction(self.actionG_rer)
-        self.menuPlugin.addSeparator()
+        #self.menuPlugin.addAction(self.actionG_rer)
+        #self.menuPlugin.addSeparator()
 
         self.retranslateUi(MainWindow)
 
@@ -514,6 +514,6 @@ class Ui_MainWindow(object):
         self.menuLangue.setTitle(QCoreApplication.translate("MainWindow", u"Langue", None))
         self.menuFonctions.setTitle(QCoreApplication.translate("MainWindow", u"Export / import", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"?", None))
-        self.menuPlugin.setTitle(QCoreApplication.translate("MainWindow", u"Plugin", None))
+        #self.menuPlugin.setTitle(QCoreApplication.translate("MainWindow", u"Plugin", None))
     # retranslateUi
 

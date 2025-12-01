@@ -224,15 +224,13 @@ class SNMPHelper:
             if uptime is not None:
                 self._has_snmp_cache.add(ip)
                 self._no_snmp_cache.discard(ip)
-                logger.info(f"✅ SNMP activé pour {ip} (uptime: {int(uptime/100/60)} minutes)")
+                # logger.info(f"✅ SNMP activé pour {ip} (uptime: {int(uptime/100/60)} minutes)")
                 return True
             else:
                 self._no_snmp_cache.add(ip)
                 self._has_snmp_cache.discard(ip)
-                logger.debug(f"❌ SNMP non disponible pour {ip}")
                 return False
         except Exception as e:
-            logger.debug(f"Erreur test SNMP pour {ip}: {e}")
             self._no_snmp_cache.add(ip)
             return False
     
@@ -248,7 +246,6 @@ class SNMPHelper:
             float: Température en °C, ou None si échec
         """
         if not SNMP_AVAILABLE:
-            logger.debug("SNMP non disponible")
             return None
         
         # Test préalable : SNMP est-il activé ? (test rapide)
@@ -275,7 +272,6 @@ class SNMPHelper:
             
             return result
         except asyncio.TimeoutError:
-            logger.debug(f"Timeout SNMP global pour {ip}")
             # NE PAS mettre en cache immédiatement (peut être temporaire)
             return None
     
@@ -445,10 +441,8 @@ class SNMPHelper:
             errorIndication, errorStatus, errorIndex, varBinds = iterator
             
             if errorIndication:
-                logger.debug(f"SNMP error indication pour {ip}: {errorIndication}")
                 return None
             elif errorStatus:
-                logger.debug(f"SNMP error status pour {ip}: {errorStatus.prettyPrint()}")
                 return None
             else:
                 # Récupération de la valeur
@@ -479,10 +473,8 @@ class SNMPHelper:
                         if return_type == 'auto':
                             return str(value)
                         # En mode numeric, retourner None si pas convertible
-                        logger.debug(f"Impossible de convertir la valeur SNMP en nombre: {value}")
                         return None
         except Exception as e:
-            logger.debug(f"Exception SNMP pour {ip}: {e}")
             return None
         finally:
             # Fermeture propre du SnmpEngine pour éviter les fuites de ressources et erreurs "Unregistered transport"
@@ -499,8 +491,8 @@ class SNMPHelper:
                                 snmp_engine.transportDispatcher.unregisterTransport(transport_domain)
                         except:
                             pass
-                except Exception as e:
-                    logger.debug(f"Erreur nettoyage SNMP: {e}")
+                except Exception:
+                    pass
 
     async def find_best_interface(self, ip):
         """
@@ -595,7 +587,6 @@ class SNMPHelper:
                   ou None si échec
         """
         if not SNMP_AVAILABLE:
-            logger.debug("SNMP non disponible")
             return None
         
         # Test préalable : SNMP est-il activé ?
@@ -638,14 +629,12 @@ class SNMPHelper:
                     'timestamp': time.time()
                 }
                 self._has_snmp_cache.add(ip)
-                logger.debug(f"📡 Compteurs SNMP récupérés pour {ip}: IN={int(octets_in):,}, OUT={int(octets_out):,} octets")
+                # logger.debug(f"📡 Compteurs SNMP récupérés pour {ip}: IN={int(octets_in):,}, OUT={int(octets_out):,} octets")
                 return result
             else:
-                logger.debug(f"Impossible de récupérer le trafic pour {ip}")
                 return None
                 
         except Exception as e:
-            logger.debug(f"Erreur récupération trafic pour {ip}: {e}")
             return None
     
     async def get_interface_speed_direct(self, ip, interface_index=1):

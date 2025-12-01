@@ -152,9 +152,9 @@ class AsyncPingWorker(QThread):
                     timeout=2.0
                 )
             except asyncio.TimeoutError:
-                logger.debug(f"Timeout SNMP température pour {ip}")
+                pass
             except Exception as e:
-                logger.debug(f"Erreur SNMP température pour {ip}: {e}")
+                pass
             
             # Récupération des débits réseau (avec filtrage intelligent et auto-détection interface)
             try:
@@ -170,9 +170,9 @@ class AsyncPingWorker(QThread):
                     }
                     self.traffic_cache[ip] = bandwidth_result['raw_data']
             except asyncio.TimeoutError:
-                logger.debug(f"Timeout SNMP trafic pour {ip}")
+                pass
             except Exception as e:
-                logger.debug(f"Erreur SNMP trafic pour {ip}: {e}")
+                pass
         
         # Emission du résultat
         color = AppColors.get_latency_color(latency)

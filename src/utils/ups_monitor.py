@@ -147,7 +147,7 @@ class UPSMonitor:
             )
             return result
         except Exception as e:
-            logger.debug(f"Erreur SNMP UPS pour {ip} OID {oid}: {e}")
+            pass
             return None
 
     def _snmp_get_sync(self, ip, oid):

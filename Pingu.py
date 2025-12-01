@@ -154,8 +154,8 @@ class MainWindow(QMainWindow):
         self._setup_connections()
         
         # Chargement des plugins
-        self.plugin = fct.plug(self)
-        self.menuPlugin(self.plugin)
+        #self.plugin = fct.plug(self)
+        #self.menuPlugin(self.plugin)
         
         self.ui.progressBar.hide()
         lic.verify_license()
@@ -179,7 +179,7 @@ class MainWindow(QMainWindow):
         self.ui.butIp.clicked.connect(self.butIpClic)
         self.ui.butStart.clicked.connect(self.butStart)
         self.ui.menuClose.triggered.connect(self.close)
-        self.ui.actionG_rer.triggered.connect(self.plugGerer)
+        #self.ui.actionG_rer.triggered.connect(self.plugGerer)
         self.ui.actionMaj.triggered.connect(lambda: fctMaj.main(self))
         # Modele alertes
         self.ui.spinDelais.valueChanged.connect(self.on_spin_delais_changed)

@@ -1,6 +1,8 @@
 # Fichiers Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 *.so
 .Python
@@ -89,23 +91,11 @@ bd/Test.xlsx
 bd/TestIp.xlsx.xlsx
 debug_snmp.py
 installer/changelog.xml
-installer/PingU_Setup.exe
-installer/changelog.xml
-installer/PingU_Setup.exe
-installer/changelog.xml
-installer/PingU_Setup.exe
-installer/changelog.xml
-installer/PingU_Setup.exe
-installer/PingU_Setup.exe
-installer/PingU_Setup.exe
-src/__pycache__/web_server.cpython-312.pyc
 SOLUTIONS_RASPBERRY.md
 CORRECTIONS_LINUX_SMTP.md
 NOUVELLES_FONCTIONNALITES.md
-src/__pycache__/web_server.cpython-312.pyc
 RESUME_CORRECTIONS_RASPBERRY.md
 installer/
 installer_script/
 pingu_headless.pid
-src/__pycache__/web_server.cpython-312.pyc
-src/__pycache__/web_server.cpython-312.pyc
+src/core/__pycache__/alert_manager.cpython-312.pyc

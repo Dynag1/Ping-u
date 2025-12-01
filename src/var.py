@@ -4,8 +4,7 @@
 #     pass
 from src.utils.colors import AppColors
 
-version = "99.02.03"
-
+version = "99.02.04"
 nom = "Ping ü"
 nom_logiciel = "Pingu"
 site = 'http://prog.dynag.co'
