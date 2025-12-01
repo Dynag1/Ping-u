@@ -345,10 +345,12 @@ def send_alert_email(host_info, alert_type='down'):
             logger.error("Paramètres SMTP non configurés")
             return False
         
-        smtp_server = smtp_params[0]
-        smtp_port = int(smtp_params[1])
-        smtp_email = smtp_params[2]
-        smtp_password = smtp_params[3]
+        # Ordre correct des paramètres dans la DB (sFenetre.py):
+        # [0]=email, [1]=password, [2]=port, [3]=server, [4]=recipients, [5]=telegram_chatid
+        smtp_email = smtp_params[0]
+        smtp_password = smtp_params[1]
+        smtp_port = int(smtp_params[2])
+        smtp_server = smtp_params[3]
         recipients = smtp_params[4]
         
         if not all([smtp_server, smtp_email, recipients]):
@@ -418,10 +420,12 @@ def send_recap_email(hosts_data, test_mode=False):
             logger.error("Paramètres SMTP non configurés")
             return False
         
-        smtp_server = smtp_params[0]
-        smtp_port = int(smtp_params[1])
-        smtp_email = smtp_params[2]
-        smtp_password = smtp_params[3]
+        # Ordre correct des paramètres dans la DB (sFenetre.py):
+        # [0]=email, [1]=password, [2]=port, [3]=server, [4]=recipients, [5]=telegram_chatid
+        smtp_email = smtp_params[0]
+        smtp_password = smtp_params[1]
+        smtp_port = int(smtp_params[2])
+        smtp_server = smtp_params[3]
         recipients = smtp_params[4]
         
         if not all([smtp_server, smtp_email, recipients]):
