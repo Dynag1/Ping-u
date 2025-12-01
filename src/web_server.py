@@ -240,7 +240,7 @@ class WebServer(QObject):
                 # Mettre à jour les variables
                 from src import var
                 var.delais = delai
-                var.nbrHs = nb_hs
+                var.nbrHs = int(nb_hs)  # Force int conversion
                 
                 # Démarrer le monitoring via le contrôleur (thread-safe avec signal Qt)
                 if hasattr(self.main_window, 'main_controller'):
@@ -248,8 +248,6 @@ class WebServer(QObject):
                     if self.main_window.main_controller.ping_manager is None:
                         # Mise à jour des variables AVANT de démarrer
                         logger.info(f"Configuration reçue: Délai={delai}s, Nb HS={nb_hs}")
-                        var.delais = delai
-                        var.nbrHs = int(nb_hs) # Force int conversion
                         
                         # Utiliser un signal Qt pour démarrer le monitoring de manière thread-safe
                         self.main_window.comm.start_monitoring_signal.emit()
@@ -258,7 +256,11 @@ class WebServer(QObject):
                         self.socketio.emit('monitoring_status', {'running': True}, namespace='/')
                         return jsonify({'success': True, 'message': 'Monitoring démarré'})
                     else:
-                        return jsonify({'success': True, 'message': 'Monitoring déjà en cours'})
+                        # Monitoring déjà en cours, mais on met à jour les paramètres
+                        # et on nettoie les listes pour éviter les fausses alertes
+                        logger.info(f"Mise à jour configuration: Délai={delai}s, Nb HS={nb_hs}")
+                        self._clean_alert_lists_for_new_threshold(int(nb_hs))
+                        return jsonify({'success': True, 'message': 'Configuration mise à jour'})
                 
                 return jsonify({'success': False, 'error': 'Contrôleur non disponible'}), 500
             except Exception as e:
@@ -984,6 +986,37 @@ Ping ü - Monitoring Réseau
         Utiliser _get_cached_bandwidth() à la place.
         """
         return self._get_cached_bandwidth(ip)
+    
+    def _clean_alert_lists_for_new_threshold(self, new_threshold):
+        """
+        Nettoie les listes d'alertes pour s'adapter au nouveau seuil.
+        Si un compteur dépasse le nouveau seuil, il est ramené au nouveau seuil - 1.
+        Cela évite les alertes immédiates lors du changement de configuration.
+        """
+        try:
+            from src import var
+            
+            # Fonction pour nettoyer une liste
+            def clean_list(liste, list_name):
+                cleaned_count = 0
+                for ip, count in list(liste.items()):
+                    # Si le compteur dépasse le nouveau seuil, on le limite
+                    if int(count) >= new_threshold and int(count) < 10:
+                        liste[ip] = max(1, new_threshold - 1)
+                        cleaned_count += 1
+                return cleaned_count
+            
+            hs_cleaned = clean_list(var.liste_hs, "liste_hs")
+            mail_cleaned = clean_list(var.liste_mail, "liste_mail")
+            telegram_cleaned = clean_list(var.liste_telegram, "liste_telegram")
+            
+            total_cleaned = hs_cleaned + mail_cleaned + telegram_cleaned
+            if total_cleaned > 0:
+                logger.info(f"Nettoyage des listes d'alertes pour nouveau seuil {new_threshold}: "
+                           f"{hs_cleaned} HS, {mail_cleaned} mail, {telegram_cleaned} telegram")
+            
+        except Exception as e:
+            logger.error(f"Erreur nettoyage listes alertes: {e}", exc_info=True)
     
     def _get_row_status(self, model, row):
         """Détermine le statut (online/offline) selon la colonne Latence"""

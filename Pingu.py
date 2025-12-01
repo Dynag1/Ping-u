@@ -520,7 +520,43 @@ class MainWindow(QMainWindow):
         self.ui.labDelaisH.setText(str(valueA))
 
     def on_spin_spinHs_changed(self, value):
+        old_value = var.nbrHs
         var.nbrHs = value
+        
+        # Si le monitoring est actif et que la valeur a changé, nettoyer les listes
+        if old_value != value and hasattr(self, 'main_controller') and self.main_controller:
+            if self.main_controller.ping_manager is not None:
+                # Nettoyer les listes d'alertes pour éviter les fausses alertes
+                self._clean_alert_lists_for_new_threshold(value)
+                logger.info(f"Seuil nbrHs modifié de {old_value} à {value} pendant le monitoring")
+    
+    def _clean_alert_lists_for_new_threshold(self, new_threshold):
+        """
+        Nettoie les listes d'alertes pour s'adapter au nouveau seuil.
+        Si un compteur dépasse le nouveau seuil, il est ramené au nouveau seuil - 1.
+        """
+        try:
+            # Fonction pour nettoyer une liste
+            def clean_list(liste, list_name):
+                cleaned_count = 0
+                for ip, count in list(liste.items()):
+                    # Si le compteur dépasse le nouveau seuil, on le limite
+                    # (sauf s'il est déjà à 10 ou 20 qui sont des états spéciaux)
+                    if int(count) >= new_threshold and int(count) < 10:
+                        liste[ip] = max(1, new_threshold - 1)
+                        cleaned_count += 1
+                return cleaned_count
+            
+            hs_cleaned = clean_list(var.liste_hs, "liste_hs")
+            mail_cleaned = clean_list(var.liste_mail, "liste_mail")
+            telegram_cleaned = clean_list(var.liste_telegram, "liste_telegram")
+            
+            total_cleaned = hs_cleaned + mail_cleaned + telegram_cleaned
+            if total_cleaned > 0:
+                logger.info(f"Nettoyage des listes d'alertes: {hs_cleaned} HS, {mail_cleaned} mail, {telegram_cleaned} telegram")
+                
+        except Exception as e:
+            logger.error(f"Erreur nettoyage listes alertes: {e}", exc_info=True)
 
     def barProgress(self, i):
         self.ui.progressBar.setValue(i)

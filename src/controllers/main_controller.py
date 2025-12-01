@@ -24,6 +24,13 @@ class MainController:
         try:
             logger.info("Démarrage du monitoring via MainController")
             
+            # Réinitialiser les listes d'alertes pour éviter les fausses alertes
+            # avec d'anciens compteurs qui ne correspondent plus au nbrHs actuel
+            var.liste_hs.clear()
+            var.liste_mail.clear()
+            var.liste_telegram.clear()
+            logger.info(f"Listes d'alertes réinitialisées (nbrHs={var.nbrHs})")
+            
             # Instanciation des managers
             # Note: PingManager prend le modèle de données, AlertManager aussi
             self.ping_manager = PingManager(self.main_window.treeIpModel)
