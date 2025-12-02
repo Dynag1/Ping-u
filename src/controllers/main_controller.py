@@ -24,6 +24,14 @@ class MainController:
         try:
             logger.info("Démarrage du monitoring via MainController")
             
+            # Sécurité : Vérifier si le monitoring est déjà en cours
+            if self.ping_manager is not None or var.tourne:
+                logger.warning("Tentative de démarrage alors que le monitoring est déjà actif. Redémarrage...")
+                self.stop_monitoring()
+                # Laisser un peu de temps pour l'arrêt des threads
+                from PySide6.QtCore import QThread
+                QThread.msleep(500)
+            
             # Réinitialiser les listes d'alertes pour éviter les fausses alertes
             # avec d'anciens compteurs qui ne correspondent plus au nbrHs actuel
             var.liste_hs.clear()

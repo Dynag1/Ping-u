@@ -47,9 +47,17 @@ def save_csv(self, treeModel, filepath=None, return_path=False, silent=False):
                 filename += '.pin'
         else:
             filename = filepath
+            # Assurer que le répertoire existe
+            os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
 
         row_count = model.rowCount()
-        print(f"Sauvegarde de {row_count} lignes dans {filename}")
+        # Utiliser un logger si disponible, sinon print
+        try:
+            from src.utils.logger import get_logger
+            logger = get_logger(__name__)
+            logger.info(f"Sauvegarde de {row_count} lignes dans {filename}")
+        except:
+            print(f"Sauvegarde de {row_count} lignes dans {filename}")
         
         with open(filename, 'w', newline='', encoding='utf-8') as myfile:
             csvwriter = csv.writer(myfile, delimiter=',')
@@ -76,7 +84,14 @@ def save_csv(self, treeModel, filepath=None, return_path=False, silent=False):
                 QMessageBox.Ok
             )
     except Exception as e:
-        print("design - " + str(e))
+        # Utiliser un logger si disponible
+        try:
+            from src.utils.logger import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Erreur sauvegarde CSV: {e}")
+        except:
+            print("design - " + str(e))
+            
         if return_path:
             raise
         return

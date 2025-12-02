@@ -239,10 +239,15 @@ class AsyncPingWorker(QThread):
             if current_count >= 10:
                 return
             # Incrémenter seulement si on n'a pas atteint le seuil
-            if current_count < int(var.nbrHs):
+            target_hs = int(var.nbrHs)
+            if current_count < target_hs:
                 liste[ip] += 1
+                logger.debug(f"Compteur incrémenté pour {ip}: {current_count} -> {liste[ip]} (Seuil: {target_hs})")
+            else:
+                logger.debug(f"Compteur max atteint pour {ip}: {current_count} (Seuil: {target_hs})")
         else:
             liste[ip] = 1
+            logger.debug(f"Compteur initialisé pour {ip}: 1 (Seuil: {int(var.nbrHs)})")
 
     def list_ok(self, liste, ip):
         if ip in liste:

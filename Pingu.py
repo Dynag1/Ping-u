@@ -994,58 +994,75 @@ def run_headless_mode():
     def cleanup_and_exit():
         logger.info("[HEADLESS] Arret en cours...")
         
+        # 1. Sauvegarde automatique de la liste de suivi (PRIORITÉ HAUTE)
         try:
-            # Arrêter le monitoring
+            if not os.path.exists("bd"):
+                os.makedirs("bd", exist_ok=True)
+            autosave_path = os.path.join("bd", "autosave.pin")
+            
+            # Log explicite du nombre d'hôtes à sauvegarder
+            if hasattr(window, 'treeIpModel'):
+                row_count = window.treeIpModel.rowCount()
+                logger.info(f"Tentative de sauvegarde automatique de {row_count} hôtes vers {autosave_path}")
+            else:
+                logger.warning("window.treeIpModel introuvable pour la sauvegarde")
+
+            # Sauvegarde silencieuse pour éviter les popups en headless et erreur QObject parent
+            fct.save_csv(window, window.treeIpModel, filepath=autosave_path, silent=True)
+            
+            if os.path.exists(autosave_path):
+                size = os.path.getsize(autosave_path)
+                logger.info(f"Liste de suivi sauvegardée automatiquement dans {autosave_path} (taille: {size} octets)")
+            else:
+                logger.error(f"Fichier {autosave_path} non trouvé après tentative de sauvegarde")
+                
+        except Exception as e:
+            logger.error(f"Erreur sauvegarde automatique liste: {e}", exc_info=True)
+            
+        # 2. Sauvegarder les paramètres
+        try:
+            db.save_param_db()
+            logger.info("Paramètres sauvegardés")
+        except Exception as e:
+            logger.error(f"Erreur sauvegarde paramètres: {e}")
+
+        # 3. Arrêter le monitoring
+        try:
             if window.main_controller and window.main_controller.ping_manager:
                 logger.info("Arrêt du monitoring...")
                 window.main_controller.stop_monitoring()
                 time.sleep(1)  # Attendre que le monitoring s'arrête
+        except Exception as e:
+            logger.error(f"Erreur arrêt monitoring: {e}")
             
-            # Arrêter le serveur web
+        # 4. Arrêter le serveur web
+        try:
             if window.web_server:
                 logger.info("Arrêt du serveur web...")
                 window.web_server.stop()
                 time.sleep(2)  # Attendre que le serveur libère le port
-            
-            # Sauvegarder les paramètres
-            try:
-                db.save_param_db()
-                logger.info("Paramètres sauvegardés")
-            except Exception as e:
-                logger.error(f"Erreur sauvegarde paramètres: {e}")
-
-            # Sauvegarde automatique de la liste de suivi
-            try:
-                if not os.path.exists("bd"):
-                    os.makedirs("bd", exist_ok=True)
-                autosave_path = os.path.join("bd", "autosave.pin")
-                fct.save_csv(window, window.treeIpModel, filepath=autosave_path)
-                logger.info(f"Liste de suivi sauvegardée automatiquement dans {autosave_path}")
-            except Exception as e:
-                logger.error(f"Erreur sauvegarde automatique liste: {e}", exc_info=True)
-            
-            # Supprimer le fichier PID
-            try:
-                if os.path.exists(pid_file):
-                    os.remove(pid_file)
-                    logger.info("Fichier PID supprimé")
-            except Exception as e:
-                logger.error(f"Erreur suppression PID: {e}")
-            
-            # Supprimer le fichier stop s'il existe
-            try:
-                if os.path.exists('pingu_headless.stop'):
-                    os.remove('pingu_headless.stop')
-            except:
-                pass
-            
-            logger.info("[HEADLESS] Arret termine proprement")
-            
         except Exception as e:
-            logger.error(f"Erreur lors du nettoyage: {e}", exc_info=True)
-        finally:
-            # Force la fermeture
-            os._exit(0)
+            logger.error(f"Erreur arrêt serveur web: {e}")
+            
+        # 5. Supprimer le fichier PID
+        try:
+            if os.path.exists(pid_file):
+                os.remove(pid_file)
+                logger.info("Fichier PID supprimé")
+        except Exception as e:
+            logger.error(f"Erreur suppression PID: {e}")
+        
+        # 6. Supprimer le fichier stop s'il existe
+        try:
+            if os.path.exists('pingu_headless.stop'):
+                os.remove('pingu_headless.stop')
+        except:
+            pass
+        
+        logger.info("[HEADLESS] Arret termine proprement")
+        
+        # Force la fermeture
+        os._exit(0)
     
     # Enregistrer les gestionnaires de signaux
     signal.signal(signal.SIGINT, signal_handler)
