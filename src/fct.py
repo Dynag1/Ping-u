@@ -3,12 +3,41 @@
 # if __name__ == "__main__":
 #     pass
 import socket
-from PySide6.QtWidgets import QFileDialog, QMessageBox
-from PySide6.QtCore import QAbstractItemModel, QModelIndex
-from PySide6.QtGui import QStandardItem, QStandardItemModel
 import csv
 import os
 import sys
+
+# Imports conditionnels pour éviter les erreurs en headless
+try:
+    from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
+    from PySide6.QtCore import QAbstractItemModel, QModelIndex
+    from PySide6.QtGui import QStandardItem, QStandardItemModel
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    # Classes factices pour le typage et l'exécution headless
+    class QFileDialog: 
+        @staticmethod
+        def getSaveFileName(*args, **kwargs): return (None, None)
+        @staticmethod
+        def getOpenFileName(*args, **kwargs): return (None, None)
+    class QMessageBox:
+        @staticmethod
+        def information(*args): pass
+        @staticmethod
+        def critical(*args): pass
+        Ok = 1
+    class QAbstractItemModel: pass
+    class QModelIndex: pass
+    class QStandardItem:
+        def __init__(self, text=""): self._text = text
+        def text(self): return self._text
+    class QStandardItemModel:
+        def rowCount(self): return 0
+        def columnCount(self): return 0
+        def appendRow(self, items): pass
+        def removeRows(self, row, count): pass
+    class QWidget: pass
 
 
 def getIp(self):
@@ -75,7 +104,7 @@ def save_csv(self, treeModel, filepath=None, return_path=False, silent=False):
             return filename
 
         # Lancer l'alerte seulement si pas silent
-        if not silent:
+        if not silent and GUI_AVAILABLE:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(
                 self,
@@ -132,14 +161,14 @@ def load_csv(self, treeModel, filepath=None):
                 treeModel.setHorizontalHeaderLabels(headers)
 
         # Afficher la boîte de dialogue seulement si on a une vraie fenêtre Qt (pas en mode headless)
-        from PySide6.QtWidgets import QWidget
-        if filepath is None and isinstance(self, QWidget):
+        if GUI_AVAILABLE and filepath is None and isinstance(self, QWidget):
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self, self.tr("Succès"), self.tr("Données chargées avec succès"), QMessageBox.Ok)
 
     except Exception as e:
         # Afficher l'erreur seulement si on a une vraie fenêtre Qt (pas en mode headless)
-        from PySide6.QtWidgets import QWidget
-        if filepath is None and isinstance(self, QWidget):
+        if GUI_AVAILABLE and filepath is None and isinstance(self, QWidget):
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self, self.tr("Erreur"), f"Erreur lors du chargement : {str(e)}", QMessageBox.Ok)
         else:
             # En mode headless ou programmatique, juste lever l'exception

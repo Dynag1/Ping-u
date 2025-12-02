@@ -4,11 +4,26 @@ import os
 import subprocess
 import signal
 import time
-from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
-from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QMenu
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QAction, QActionGroup
-from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, QEvent, QCoreApplication, QLocale, QSortFilterProxyModel
-from src.ui_mainwindow import Ui_MainWindow
+
+try:
+    from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
+    from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QMenu
+    from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QAction, QActionGroup
+    from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, QEvent, QCoreApplication, QLocale, QSortFilterProxyModel
+    from src.ui_mainwindow import Ui_MainWindow
+    GUI_AVAILABLE = True
+except ImportError:
+    # Mode headless ou environnement sans GUI
+    GUI_AVAILABLE = False
+    # Créer des classes factices pour éviter les erreurs d'import
+    class QObject: pass
+    class Signal: 
+        def __init__(self, *args): pass
+        def emit(self, *args): pass
+        def connect(self, *args): pass
+    class QMainWindow: pass
+    class QSortFilterProxyModel: pass
+
 from src import var, fct, lic, threadAjIp, db, sFenetre
 from src import fctXls, fctMaj
 import src.Snyf.main as snyf
@@ -1220,6 +1235,11 @@ Mode headless:
         run_headless_mode()
     else:
         # Mode normal avec interface graphique
+        if not GUI_AVAILABLE:
+            print("❌ Impossible de démarrer l'interface graphique: PySide6 n'est pas installé.")
+            print("💡 Pour le mode serveur sans interface, utilisez: python Pingu.py --headless")
+            sys.exit(1)
+            
         from PySide6.QtWidgets import QSplashScreen
         from PySide6.QtGui import QPixmap
         app = QApplication(sys.argv)  # Créer l'application Qt

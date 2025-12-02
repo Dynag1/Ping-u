@@ -2,11 +2,47 @@ import asyncio
 import platform
 import re
 import sys
-from PySide6.QtCore import QObject, Signal, QThread, Qt
-from PySide6.QtGui import QStandardItem, QColor, QBrush
 import src.var as var
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
+
+# Imports PySide6 conditionnels
+try:
+    from PySide6.QtCore import QObject, Signal, QThread, Qt, QTimer
+    from PySide6.QtGui import QStandardItem, QColor, QBrush
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    class QObject: pass
+    class Signal: 
+        def __init__(self, *args): pass
+        def emit(self, *args): pass
+        def connect(self, *args): pass
+    class QThread: 
+        def __init__(self): pass
+        def start(self): self.run()
+        def wait(self, *args): return True
+        def isRunning(self): return False
+        def stop(self): pass
+    class QStandardItem:
+        def __init__(self, text=""): self._text = text
+        def text(self): return self._text
+        def setText(self, text): self._text = text
+        def setForeground(self, *args): pass
+        def setBackground(self, *args): pass
+    class QColor:
+        def __init__(self, *args): pass
+    class QBrush:
+        def __init__(self, *args): pass
+    class Qt:
+        pass
+    class QTimer:
+        @staticmethod
+        def singleShot(ms, callback):
+            # Simulation basique pour headless
+            pass
+
+logger = get_logger(__name__)
 
 # Import optionnel de SNMP (peut échouer dans l'exécutable PyInstaller)
 try:
@@ -14,13 +50,10 @@ try:
     from src.utils.ups_monitor import ups_monitor
     SNMP_AVAILABLE = True
 except ImportError as e:
-    logger = get_logger(__name__)
     logger.warning(f"SNMP non disponible: {e}")
     snmp_helper = None
     ups_monitor = None
     SNMP_AVAILABLE = False
-
-logger = get_logger(__name__)
 
 class AsyncPingWorker(QThread):
     """
@@ -271,8 +304,13 @@ class PingManager(QObject):
         if not ips:
             # Si pas d'IPs, on attend quand même
             # On utilise QTimer.singleShot
-            from PySide6.QtCore import QTimer
-            QTimer.singleShot(int(var.delais) * 1000, self.schedule_next_run)
+            if GUI_AVAILABLE:
+                from PySide6.QtCore import QTimer
+                QTimer.singleShot(int(var.delais) * 1000, self.schedule_next_run)
+            else:
+                import time
+                time.sleep(int(var.delais))
+                self.schedule_next_run()
             return
 
         # Lancement du worker
@@ -285,11 +323,16 @@ class PingManager(QObject):
     def on_worker_finished(self):
         """Appelé quand une vague de pings est terminée."""
         if var.tourne:
-            from PySide6.QtCore import QTimer
-            # On attend le délai configuré avant la prochaine vague
-            # Note: var.delais est en secondes
-            delay_ms = max(1, int(var.delais)) * 1000
-            QTimer.singleShot(delay_ms, self.schedule_next_run)
+            if GUI_AVAILABLE:
+                from PySide6.QtCore import QTimer
+                # On attend le délai configuré avant la prochaine vague
+                # Note: var.delais est en secondes
+                delay_ms = max(1, int(var.delais)) * 1000
+                QTimer.singleShot(delay_ms, self.schedule_next_run)
+            else:
+                import time
+                time.sleep(max(1, int(var.delais)))
+                self.schedule_next_run()
 
     def get_all_ips(self):
         """Récupère toutes les IPs du modèle, y compris les exclues."""
@@ -597,11 +640,16 @@ class SNMPWorker(QThread):
     def on_worker_finished(self):
         """Appelé quand une vague de pings est terminée."""
         if var.tourne:
-            from PySide6.QtCore import QTimer
-            # On attend le délai configuré avant la prochaine vague
-            # Note: var.delais est en secondes
-            delay_ms = max(1, int(var.delais)) * 1000
-            QTimer.singleShot(delay_ms, self.schedule_next_run)
+            if GUI_AVAILABLE:
+                from PySide6.QtCore import QTimer
+                # On attend le délai configuré avant la prochaine vague
+                # Note: var.delais est en secondes
+                delay_ms = max(1, int(var.delais)) * 1000
+                QTimer.singleShot(delay_ms, self.schedule_next_run)
+            else:
+                import time
+                time.sleep(max(1, int(var.delais)))
+                self.schedule_next_run()
 
     def get_all_ips(self):
         """Récupère toutes les IPs du modèle, y compris les exclues."""
@@ -691,11 +739,14 @@ class SNMPWorker(QThread):
         try:
             # Popup
             if var.popup:
-                from PySide6.QtWidgets import QMessageBox
-                from PySide6.QtCore import QMetaObject, Qt
-                # Utiliser invokeMethod pour afficher le popup dans le thread principal
-                # Note: On pourrait aussi utiliser un signal dédié vers MainWindow
-                logger.info(f"Popup UPS: {message}")
+                if GUI_AVAILABLE:
+                    from PySide6.QtWidgets import QMessageBox
+                    from PySide6.QtCore import QMetaObject, Qt
+                    # Utiliser invokeMethod pour afficher le popup dans le thread principal
+                    # Note: On pourrait aussi utiliser un signal dédié vers MainWindow
+                    logger.info(f"Popup UPS: {message}")
+                else:
+                    logger.info(f"Popup UPS (headless): {message}")
             
             # Mail
             if var.mail:

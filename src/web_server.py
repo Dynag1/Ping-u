@@ -10,7 +10,22 @@ import threading
 import socket
 import asyncio
 import secrets
-from PySide6.QtCore import QObject, Signal
+
+try:
+    from PySide6.QtCore import QObject, Signal
+    from PySide6.QtGui import QStandardItem
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    class QObject: pass
+    class Signal: 
+        def __init__(self, *args): pass
+        def emit(self, *args): pass
+        def connect(self, *args): pass
+    class QStandardItem:
+        def __init__(self, text=""): self._text = text
+        def text(self): return self._text
+
 from src.utils.logger import get_logger
 from src.utils.colors import format_bandwidth
 from src.web_auth import web_auth, WebAuth
@@ -352,7 +367,8 @@ class WebServer(QObject):
                 for row in range(model.rowCount()):
                     item_ip = model.item(row, 1)  # Colonne IP
                     if item_ip and item_ip.text() == ip:
-                        from PySide6.QtGui import QStandardItem
+                        if GUI_AVAILABLE:
+                            from PySide6.QtGui import QStandardItem
                         excl_item = QStandardItem("x")
                         model.setItem(row, 9, excl_item)  # Colonne Excl
                         
@@ -381,7 +397,8 @@ class WebServer(QObject):
                 for row in range(model.rowCount()):
                     item_ip = model.item(row, 1)  # Colonne IP
                     if item_ip and item_ip.text() == ip:
-                        from PySide6.QtGui import QStandardItem
+                        if GUI_AVAILABLE:
+                            from PySide6.QtGui import QStandardItem
                         excl_item = QStandardItem("")
                         model.setItem(row, 9, excl_item)  # Colonne Excl (vide pour inclure)
                         logger.info(f"Hôte {ip} réinclus via API")
@@ -405,7 +422,8 @@ class WebServer(QObject):
                 for row in range(model.rowCount()):
                     item_ip = model.item(row, 1)  # Colonne IP
                     if item_ip and item_ip.text() == ip:
-                        from PySide6.QtGui import QStandardItem
+                        if GUI_AVAILABLE:
+                            from PySide6.QtGui import QStandardItem
                         name_item = QStandardItem(new_name)
                         model.setItem(row, 2, name_item)  # Colonne Nom
                         logger.info(f"Nom de l'hôte {ip} modifié en '{new_name}' via API")

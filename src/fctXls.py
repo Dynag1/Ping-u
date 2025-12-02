@@ -1,15 +1,39 @@
 # This Python file uses the following encoding: utf-8
 
 import src.var as var
-from PySide6.QtCore import QModelIndex
-from PySide6.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook
 from openpyxl import load_workbook
 import os
+
+try:
+    from PySide6.QtCore import QModelIndex
+    from PySide6.QtWidgets import QFileDialog, QMessageBox
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    class QModelIndex: pass
+    class QFileDialog:
+        @staticmethod
+        def getSaveFileName(*args, **kwargs): return (None, None)
+        @staticmethod
+        def getOpenFileName(*args, **kwargs): return (None, None)
+    class QMessageBox:
+        @staticmethod
+        def information(*args): pass
+        @staticmethod
+        def critical(*args): pass
+        @staticmethod
+        def warning(*args): pass
+        Ok = 1
+
 name = ""
 
 
 def chSave(self):
+    if not GUI_AVAILABLE:
+        # En mode headless, ces fonctions ne sont pas supportées ou doivent être gérées différemment
+        return None
+
     filename, _ = QFileDialog.getSaveFileName(
         parent=self,
         caption=self.tr("Enregistrer le fichier"),
@@ -26,6 +50,9 @@ def chSave(self):
 
 
 def chOpen(self):
+    if not GUI_AVAILABLE:
+        return None
+
     filename, _ = QFileDialog.getOpenFileName(
         parent=self,
         caption=self.tr("Ouvrir un fichier"),
@@ -39,6 +66,9 @@ def chOpen(self):
 
 
 def saveExcel(self, tree_model):
+    if not GUI_AVAILABLE:
+        return
+
     try:
         name = chSave(self)  # À remplacer par ta méthode de sélection de fichier
 
@@ -86,6 +116,9 @@ def saveExcel(self, tree_model):
         print(e)
 
 def openExcel(self, tree_model):
+    if not GUI_AVAILABLE:
+        return
+
     filename = chOpen(self)
     tree_model.removeRows(0, tree_model.rowCount())
 
