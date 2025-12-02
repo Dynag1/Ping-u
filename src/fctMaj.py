@@ -1,7 +1,14 @@
 import traceback
 import os
-import urllib3
-import xmltodict
+try:
+    import urllib3
+    import xmltodict
+    UPDATE_MODULES_AVAILABLE = True
+except ImportError:
+    UPDATE_MODULES_AVAILABLE = False
+    urllib3 = None
+    xmltodict = None
+
 from src import var
 import webbrowser
 from datetime import datetime
@@ -36,6 +43,10 @@ def log(message):
         print(f"Erreur écriture log : {e}")
 
 def getxml():
+    if not UPDATE_MODULES_AVAILABLE:
+        log("Modules urllib3/xmltodict manquants, mise à jour impossible")
+        return None
+
     try:
         log("Début récupération du changelog XML")
         url = var.site + "/" + var.nom_logiciel + "/changelog.xml"
