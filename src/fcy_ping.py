@@ -346,6 +346,9 @@ class PingManager(QObject):
             else:
                 item.setBackground(QBrush(QColor(color)))
                 item.setForeground(QBrush(QColor("black")))
+        
+        # Mise à jour des listes (HS/OK) via le gestionnaire principal (thread-safe)
+        self.update_lists(ip, latency)
 
     def handle_ups_alert(self, ip, message):
         """Gère les alertes UPS et envoie les notifications."""
@@ -612,6 +615,9 @@ class SNMPWorker(QThread):
             else:
                 item.setBackground(QBrush(QColor(color)))
                 item.setForeground(QBrush(QColor("black")))
+        
+        # Mise à jour des listes (HS/OK) via le gestionnaire principal (thread-safe)
+        self.update_lists(ip, latency)
 
     def update_lists(self, ip, latency):
         # Vérifier si l'hôte est exclu avant de mettre à jour les listes d'alertes
