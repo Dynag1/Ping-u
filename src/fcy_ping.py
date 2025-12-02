@@ -350,6 +350,50 @@ class PingManager(QObject):
         # Mise à jour des listes (HS/OK) via le gestionnaire principal (thread-safe)
         self.update_lists(ip, latency)
 
+    def update_lists(self, ip, latency):
+        # Vérifier si l'hôte est exclu avant de mettre à jour les listes d'alertes
+        try:
+            row = self.find_item_row(ip)
+            if row != -1:
+                item_excl = self.tree_model.item(row, 9)
+                if item_excl and item_excl.text() == "x":
+                    return # Pas d'alerte pour les exclus
+
+            if latency == 500:
+                self.list_increment(var.liste_hs, ip)
+                self.list_increment(var.liste_mail, ip)
+                self.list_increment(var.liste_telegram, ip)
+            else:
+                self.list_ok(var.liste_hs, ip)
+                self.list_ok(var.liste_mail, ip)
+                self.list_ok(var.liste_telegram, ip)
+        except Exception as e:
+            logger.error(f"Erreur update lists {ip}: {e}")
+
+    def list_increment(self, liste, ip):
+        if ip in liste:
+            current_count = int(liste[ip])
+            # Ne jamais incrémenter les états spéciaux (10 = alerte envoyée, 20 = retour OK détecté)
+            if current_count >= 10:
+                return
+            # Incrémenter seulement si on n'a pas atteint le seuil
+            target_hs = int(var.nbrHs)
+            if current_count < target_hs:
+                liste[ip] += 1
+                logger.debug(f"Compteur incrémenté pour {ip}: {current_count} -> {liste[ip]} (Seuil: {target_hs})")
+            else:
+                logger.debug(f"Compteur max atteint pour {ip}: {current_count} (Seuil: {target_hs})")
+        else:
+            liste[ip] = 1
+            logger.debug(f"Compteur initialisé pour {ip}: 1 (Seuil: {int(var.nbrHs)})")
+
+    def list_ok(self, liste, ip):
+        if ip in liste:
+            if liste[ip] == 10:
+                liste[ip] = 20
+            else:
+                liste.pop(ip, None)
+
     def handle_ups_alert(self, ip, message):
         """Gère les alertes UPS et envoie les notifications."""
         logger.info(f"Alerte UPS reçue: {message}")
