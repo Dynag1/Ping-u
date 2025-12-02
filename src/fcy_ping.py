@@ -324,19 +324,28 @@ class PingManager(QObject):
             # Applique la couleur et le texte selon la colonne
             if col == 5:  # Colonne Latence
                 if is_excluded:
-                    item.setText("EXCLU")
+                    # Afficher la latence réelle mais avec un indicateur "Exclu"
+                    latency_text = f"{latency:.1f} ms" if latency < 500 else "HS"
+                    item.setText(f"{latency_text}")
                 else:
                     item.setText(f"{latency:.1f} ms" if latency < 500 else "HS")
             elif col == 6:  # Colonne Température (sera mis à jour par le thread SNMP séparé)
                 pass # Ne rien faire ici pour la température, géré par SNMPWorker
             
             # Colorie toute la ligne
-            # Si exclu, on peut mettre une couleur spécifique (ex: gris) ou garder la couleur normale
             if is_excluded:
-                # Couleur grisée pour les exclus
-                item.setBackground(QBrush(QColor(220, 220, 220)))
+                # Changer la couleur du texte pour indiquer l'exclusion (gris)
+                item.setForeground(QBrush(QColor("gray")))
+                # Fond légèrement grisé aussi pour bien distinguer
+                if latency < 500:
+                    # Si en ligne, fond vert très pâle ou gris clair
+                    item.setBackground(QBrush(QColor(240, 240, 240)))
+                else:
+                    # Si hors ligne, fond rouge très pâle
+                    item.setBackground(QBrush(QColor(255, 240, 240)))
             else:
                 item.setBackground(QBrush(QColor(color)))
+                item.setForeground(QBrush(QColor("black")))
 
     def handle_ups_alert(self, ip, message):
         """Gère les alertes UPS et envoie les notifications."""
@@ -577,19 +586,28 @@ class SNMPWorker(QThread):
             # Applique la couleur et le texte selon la colonne
             if col == 5:  # Colonne Latence
                 if is_excluded:
-                    item.setText("EXCLU")
+                    # Afficher la latence réelle mais avec un indicateur "Exclu"
+                    latency_text = f"{latency:.1f} ms" if latency < 500 else "HS"
+                    item.setText(f"{latency_text}")
                 else:
                     item.setText(f"{latency:.1f} ms" if latency < 500 else "HS")
             elif col == 6:  # Colonne Température (sera mis à jour par le thread SNMP séparé)
                 pass # Ne rien faire ici pour la température, géré par SNMPWorker
             
             # Colorie toute la ligne
-            # Si exclu, on peut mettre une couleur spécifique (ex: gris) ou garder la couleur normale
             if is_excluded:
-                # Couleur grisée pour les exclus
-                item.setBackground(QBrush(QColor(220, 220, 220)))
+                # Changer la couleur du texte pour indiquer l'exclusion (gris)
+                item.setForeground(QBrush(QColor("gray")))
+                # Fond légèrement grisé aussi pour bien distinguer
+                if latency < 500:
+                    # Si en ligne, fond vert très pâle ou gris clair
+                    item.setBackground(QBrush(QColor(240, 240, 240)))
+                else:
+                    # Si hors ligne, fond rouge très pâle
+                    item.setBackground(QBrush(QColor(255, 240, 240)))
             else:
                 item.setBackground(QBrush(QColor(color)))
+                item.setForeground(QBrush(QColor("black")))
 
     def update_lists(self, ip, latency):
         # Vérifier si l'hôte est exclu avant de mettre à jour les listes d'alertes
