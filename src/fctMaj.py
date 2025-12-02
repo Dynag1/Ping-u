@@ -2,11 +2,26 @@ import traceback
 import os
 import urllib3
 import xmltodict
-from PySide6.QtCore import QCoreApplication
-from PySide6.QtWidgets import QMessageBox
 from src import var
 import webbrowser
 from datetime import datetime
+
+try:
+    from PySide6.QtCore import QCoreApplication
+    from PySide6.QtWidgets import QMessageBox
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    class QCoreApplication: pass
+    class QMessageBox:
+        @staticmethod
+        def question(*args): return QMessageBox.No
+        @staticmethod
+        def information(*args): pass
+        @staticmethod
+        def warning(*args): pass
+        Yes = 1
+        No = 0
 
 LOG_FILE = "logs/update.log"
 
@@ -57,6 +72,11 @@ def recupDerVer(self):
     return None
 
 def testVersion(self):
+    if not GUI_AVAILABLE:
+        # En mode headless, on log juste mais pas de popup
+        log("Test de version ignoré en mode headless")
+        return
+
     log("Début du test de version")
     result = recupDerVer(self)
     if result is None:

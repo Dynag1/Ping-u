@@ -2,7 +2,14 @@ from src import var
 import pickle
 import os.path
 from pathlib import Path
-from PySide6.QtCore import Qt
+try:
+    from PySide6.QtCore import Qt
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    class Qt:
+        DisplayRole = 0
+
 from src.utils.logger import get_logger
 from src.utils.paths import AppPaths
 

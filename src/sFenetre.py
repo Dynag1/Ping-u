@@ -1,11 +1,28 @@
 import sqlite3
 from src import var, db, lic
-from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtCore import Qt, QSortFilterProxyModel, Signal,QObject
-from PySide6.QtWidgets import QHeaderView, QDialog, QTimeEdit
 
+try:
+    from PySide6.QtGui import QStandardItemModel, QStandardItem
+    from PySide6.QtCore import Qt, QSortFilterProxyModel, Signal, QObject
+    from PySide6.QtWidgets import QHeaderView, QDialog, QTimeEdit, QMessageBox
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    # Classes factices minimales
+    class QStandardItemModel: pass
+    class QStandardItem: pass
+    class Qt: pass
+    class QSortFilterProxyModel: pass
+    class Signal: 
+        def __init__(self, *args): pass
+        def emit(self, *args): pass
+    class QObject: pass
+    class QHeaderView: pass
+    class QDialog: pass
+    class QTimeEdit: pass
+    class QMessageBox: 
+        Accepted = 1
 
-from PySide6.QtWidgets import QMessageBox
 
 """*******************************
     Paramètres
@@ -13,6 +30,8 @@ from PySide6.QtWidgets import QMessageBox
 
 
 def fenetreParametre(self, comm):
+    if not GUI_AVAILABLE:
+        return
     from src.ui_fenParamGene import Ui_Dialog
     try:
         resutl = db.lire_param_gene()
@@ -67,6 +86,8 @@ def fenetreParametre(self, comm):
 
 
 def fenetreParamEnvoie(self):
+    if not GUI_AVAILABLE:
+        return
     from src.ui_fenParamEnvoie import Ui_fenParamEnvoie
     # resutl = db.lire_param_gene()
     dialog = QDialog()
@@ -105,6 +126,8 @@ def fenetreParamEnvoie(self):
 
 
 def fenetreMailRecap(self):
+    if not GUI_AVAILABLE:
+        return
     from src.ui_fenMailRecap import Ui_fenMailRecap
     # resutl = db.lire_param_gene()
     dialog = QDialog()
@@ -149,6 +172,8 @@ def fenetreMailRecap(self):
     if resultat == QMessageBox.Accepted:
         save_param_mail()
 def fenAPropos(self):
+    if not GUI_AVAILABLE:
+        return
     from src.ui_fenAPropos import Ui_Dialog
     dialog = QDialog()
     sfenetre = Ui_Dialog()
