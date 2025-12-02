@@ -29,8 +29,12 @@ class MainController:
                 logger.warning("Tentative de démarrage alors que le monitoring est déjà actif. Redémarrage...")
                 self.stop_monitoring()
                 # Laisser un peu de temps pour l'arrêt des threads
-                from PySide6.QtCore import QThread
-                QThread.msleep(500)
+                try:
+                    from PySide6.QtCore import QThread
+                    QThread.msleep(500)
+                except ImportError:
+                    import time
+                    time.sleep(0.5)
             
             # Réinitialiser les listes d'alertes pour éviter les fausses alertes
             # avec d'anciens compteurs qui ne correspondent plus au nbrHs actuel
@@ -73,8 +77,11 @@ class MainController:
             if self.ping_manager:
                 self.ping_manager.stop()
                 # Traiter les événements Qt en attente pour laisser le temps au thread de se terminer
-                from PySide6.QtCore import QCoreApplication
-                QCoreApplication.processEvents()
+                try:
+                    from PySide6.QtCore import QCoreApplication
+                    QCoreApplication.processEvents()
+                except ImportError:
+                    pass
                 self.ping_manager = None
                 
             # Mise à jour UI

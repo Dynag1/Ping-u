@@ -1,40 +1,15 @@
-# Interface graphique
-PySide6>=6.5.0
-qt_material>=2.14  # Thèmes Material Design pour Qt
-
-# Réseau et ping
-# pythonping>=1.1.0  # Remplacé par subprocess ping système (plus fiable)
-requests>=2.26.0
-
-# SNMP (surveillance température et onduleurs)
-# Note: pysnmp original est abandonné, utiliser pysnmp-lextudio (fork maintenu et compatible)
-pysnmp-lextudio>=5.0.0
-pyasn1>=0.4.8
-pyasn1-modules>=0.2.8
-pycryptodomex>=3.15.0
-
-# Email et sécurité
-python-gnupg>=0.5.0
-cryptography>=39.0.0  # Pour le système de licence sécurisé
-
-# Fichiers Excel
+PySide6>=6.5.0; sys_platform == 'win32'
+Flask>=2.3.0
+Flask-SocketIO>=5.3.0
+Flask-Cors>=4.0.0
+python-socketio>=5.8.0
+python-engineio>=4.5.0
+eventlet>=0.33.0; sys_platform != 'win32'
 openpyxl>=3.1.0
-
-# Build et packaging
-Pillow>=10.0.0
-pyinstaller>=6.0.0
-
-# Utilitaires
-setuptools>=65.0.0
-
-# Serveur Web
-flask>=3.0.0
-flask-socketio>=5.3.0
-flask-cors>=4.0.0
-python-socketio>=5.10.0
-python-engineio>=4.8.0
-simple-websocket>=1.0.0
-
 xmltodict>=0.13.0
-qt_themes
-
+urllib3>=2.0.0
+pysnmp>=4.4.12
+pysnmp-lextudio>=5.0.0; python_version >= '3.10'
+requests>=2.31.0
+emoji>=2.8.0
+cryptography>=41.0.0

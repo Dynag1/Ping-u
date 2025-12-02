@@ -875,12 +875,60 @@ def run_headless_mode():
         logger.warning(f"Erreur chargement paramètres: {e}")
     
     # Créer une application Qt minimale (nécessaire pour QStandardItemModel)
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
+    if GUI_AVAILABLE:
+        app = QApplication.instance()
+        if app is None:
+            app = QApplication(sys.argv)
+    else:
+        # En mode headless pur sans PySide6, on crée un objet dummy
+        # qui doit avoir une méthode exec() pour la boucle principale
+        class DummyApp:
+            def exec(self):
+                while True:
+                    time.sleep(1)
+            def quit(self):
+                sys.exit(0)
+        app = DummyApp()
     
     # Créer un modèle de données minimal
-    from PySide6.QtGui import QStandardItemModel
+    if GUI_AVAILABLE:
+        from PySide6.QtGui import QStandardItemModel
+    else:
+        # Modèle minimal pour headless
+        class QStandardItemModel:
+            def __init__(self):
+                self._rows = []
+                self._headers = []
+            def rowCount(self, parent=None): return len(self._rows)
+            def columnCount(self, parent=None): return 10
+            def setHorizontalHeaderLabels(self, labels): self._headers = labels
+            def appendRow(self, items): self._rows.append(items)
+            def removeRow(self, row): 
+                if 0 <= row < len(self._rows):
+                    self._rows.pop(row)
+            def removeRows(self, row, count):
+                if 0 <= row < len(self._rows):
+                    del self._rows[row:row+count]
+            def item(self, row, col):
+                if 0 <= row < len(self._rows) and 0 <= col < len(self._rows[row]):
+                    return self._rows[row][col]
+                return None
+            def setItem(self, row, col, item):
+                if 0 <= row < len(self._rows):
+                    while len(self._rows[row]) <= col:
+                        self._rows[row].append(None)
+                    self._rows[row][col] = item
+            def index(self, row, col):
+                # Retourne un objet simple qui peut stocker row/col
+                class Index:
+                    def __init__(self, r, c, m): self._r, self._c, self._m = r, c, m
+                    def data(self, role=None): 
+                        item = self._m.item(self._r, self._c)
+                        return item.text() if item else ""
+                return Index(row, col, self)
+            def data(self, index, role=None):
+                return index.data(role)
+
     treeIpModel = QStandardItemModel()
     treeIpModel.setHorizontalHeaderLabels([
         "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "Comm", "Excl"
@@ -936,7 +984,14 @@ def run_headless_mode():
             
         def on_add_row(self, i, ip, nom, mac, port, extra, is_ok):
             """Ajoute une ligne au modèle (appelé par le thread de scan)"""
-            from PySide6.QtGui import QStandardItem
+            if GUI_AVAILABLE:
+                from PySide6.QtGui import QStandardItem
+            else:
+                # Version Headless
+                class QStandardItem:
+                    def __init__(self, text=""): self._text = text
+                    def text(self): return self._text
+            
             items = [
                 QStandardItem(str(i)),    # 0: Id
                 QStandardItem(ip),        # 1: IP
@@ -1097,11 +1152,21 @@ def run_headless_mode():
             app.quit()
     
     # Timer pour vérifier le fichier stop toutes les secondes
-    from PySide6.QtCore import QTimer
-    stop_check_timer = QTimer()
-    stop_check_timer.timeout.connect(check_stop_file)
-    stop_check_timer.start(1000)
-    
+    if GUI_AVAILABLE:
+        from PySide6.QtCore import QTimer
+        stop_check_timer = QTimer()
+        stop_check_timer.timeout.connect(check_stop_file)
+        stop_check_timer.start(1000)
+    else:
+        # En mode headless sans GUI, la boucle principale est dans app.exec() (DummyApp)
+        # On doit modifier DummyApp pour vérifier le fichier stop
+        original_exec = app.exec
+        def looped_exec():
+            while True:
+                check_stop_file()
+                time.sleep(1)
+        app.exec = looped_exec
+
     logger.info("[HEADLESS] Application demarree en mode headless")
     logger.info("[HEADLESS] Pour arreter: python Pingu.py -stop")
     logger.info("[HEADLESS] Interface web admin: http://localhost:9090/admin")

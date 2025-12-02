@@ -1,9 +1,16 @@
 # This Python file uses the following encoding: utf-8
 
 import src.var as var
-from openpyxl import Workbook
-from openpyxl import load_workbook
 import os
+
+try:
+    from openpyxl import Workbook
+    from openpyxl import load_workbook
+    OPENPYXL_AVAILABLE = True
+except ImportError:
+    OPENPYXL_AVAILABLE = False
+    Workbook = None
+    load_workbook = None
 
 try:
     from PySide6.QtCore import QModelIndex
@@ -68,6 +75,10 @@ def chOpen(self):
 def saveExcel(self, tree_model):
     if not GUI_AVAILABLE:
         return
+        
+    if not OPENPYXL_AVAILABLE:
+        QMessageBox.critical(self, self.tr("Erreur"), self.tr("Le module openpyxl n'est pas installé. Impossible d'exporter en Excel."), QMessageBox.Ok)
+        return
 
     try:
         name = chSave(self)  # À remplacer par ta méthode de sélection de fichier
@@ -117,6 +128,10 @@ def saveExcel(self, tree_model):
 
 def openExcel(self, tree_model):
     if not GUI_AVAILABLE:
+        return
+        
+    if not OPENPYXL_AVAILABLE:
+        QMessageBox.critical(self, self.tr("Erreur"), self.tr("Le module openpyxl n'est pas installé. Impossible d'importer depuis Excel."), QMessageBox.Ok)
         return
 
     filename = chOpen(self)

@@ -3,13 +3,33 @@
 Serveur Web pour afficher les hôtes monitorés en temps réel
 Utilise Flask et Socket.IO pour les mises à jour automatiques
 """
-from flask import Flask, render_template, jsonify, request, send_file, session, redirect, url_for
-from flask_socketio import SocketIO, emit
-from flask_cors import CORS
-import threading
 import socket
 import asyncio
 import secrets
+import logging
+
+try:
+    from flask import Flask, render_template, jsonify, request, send_file, session, redirect, url_for
+    from flask_socketio import SocketIO, emit
+    from flask_cors import CORS
+    FLASK_AVAILABLE = True
+except ImportError:
+    FLASK_AVAILABLE = False
+    class Flask: 
+        def __init__(self, *args, **kwargs): pass
+        def route(self, *args, **kwargs): return lambda f: f
+        def config(self): return {}
+    class SocketIO: 
+        def __init__(self, *args, **kwargs): pass
+        def on(self, *args, **kwargs): return lambda f: f
+        def run(self, *args, **kwargs): pass
+    def jsonify(*args, **kwargs): return {}
+    def render_template(*args, **kwargs): return ""
+    def request(*args, **kwargs): return None
+    def session(*args, **kwargs): return {}
+    def redirect(*args, **kwargs): return ""
+    def url_for(*args, **kwargs): return ""
+    def CORS(*args, **kwargs): pass
 
 try:
     from PySide6.QtCore import QObject, Signal
@@ -1096,6 +1116,10 @@ Ping ü - Monitoring Réseau
     
     def start(self):
         """Démarre le serveur web"""
+        if not FLASK_AVAILABLE:
+            logger.error("Flask/SocketIO non installés. Le serveur web ne peut pas démarrer.")
+            return False
+
         if self.running:
             logger.warning("Serveur web déjà en cours d'exécution")
             return False
