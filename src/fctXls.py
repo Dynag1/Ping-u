@@ -107,7 +107,8 @@ def openExcel(self, tree_model):
             for i in range(tree_model.rowCount()):
                 existing_ip = tree_model.index(i, 0).data()
                 if existing_ip == ip:
-                    QMessageBox.warning(self, self.tr("Doublon"), f"{self.tr('L\'adresse existe déjà')} : {ip}")
+                    msg = self.tr("L'adresse existe déjà")
+                    QMessageBox.warning(self, self.tr("Doublon"), f"{msg} : {ip}")
                     ip_exists = True
                     break
 
@@ -130,4 +131,5 @@ def openExcel(self, tree_model):
             QMessageBox.Ok
         )
     except Exception as e:
-        QMessageBox.critical(self, self.tr("Erreur"), f"{self.tr('Erreur lors de la lecture')} : {str(e)}")
+        msg = self.tr("Erreur lors de la lecture")
+        QMessageBox.critical(self, self.tr("Erreur"), f"{msg} : {str(e)}")

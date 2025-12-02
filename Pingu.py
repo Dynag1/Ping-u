@@ -680,7 +680,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, self.tr("Logs"), self.tr("Le fichier de logs n'existe pas."))
         except Exception as e:
             logger.error(f"Erreur lors de l'effacement des logs: {e}", exc_info=True)
-            QMessageBox.critical(self, self.tr("Erreur"), f"{self.tr('Impossible d\'effacer les logs')}: {e}")
+            msg = self.tr("Impossible d'effacer les logs")
+            QMessageBox.critical(self, self.tr("Erreur"), f"{msg}: {e}")
     
     # ============= Serveur Web =============
     
