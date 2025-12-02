@@ -429,11 +429,13 @@ class SNMPWorker(QThread):
         self.tree_model = tree_model
         self.traffic_cache = traffic_cache
         self.is_running = True
+        self.system = platform.system().lower()
         # Connecter le signal à une méthode locale (astuce pour thread-safety)
         self.snmp_update_signal.connect(self.apply_update)
 
     def run(self):
         """Point d'entrée du thread."""
+        logger.info(f"Démarrage du worker SNMP sur {self.system}")
         try:
             # Création et exécution de la boucle asyncio
             if platform.system().lower() == "windows":
@@ -448,12 +450,14 @@ class SNMPWorker(QThread):
             logger.error(f"Erreur boucle asyncio SNMP: {e}", exc_info=True)
 
     def stop(self):
+        logger.info("Arrêt du worker SNMP demandé")
         self.is_running = False
         # Permettre un arrêt rapide en attendant le thread
         self.wait()
 
     async def run_loop(self):
         """Boucle principale SNMP avec délai fixe de 5 secondes."""
+        logger.info("Début de la boucle principale SNMP")
         while self.is_running:
             try:
                 start_time = asyncio.get_event_loop().time()

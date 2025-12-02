@@ -1116,6 +1116,18 @@ Ping ü - Monitoring Réseau
             log = logging.getLogger('werkzeug')
             log.setLevel(logging.ERROR)  # Ne montrer que les vraies erreurs
             
+            # Supprimer les handlers existants pour éviter la duplication et filtrer stderr
+            for h in log.handlers[:]:
+                log.removeHandler(h)
+                
+            # Filtre personnalisé pour ignorer l'erreur spécifique "write() before start_response"
+            # qui est un bug connu de Werkzeug/SocketIO en mode threading mais inoffensif
+            class IgnoreWriteErrorFilter(logging.Filter):
+                def filter(self, record):
+                    return "write() before start_response" not in record.getMessage()
+            
+            log.addFilter(IgnoreWriteErrorFilter())
+            
             self.socketio.run(self.app, 
                             host='0.0.0.0',
                             port=self.port, 
