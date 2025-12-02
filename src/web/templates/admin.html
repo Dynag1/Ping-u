@@ -1022,8 +1022,11 @@
                         <button class="btn btn-danger btn-small" onclick="deleteHost('${host.ip}')" title="Supprimer">
                             🗑️
                         </button>
-                        <button class="btn btn-secondary btn-small" onclick="excludeHost('${host.ip}')" title="Exclure">
-                            🚫
+                        <button class="btn ${host.excl === 'x' ? 'btn-secondary' : 'btn-secondary'} btn-small" 
+                                onclick="excludeHost('${host.ip}', ${host.excl === 'x' ? true : false})" 
+                                title="${host.excl === 'x' ? 'Inclure (Actuellement exclu)' : 'Exclure'}"
+                                style="${host.excl === 'x' ? 'background: #f59e0b;' : ''}">
+                            ${host.excl === 'x' ? '⚠️' : '🚫'}
                         </button>
                     </td>
                 </tr>
@@ -1200,15 +1203,21 @@
             }
         }
 
-        async function excludeHost(ip) {
+        async function excludeHost(ip, isExcluded) {
             try {
-                const result = await apiCall('/api/exclude_host', 'POST', { ip });
-                showNotification(`Hôte ${ip} exclu`, 'info');
+                const endpoint = isExcluded ? '/api/include_host' : '/api/exclude_host';
+                const message = isExcluded ? `Hôte ${ip} réinclus` : `Hôte ${ip} exclu`;
+                const type = isExcluded ? 'success' : 'info';
+                
+                const result = await apiCall(endpoint, 'POST', { ip });
+                showNotification(message, type);
                 socket.emit('request_update');
             } catch (error) {
                 // Erreur déjà affichée
             }
         }
+
+        // Ancienne fonction includeHost supprimée car fusionnée dans excludeHost
 
         function editHostName(ip) {
             const ipClean = ip.replace(/\./g, '-');

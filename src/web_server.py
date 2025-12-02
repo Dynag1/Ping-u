@@ -355,6 +355,12 @@ class WebServer(QObject):
                         from PySide6.QtGui import QStandardItem
                         excl_item = QStandardItem("x")
                         model.setItem(row, 9, excl_item)  # Colonne Excl
+                        
+                        # Réinitialiser le statut visuel
+                        latence_item = model.item(row, 5)
+                        if latence_item:
+                            latence_item.setText("EXCLU")
+                        
                         logger.info(f"Hôte {ip} exclu via API")
                         self.broadcast_update()
                         return jsonify({'success': True, 'message': f'Hôte {ip} exclu'})
@@ -362,6 +368,29 @@ class WebServer(QObject):
                 return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
             except Exception as e:
                 logger.error(f"Erreur exclusion hôte: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/include_host', methods=['POST'])
+        @WebAuth.login_required
+        def include_host():
+            try:
+                data = request.get_json()
+                ip = data.get('ip')
+                
+                model = self.main_window.treeIpModel
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)  # Colonne IP
+                    if item_ip and item_ip.text() == ip:
+                        from PySide6.QtGui import QStandardItem
+                        excl_item = QStandardItem("")
+                        model.setItem(row, 9, excl_item)  # Colonne Excl (vide pour inclure)
+                        logger.info(f"Hôte {ip} réinclus via API")
+                        self.broadcast_update()
+                        return jsonify({'success': True, 'message': f'Hôte {ip} réinclus'})
+                
+                return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
+            except Exception as e:
+                logger.error(f"Erreur inclusion hôte: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
         @self.app.route('/api/update_host_name', methods=['POST'])
