@@ -81,6 +81,11 @@ class MainWindow(QMainWindow):
 
     def cleanup_resources(self):
         """Nettoyage propre de toutes les ressources"""
+        # Éviter la double exécution (par exemple via menu Quitter + closeEvent)
+        if getattr(self, '_is_cleaning_up', False):
+            return
+        self._is_cleaning_up = True
+        
         try:
             # 1. Arrêter le flag global
             var.tourne = False
@@ -104,6 +109,19 @@ class MainWindow(QMainWindow):
                 logger.info("Paramètres sauvegardés")
             except Exception as e:
                 logger.error(f"Erreur sauvegarde paramètres: {e}", exc_info=True)
+
+            # 4b. Sauvegarde automatique de la liste de suivi
+            try:
+                if not os.path.exists("bd"):
+                    os.makedirs("bd", exist_ok=True)
+                autosave_path = os.path.join("bd", "autosave.pin")
+                if self.treeIpModel.rowCount() > 0:
+                    fct.save_csv(self, self.treeIpModel, filepath=autosave_path, silent=True)
+                    logger.info(f"Liste de suivi sauvegardée automatiquement dans {autosave_path} ({self.treeIpModel.rowCount()} hôtes)")
+                else:
+                    logger.warning("Aucun hôte à sauvegarder pour l'autosave")
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde automatique liste: {e}", exc_info=True)
                 
             # 5. Traiter les derniers événements Qt
             QCoreApplication.processEvents()
@@ -165,6 +183,26 @@ class MainWindow(QMainWindow):
         self.treeIpHeader(self.tree_view)
         # IP locale
         self.ui.txtIp.setText(fct.getIp(self))
+
+        # Chargement automatique de la dernière liste de suivi
+        try:
+            autosave_path = os.path.join("bd", "autosave.pin")
+            loaded = False
+            
+            if os.path.exists(autosave_path):
+                logger.info(f"Chargement de la liste automatique: {autosave_path}")
+                fct.load_csv(self, self.treeIpModel, autosave_path)
+                if self.treeIpModel.rowCount() > 0:
+                    loaded = True
+            
+            if not loaded and os.path.exists('bd'):
+                files = [f for f in os.listdir('bd') if f.endswith('.pin') and f != 'autosave.pin']
+                if files:
+                    latest_file = max([os.path.join('bd', f) for f in files], key=os.path.getmtime)
+                    logger.info(f"Chargement du dernier fichier (fallback): {latest_file}")
+                    fct.load_csv(self, self.treeIpModel, latest_file)
+        except Exception as e:
+            logger.error(f"Erreur chargement automatique liste: {e}", exc_info=True)
         
         # Chargement des paramètres UI
         # Chargement des paramètres UI
@@ -405,18 +443,21 @@ class MainWindow(QMainWindow):
 
     def treeIpHeader(self, tree_view):
         self.tree_view = self.ui.treeIp
-        self.treeIpModel = QStandardItemModel()
-        # 10 colonnes uniquement (SANS Débit IN/OUT)
+        
+        # Créer le modèle seulement s'il n'existe pas déjà
+        if not hasattr(self, 'treeIpModel') or self.treeIpModel is None:
+            self.treeIpModel = QStandardItemModel()
+            self.proxyModel = IPSortProxyModel()
+            self.proxyModel.setSourceModel(self.treeIpModel)
+            self.tree_view.setModel(self.proxyModel)
+            
+        # Toujours mettre à jour les en-têtes (pour la traduction)
         self.treeIpModel.setHorizontalHeaderLabels([
             self.tr("Id"), self.tr("IP"), self.tr("Nom"), self.tr("Mac"), 
             self.tr("Port"), self.tr("Latence"), self.tr("Temp"), self.tr("Suivi"), 
             self.tr("Comm"), self.tr("Excl")
         ])
         
-        # Utiliser un proxy model pour le tri numérique des IP
-        self.proxyModel = IPSortProxyModel()
-        self.proxyModel.setSourceModel(self.treeIpModel)
-        self.tree_view.setModel(self.proxyModel)
         self.tree_view.setSortingEnabled(True)
         header = self.tree_view.header()
         header.setStretchLastSection(False)
@@ -434,6 +475,11 @@ class MainWindow(QMainWindow):
         self.tree_view.setSelectionMode(QAbstractItemView.NoSelection)
 
         self.tree_view.setContextMenuPolicy(Qt.CustomContextMenu)
+        # Déconnecter l'ancien signal pour éviter les doublons si on repasse ici
+        try:
+            self.tree_view.customContextMenuRequested.disconnect()
+        except:
+            pass
         self.tree_view.customContextMenuRequested.connect(self.show_context_menu)
         self.tree_view.header().setSortIndicator(1, Qt.AscendingOrder)
 
@@ -903,15 +949,22 @@ def run_headless_mode():
     # Charger les données existantes si disponibles
     hosts_loaded = False
     try:
-        if os.path.exists('bd'):
-            files = [f for f in os.listdir('bd') if f.endswith('.pin')]
+        autosave_path = os.path.join("bd", "autosave.pin")
+        if os.path.exists(autosave_path):
+            logger.info(f"Chargement de la liste automatique: {autosave_path}")
+            fct.load_csv(window, window.treeIpModel, autosave_path)
+            hosts_loaded = window.treeIpModel.rowCount() > 0
+        
+        if not hosts_loaded and os.path.exists('bd'):
+            files = [f for f in os.listdir('bd') if f.endswith('.pin') and f != 'autosave.pin']
             if files:
                 latest_file = max([os.path.join('bd', f) for f in files], key=os.path.getmtime)
                 logger.info(f"Chargement des données depuis {latest_file}")
                 fct.load_csv(window, window.treeIpModel, latest_file)
                 hosts_loaded = window.treeIpModel.rowCount() > 0
-                if hosts_loaded:
-                    logger.info(f"{window.treeIpModel.rowCount()} hôte(s) chargé(s)")
+        
+        if hosts_loaded:
+            logger.info(f"{window.treeIpModel.rowCount()} hôte(s) chargé(s)")
     except Exception as e:
         logger.warning(f"Impossible de charger les données: {e}")
     
@@ -960,6 +1013,16 @@ def run_headless_mode():
                 logger.info("Paramètres sauvegardés")
             except Exception as e:
                 logger.error(f"Erreur sauvegarde paramètres: {e}")
+
+            # Sauvegarde automatique de la liste de suivi
+            try:
+                if not os.path.exists("bd"):
+                    os.makedirs("bd", exist_ok=True)
+                autosave_path = os.path.join("bd", "autosave.pin")
+                fct.save_csv(window, window.treeIpModel, filepath=autosave_path)
+                logger.info(f"Liste de suivi sauvegardée automatiquement dans {autosave_path}")
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde automatique liste: {e}", exc_info=True)
             
             # Supprimer le fichier PID
             try:

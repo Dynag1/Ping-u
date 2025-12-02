@@ -32,6 +32,34 @@ def getmac(ip):
                                 fields = result.stdout.split()
                                 if len(fields) >= 11 and fields[10] != "00:00:00:00:00:00":
                                         mac = fields[10]
+                elif my_os == "Linux":
+                        try:
+                            # Lecture directe du fichier ARP (plus fiable et rapide que la commande arp)
+                            with open("/proc/net/arp", "r") as f:
+                                # Sauter la ligne d'en-tête
+                                next(f)
+                                for line in f:
+                                    fields = line.split()
+                                    if len(fields) >= 4 and fields[0] == ip:
+                                        hw_address = fields[3]
+                                        if hw_address != "00:00:00:00:00:00":
+                                            mac = hw_address
+                                            break
+                        except Exception:
+                            # Fallback sur la commande arp si /proc/net/arp n'est pas accessible
+                            result = subprocess.run(
+                                    ["arp", "-a", ip],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    timeout=2,
+                                    text=True
+                            )
+                            if result.returncode == 0:
+                                # Format Linux: ? (192.168.1.1) at 00:11:22:33:44:55 [ether] on eth0
+                                import re
+                                match = re.search(r"at ([0-9a-fA-F:]{17})", result.stdout)
+                                if match:
+                                    mac = match.group(1)
         except Exception as e:
                 print(str(e))
                 pass

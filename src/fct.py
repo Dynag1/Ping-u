@@ -22,7 +22,7 @@ def getIp(self):
         print("fct_ip - " + str(e))
 
 
-def save_csv(self, treeModel, filepath=None, return_path=False):
+def save_csv(self, treeModel, filepath=None, return_path=False, silent=False):
     try:
         # Récupérer le modèle depuis le QTreeView
         model = treeModel
@@ -48,11 +48,14 @@ def save_csv(self, treeModel, filepath=None, return_path=False):
         else:
             filename = filepath
 
+        row_count = model.rowCount()
+        print(f"Sauvegarde de {row_count} lignes dans {filename}")
+        
         with open(filename, 'w', newline='', encoding='utf-8') as myfile:
             csvwriter = csv.writer(myfile, delimiter=',')
 
             # Parcourir les lignes du modèle
-            for row in range(model.rowCount()):
+            for row in range(row_count):
                 row_data = []
                 for column in range(model.columnCount()):
                     index = model.index(row, column)
@@ -63,13 +66,15 @@ def save_csv(self, treeModel, filepath=None, return_path=False):
         if return_path:
             return filename
 
-        # Lancer l'alerte dans un thread séparé
-        QMessageBox.information(
-            self,
-            self.tr("Succès"),
-            self.tr("Données sauvegardés"),
-            QMessageBox.Ok
-        )
+        # Lancer l'alerte seulement si pas silent
+        if not silent:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self,
+                self.tr("Succès"),
+                self.tr("Données sauvegardés"),
+                QMessageBox.Ok
+            )
     except Exception as e:
         print("design - " + str(e))
         if return_path:
