@@ -280,6 +280,17 @@
                     <span>Connecté</span>
                 </span>
             </h1>
+            <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
+                <label style="color: #6b7280; font-weight: 600;">Trier par :</label>
+                <select id="sort-select" onchange="changeSort()" style="padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <option value="status-offline-first">Statut (HS en premier)</option>
+                    <option value="status-online-first">Statut (En ligne en premier)</option>
+                    <option value="ip-asc">Adresse IP (Croissant)</option>
+                    <option value="ip-desc">Adresse IP (Décroissant)</option>
+                    <option value="name-asc">Nom (A-Z)</option>
+                    <option value="name-desc">Nom (Z-A)</option>
+                </select>
+            </div>
             <div class="stats">
                 <div class="stat-card total">
                     <span class="label">Total:</span>
@@ -316,6 +327,7 @@
         });
         
         let hostsData = [];
+        let currentSort = 'status-offline-first';
         
         socket.on('connect', function() {
             updateStatusBadge(true);
@@ -336,6 +348,73 @@
             updateStats(hosts);
             updateLastUpdateTime();
         });
+
+        function changeSort() {
+            currentSort = document.getElementById('sort-select').value;
+            renderHosts(hostsData);
+        }
+
+        function naturalSort(a, b) {
+            // Fonction pour le tri naturel (gère les nombres dans les chaînes)
+            const ax = [], bx = [];
+            
+            String(a).replace(/(\d+)|(\D+)/g, function(_, $1, $2) { ax.push([$1 || Infinity, $2 || ""]) });
+            String(b).replace(/(\d+)|(\D+)/g, function(_, $1, $2) { bx.push([$1 || Infinity, $2 || ""]) });
+            
+            while(ax.length && bx.length) {
+                const an = ax.shift();
+                const bn = bx.shift();
+                const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
+                if(nn) return nn;
+            }
+            
+            return ax.length - bx.length;
+        }
+
+        function sortHostsData(hosts) {
+            return [...hosts].sort((a, b) => {
+                switch(currentSort) {
+                    case 'status-offline-first':
+                        if (a.status === 'offline' && b.status === 'online') return -1;
+                        if (a.status === 'online' && b.status === 'offline') return 1;
+                        // Si même statut, trier par IP
+                        return compareIPs(a.ip, b.ip);
+                    
+                    case 'status-online-first':
+                        if (a.status === 'online' && b.status === 'offline') return -1;
+                        if (a.status === 'offline' && b.status === 'online') return 1;
+                        // Si même statut, trier par IP
+                        return compareIPs(a.ip, b.ip);
+                    
+                    case 'ip-asc':
+                        return compareIPs(a.ip, b.ip);
+                    
+                    case 'ip-desc':
+                        return compareIPs(b.ip, a.ip);
+                    
+                    case 'name-asc':
+                        return naturalSort(a.nom || a.ip, b.nom || b.ip);
+                    
+                    case 'name-desc':
+                        return naturalSort(b.nom || b.ip, a.nom || a.ip);
+                    
+                    default:
+                        return 0;
+                }
+            });
+        }
+
+        function compareIPs(ipA, ipB) {
+            const partsA = ipA.split('.').map(Number);
+            const partsB = ipB.split('.').map(Number);
+            
+            for (let i = 0; i < 4; i++) {
+                if (partsA[i] !== partsB[i]) {
+                    return partsA[i] - partsB[i];
+                }
+            }
+            return 0;
+        }
         
         socket.on('connect_error', function(error) {
             updateStatusBadge(false);
@@ -373,13 +452,8 @@
                 return;
             }
 
-            // Trier les hôtes : HS (offline) en premier, puis online
-            const sortedHosts = hosts.sort((a, b) => {
-                if (a.status === 'offline' && b.status === 'online') return -1;
-                if (a.status === 'online' && b.status === 'offline') return 1;
-                // Si même statut, trier par nom
-                return (a.nom || a.ip).localeCompare(b.nom || b.ip);
-            });
+            // Trier les hôtes selon le choix actuel
+            const sortedHosts = sortHostsData(hosts);
 
             // Récupérer ou créer le conteneur grid
             let grid = container.querySelector('.hosts-grid');
@@ -402,6 +476,11 @@
                 } else {
                     // Mettre à jour la carte existante sans recréer
                     updateHostCard(card, host);
+                }
+                
+                // Réordonner visuellement en changeant l'ordre dans le DOM si nécessaire
+                if (grid.children[index] !== card) {
+                    grid.insertBefore(card, grid.children[index]);
                 }
             });
 

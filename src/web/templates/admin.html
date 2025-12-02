@@ -809,13 +809,13 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>IP</th>
-                            <th>Nom</th>
-                            <th>MAC</th>
-                            <th>Port</th>
-                            <th>Latence</th>
-                            <th>Température</th>
-                            <th>Statut</th>
+                            <th style="cursor: pointer;" onclick="sortHosts('ip')">IP <span id="sort-ip" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('nom')">Nom <span id="sort-nom" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('mac')">MAC <span id="sort-mac" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('port')">Port <span id="sort-port" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('latence')">Latence <span id="sort-latence" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('temp')">Température <span id="sort-temp" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('status')">Statut <span id="sort-status" class="sort-icon">↕️</span></th>
                             <th style="width: 150px;">Actions</th>
                         </tr>
                     </thead>
@@ -859,7 +859,16 @@
                 hosts = [];
             }
             hostsData = hosts;
-            updateHostsTable(hosts);
+            // Appliquer le tri actuel si défini
+            if (currentSort.column) {
+                // Réappliquer le tri sans inverser la direction
+                const savedDirection = currentSort.direction;
+                // On inverse temporairement car sortHosts va inverser
+                currentSort.direction = savedDirection === 'asc' ? 'desc' : 'asc';
+                sortHosts(currentSort.column);
+            } else {
+                updateHostsTable(hosts);
+            }
             updateStats(hosts);
         });
 
@@ -883,7 +892,69 @@
             socket.emit('request_update');
         });
 
-        // ==================== Update Functions ====================
+        // ==================== Sorting Functions ====================
+        let currentSort = { column: 'ip', direction: 'asc' };
+
+        function naturalSort(a, b) {
+            // Fonction pour le tri naturel (gère les nombres dans les chaînes)
+            const ax = [], bx = [];
+            
+            a.replace(/(\d+)|(\D+)/g, function(_, $1, $2) { ax.push([$1 || Infinity, $2 || ""]) });
+            b.replace(/(\d+)|(\D+)/g, function(_, $1, $2) { bx.push([$1 || Infinity, $2 || ""]) });
+            
+            while(ax.length && bx.length) {
+                const an = ax.shift();
+                const bn = bx.shift();
+                const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
+                if(nn) return nn;
+            }
+            
+            return ax.length - bx.length;
+        }
+
+        function sortHosts(column) {
+            // Inverser la direction si on clique sur la même colonne
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+
+            // Mettre à jour les icônes de tri
+            document.querySelectorAll('.sort-icon').forEach(icon => icon.textContent = '↕️');
+            const currentIcon = document.getElementById(`sort-${column}`);
+            if (currentIcon) {
+                currentIcon.textContent = currentSort.direction === 'asc' ? '⬆️' : '⬇️';
+            }
+
+            // Trier les données
+            hostsData.sort((a, b) => {
+                let valA = a[column] || '';
+                let valB = b[column] || '';
+
+                // Cas spécifique pour les IPs (tri numérique des octets)
+                if (column === 'ip') {
+                    const ipA = valA.split('.').map(Number);
+                    const ipB = valB.split('.').map(Number);
+                    
+                    for (let i = 0; i < 4; i++) {
+                        if (ipA[i] !== ipB[i]) {
+                            return (ipA[i] - ipB[i]) * (currentSort.direction === 'asc' ? 1 : -1);
+                        }
+                    }
+                    return 0;
+                }
+
+                // Tri naturel pour les autres colonnes (nom, port...)
+                const comparison = naturalSort(String(valA), String(valB));
+                return currentSort.direction === 'asc' ? comparison : -comparison;
+            });
+
+            // Réafficher le tableau
+            updateHostsTable(hostsData);
+        }
+
         function updateStats(hosts) {
             const total = hosts.length;
             const online = hosts.filter(h => h.status === 'online').length;
