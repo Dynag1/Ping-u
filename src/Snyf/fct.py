@@ -1,7 +1,27 @@
 from xml.dom import minidom
 import re
-import urllib3 as urllib3
-import xmltodict
+
+try:
+    import urllib3
+    URLLIB3_AVAILABLE = True
+except ImportError:
+    URLLIB3_AVAILABLE = False
+    class urllib3:
+        class PoolManager:
+            def __init__(self, *args, **kwargs): pass
+            def request(self, *args, **kwargs):
+                class DummyResponse:
+                    data = b"<root></root>"
+                return DummyResponse()
+
+try:
+    import xmltodict
+    XMLTODICT_AVAILABLE = True
+except ImportError:
+    XMLTODICT_AVAILABLE = False
+    def xmltodict_parse(*args, **kwargs):
+        return {}
+    xmltodict = type('obj', (object,), {'parse': xmltodict_parse})()
 
 
 

@@ -1,10 +1,23 @@
-from PySide6.QtWidgets import QDialog
+try:
+    from PySide6.QtWidgets import QDialog
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    class QDialog:
+        def __init__(self): pass
+        def exec(self): return 0
+        def reject(self): pass
+
 import threading
 from src.Snyf import send
 
 version = "0.1.0"
 print("main")
+
 def main(self, comm):
+    if not GUI_AVAILABLE:
+        return
+    
     from src.Snyf.ui_fen import Ui_Dialog
     dialog = QDialog()
     sfenetre = Ui_Dialog()

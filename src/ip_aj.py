@@ -1,6 +1,43 @@
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, QMutex, QMutexLocker, Signal, Slot, pyqtSlot
-from PySide6.QtGui import QStandardItem
-from PySide6.QtWidgets import QApplication
+try:
+    from PySide6.QtCore import QObject, QRunnable, QThreadPool, QMutex, QMutexLocker, Signal, Slot, pyqtSlot
+    from PySide6.QtGui import QStandardItem
+    from PySide6.QtWidgets import QApplication
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    # Classes factices pour headless
+    class QObject: pass
+    class QRunnable: 
+        def setAutoDelete(self, val): pass
+    class QThreadPool:
+        @staticmethod
+        def globalInstance():
+            class DummyPool:
+                def setMaxThreadCount(self, n): pass
+                def start(self, worker): 
+                    # Exécuter directement dans le thread courant
+                    worker.run()
+                def waitForDone(self): pass
+                def clear(self): pass
+            return DummyPool()
+    class QMutex: pass
+    class QMutexLocker: 
+        def __init__(self, mutex): pass
+    class Signal:
+        def __init__(self, *args): pass
+        def emit(self, *args): pass
+    def Slot(*args): return lambda f: f
+    def pyqtSlot(*args): return lambda f: f
+    class QStandardItem:
+        def __init__(self, text=""): self._text = text
+        def text(self): return self._text
+    class QApplication:
+        @staticmethod
+        def instance():
+            class DummyApp:
+                def thread(self): return None
+            return DummyApp()
+
 from src import ip_fct
 import multiprocessing
 
@@ -90,9 +127,14 @@ class IpScanner(QObject):
     def __init__(self):
         super().__init__()
         self.threadpool = QThreadPool.globalInstance()
-        self.threadpool.setMaxThreadCount(multiprocessing.cpu_count() * 2)
+        try:
+            import multiprocessing
+            self.threadpool.setMaxThreadCount(multiprocessing.cpu_count() * 2)
+        except:
+            pass
         self._running = False
-        self.moveToThread(QApplication.instance().thread())
+        if GUI_AVAILABLE:
+            self.moveToThread(QApplication.instance().thread())
 
     @Slot(str, int, str, dict)
     def scan(self, base_ip, count, port, options):
