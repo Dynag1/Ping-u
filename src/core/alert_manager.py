@@ -1,4 +1,68 @@
-from PySide6.QtCore import QObject, QTimer, Signal
+try:
+    from PySide6.QtCore import QObject, QTimer, Signal
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    class QObject: pass
+    
+    class Signal:
+        def __init__(self, *args):
+            self._slots = []
+        def connect(self, slot):
+            self._slots.append(slot)
+        def emit(self, *args):
+            for slot in self._slots:
+                try:
+                    slot(*args)
+                except Exception as e:
+                    print(f"Signal emit error: {e}")
+
+    class QTimer:
+        def __init__(self):
+            self._interval = 1000
+            self._callback = None
+            self._timer = None
+            self._running = False
+            self.timeout = self
+
+        def connect(self, slot):
+            self._callback = slot
+
+        def start(self, ms=None):
+            if ms is not None:
+                self._interval = ms
+            self.stop()
+            self._running = True
+            self._schedule()
+
+        def stop(self):
+            self._running = False
+            if self._timer:
+                self._timer.cancel()
+                self._timer = None
+
+        def setInterval(self, ms):
+            self._interval = ms
+
+        def interval(self):
+            return self._interval
+
+        def _schedule(self):
+            if not self._running:
+                return
+            import threading
+            self._timer = threading.Timer(self._interval / 1000.0, self._run_callback)
+            self._timer.daemon = True
+            self._timer.start()
+
+        def _run_callback(self):
+            if self._running and self._callback:
+                try:
+                    self._callback()
+                except Exception:
+                    pass
+                self._schedule()
+
 import threading
 from src import thread_mail, thread_recap_mail, thread_telegram, var, db
 from src.utils.logger import get_logger

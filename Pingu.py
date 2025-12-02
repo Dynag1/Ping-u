@@ -883,11 +883,14 @@ def run_headless_mode():
         # En mode headless pur sans PySide6, on crée un objet dummy
         # qui doit avoir une méthode exec() pour la boucle principale
         class DummyApp:
+            def __init__(self):
+                self._running = True
             def exec(self):
-                while True:
+                while self._running:
                     time.sleep(1)
+                return 0
             def quit(self):
-                sys.exit(0)
+                self._running = False
         app = DummyApp()
     
     # Créer un modèle de données minimal
@@ -1160,11 +1163,13 @@ def run_headless_mode():
     else:
         # En mode headless sans GUI, la boucle principale est dans app.exec() (DummyApp)
         # On doit modifier DummyApp pour vérifier le fichier stop
+        # Note: On utilise une approche plus propre en surchargeant la méthode de l'instance
         original_exec = app.exec
         def looped_exec():
-            while True:
+            while app._running:
                 check_stop_file()
                 time.sleep(1)
+            return 0
         app.exec = looped_exec
 
     logger.info("[HEADLESS] Application demarree en mode headless")
