@@ -1205,6 +1205,8 @@ Mode headless:
     
     parser.add_argument('-start', '--start', action='store_true',
                        help='Démarrer en mode headless (sans interface graphique)')
+    parser.add_argument('-headless', '--headless', action='store_true',
+                       help='Alias pour --start (mode headless)')
     parser.add_argument('-stop', '--stop', action='store_true',
                        help='Arrêter l\'application en mode headless')
     
@@ -1213,7 +1215,7 @@ Mode headless:
     if args.stop:
         # Mode stop
         stop_headless_mode()
-    elif args.start:
+    elif args.start or args.headless:
         # Mode headless
         run_headless_mode()
     else:
