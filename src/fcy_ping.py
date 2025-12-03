@@ -305,9 +305,10 @@ class AsyncPingWorker(QThread):
 
 
 class PingManager(QObject):
-    def __init__(self, tree_model):
+    def __init__(self, tree_model, main_window=None):
         super().__init__()
         self.tree_model = tree_model
+        self.main_window = main_window
         self.worker = None
         self.timer = None
         # Cache pour stocker les données de trafic entre les cycles
@@ -335,12 +336,8 @@ class PingManager(QObject):
         
         if not ips:
             # Si pas d'IPs, on attend quand même avec un timer non-bloquant
-            if GUI_AVAILABLE:
-                from PySide6.QtCore import QTimer
-                QTimer.singleShot(int(var.delais) * 1000, self.schedule_next_run)
-            else:
-                # Mode headless: utiliser QTimer factice (threading.Timer)
-                QTimer.singleShot(int(var.delais) * 1000, self.schedule_next_run)
+            # QTimer est déjà défini globalement (PySide6 ou factice)
+            QTimer.singleShot(int(var.delais) * 1000, self.schedule_next_run)
             return
 
         # Lancement du worker
@@ -352,15 +349,19 @@ class PingManager(QObject):
 
     def on_worker_finished(self):
         """Appelé quand une vague de pings est terminée."""
+        # Broadcaster les mises à jour aux clients web (mode headless)
+        if not GUI_AVAILABLE and self.main_window:
+            try:
+                if hasattr(self.main_window, 'web_server') and self.main_window.web_server:
+                    self.main_window.web_server.broadcast_update()
+            except Exception as e:
+                logger.debug(f"Erreur broadcast: {e}")
+        
         if var.tourne:
             # Délai avant la prochaine vague (non-bloquant)
+            # QTimer est déjà défini globalement (PySide6 ou factice)
             delay_ms = max(1, int(var.delais)) * 1000
-            if GUI_AVAILABLE:
-                from PySide6.QtCore import QTimer
-                QTimer.singleShot(delay_ms, self.schedule_next_run)
-            else:
-                # Mode headless: utiliser QTimer factice (threading.Timer)
-                QTimer.singleShot(delay_ms, self.schedule_next_run)
+            QTimer.singleShot(delay_ms, self.schedule_next_run)
 
     def get_all_ips(self):
         """Récupère toutes les IPs du modèle, y compris les exclues."""
@@ -395,7 +396,6 @@ class PingManager(QObject):
             # Applique la couleur et le texte selon la colonne
             if col == 5:  # Colonne Latence
                 if is_excluded:
-                    # Afficher la latence réelle mais avec un indicateur "Exclu"
                     latency_text = f"{latency:.1f} ms" if latency < 500 else "HS"
                     item.setText(f"{latency_text}")
                 else:
@@ -403,20 +403,17 @@ class PingManager(QObject):
             elif col == 6:  # Colonne Température (sera mis à jour par le thread SNMP séparé)
                 pass # Ne rien faire ici pour la température, géré par SNMPWorker
             
-            # Colorie toute la ligne
-            if is_excluded:
-                # Changer la couleur du texte pour indiquer l'exclusion (gris)
-                item.setForeground(QBrush(QColor("gray")))
-                # Fond légèrement grisé aussi pour bien distinguer
-                if latency < 500:
-                    # Si en ligne, fond vert très pâle ou gris clair
-                    item.setBackground(QBrush(QColor(240, 240, 240)))
+            # Colorie toute la ligne (seulement si GUI disponible)
+            if GUI_AVAILABLE:
+                if is_excluded:
+                    item.setForeground(QBrush(QColor("gray")))
+                    if latency < 500:
+                        item.setBackground(QBrush(QColor(240, 240, 240)))
+                    else:
+                        item.setBackground(QBrush(QColor(255, 240, 240)))
                 else:
-                    # Si hors ligne, fond rouge très pâle
-                    item.setBackground(QBrush(QColor(255, 240, 240)))
-            else:
-                item.setBackground(QBrush(QColor(color)))
-                item.setForeground(QBrush(QColor("black")))
+                    item.setBackground(QBrush(QColor(color)))
+                    item.setForeground(QBrush(QColor("black")))
         
         # Mise à jour des listes (HS/OK) via le gestionnaire principal (thread-safe)
         self.update_lists(ip, latency)

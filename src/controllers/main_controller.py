@@ -44,8 +44,8 @@ class MainController:
             logger.info(f"Listes d'alertes réinitialisées (nbrHs={var.nbrHs})")
             
             # Instanciation des managers
-            # Note: PingManager prend le modèle de données, AlertManager aussi
-            self.ping_manager = PingManager(self.main_window.treeIpModel)
+            # Note: PingManager prend le modèle de données + main_window pour broadcast
+            self.ping_manager = PingManager(self.main_window.treeIpModel, self.main_window)
             self.alert_manager = AlertManager(self.main_window, self.main_window.treeIpModel)
             
             var.tourne = True
