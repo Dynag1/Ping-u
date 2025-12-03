@@ -20,9 +20,17 @@ except ImportError:
     # Créer des classes factices pour éviter les erreurs d'import
     class QObject: pass
     class Signal: 
-        def __init__(self, *args): pass
-        def emit(self, *args): pass
-        def connect(self, *args): pass
+        """Signal factice fonctionnel pour le mode headless"""
+        def __init__(self, *args): 
+            self._callbacks = []
+        def emit(self, *args): 
+            for callback in self._callbacks:
+                try:
+                    callback(*args)
+                except Exception as e:
+                    print(f"Signal emit error: {e}")
+        def connect(self, callback): 
+            self._callbacks.append(callback)
     class QMainWindow: pass
     class QSortFilterProxyModel: pass
     class QPoint: pass
