@@ -25,6 +25,23 @@ except ImportError:
         def connect(self, *args): pass
     class QMainWindow: pass
     class QSortFilterProxyModel: pass
+    class QPoint: pass
+    class QModelIndex: pass
+    class QColor: pass
+    class QAction: pass
+    class QActionGroup: pass
+    class QStandardItemModel: pass
+    class QStandardItem:
+        def __init__(self, text=""): self._text = text
+        def text(self): return self._text
+    class QEvent:
+        LanguageChange = 0
+    class Qt:
+        DisplayRole = 0
+        ItemIsEditable = 0
+        BackgroundRole = 0
+        UserRole = 0
+    class Ui_MainWindow: pass
 
 from src import var, fct, lic, threadAjIp, db, sFenetre
 from src import fctXls, fctMaj
