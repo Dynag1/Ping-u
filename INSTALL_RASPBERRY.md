@@ -1,4 +1,4 @@
-# 🍓 Installation et Utilisation - Raspberry Pi
+# 🍓 Installation Ping ü - Raspberry Pi
 
 Guide complet pour installer et utiliser Ping ü sur Raspberry Pi (Raspbian/Raspberry Pi OS).
 
@@ -6,178 +6,270 @@ Guide complet pour installer et utiliser Ping ü sur Raspberry Pi (Raspbian/Rasp
 
 ## 📋 Table des matières
 
-1. [Installation](#installation)
-2. [Configuration initiale](#configuration-initiale)
-3. [Correction des erreurs communes](#correction-des-erreurs-communes)
-4. [Interface Web](#interface-web)
-5. [Service systemd](#service-systemd)
-6. [SNMP](#snmp)
-7. [Dépannage](#dépannage)
+1. [Prérequis](#-prérequis)
+2. [Installation rapide](#-installation-rapide)
+3. [Installation détaillée](#-installation-détaillée)
+4. [Configuration](#-configuration)
+5. [Utilisation](#-utilisation)
+6. [Service systemd](#-service-systemd)
+7. [SNMP (optionnel)](#-snmp-optionnel)
+8. [Dépannage](#-dépannage)
+9. [Mise à jour](#-mise-à-jour)
 
 ---
 
-## 🚀 Installation
+## 📦 Prérequis
 
-### Prérequis
-
-```bash
-# Mettre à jour le système
-sudo apt update
-sudo apt upgrade -y
-
-# Installer Python et dépendances
-sudo apt install -y python3 python3-pip python3-venv git
-```
-
-### Installation de Ping ü
-
-```bash
-# Cloner le dépôt (ou transférer via SCP)
-git clone https://github.com/Dynag1/Ping-u.git ~/ping-u
-cd ~/ping-u
-
-# Installer les dépendances
-pip3 install -r requirements.txt
-```
+- Raspberry Pi 3/4/5 (ou Zero 2 W)
+- Raspberry Pi OS (Bullseye ou Bookworm)
+- Python 3.10 ou supérieur
+- Connexion réseau
 
 ---
 
-## ⚙️ Configuration initiale
-
-### Script d'initialisation automatique
-
-Le script crée tous les fichiers de configuration nécessaires :
+## 🚀 Installation rapide
 
 ```bash
-cd ~/ping-u
-chmod +x fix_raspberry.sh start_headless.sh stop_headless.sh
-./fix_raspberry.sh
-```
+# 1. Mettre à jour le système
+sudo apt update && sudo apt upgrade -y
 
-Ce script va automatiquement :
-- ✅ Configurer les permissions ping
-- ✅ Créer les fichiers de configuration (tab, tabG, tab4, etc.)
-- ✅ Vérifier les dépendances
-- ✅ Tester le ping
+# 2. Installer les dépendances système
+sudo apt install -y python3 python3-pip python3-venv git libffi-dev libssl-dev
 
-### OU Configuration manuelle
+# 3. Cloner le projet
+git clone https://github.com/Dynag1/Ping-u.git ~/Ping-u
+cd ~/Ping-u
 
-Si vous préférez faire étape par étape :
+# 4. Créer l'environnement virtuel
+python3 -m venv .venv
+source .venv/bin/activate
 
-```bash
-# 1. Permissions ping
+# 5. Installer les dépendances Python
+pip install --upgrade pip
+pip install Flask Flask-SocketIO Flask-Cors python-socketio python-engineio
+pip install eventlet requests cryptography openpyxl xmltodict urllib3
+
+# 6. Configurer les permissions ping
 sudo sysctl -w net.ipv4.ping_group_range="0 2147483647"
 echo "net.ipv4.ping_group_range=0 2147483647" | sudo tee -a /etc/sysctl.conf
 
-# 2. Créer les fichiers de config
-python3 init_raspberry.py
+# 7. Initialiser la configuration
+python init_raspberry.py
 
-# 3. Vérifier le ping
-ping -c 1 8.8.8.8
+# 8. Rendre les scripts exécutables
+chmod +x start_headless.sh stop_headless.sh fix_raspberry.sh
+
+# 9. Démarrer l'application
+./start_headless.sh
 ```
+
+**Accès web** : `http://[IP_RASPBERRY]:9090/admin`  
+**Identifiants** : `admin` / `a`
 
 ---
 
-## 🔧 Correction des erreurs communes
+## 📖 Installation détaillée
 
-### Erreur : "[Errno 1] Operation not permitted"
+### Étape 1 : Mise à jour du système
 
-**Cause** : Permissions ping non configurées
-
-**Solution** :
 ```bash
+sudo apt update
+sudo apt upgrade -y
+```
+
+### Étape 2 : Installation des dépendances système
+
+```bash
+sudo apt install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    git \
+    libffi-dev \
+    libssl-dev \
+    build-essential
+```
+
+### Étape 3 : Cloner le projet
+
+```bash
+# Via Git (recommandé)
+git clone https://github.com/Dynag1/Ping-u.git ~/Ping-u
+
+# Ou via SCP depuis Windows
+# scp -r "C:\Users\...\Ping ü" user@raspberry:~/Ping-u
+```
+
+### Étape 4 : Créer l'environnement virtuel
+
+```bash
+cd ~/Ping-u
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+> ⚠️ **Important** : Toujours activer le venv avant d'installer des packages ou lancer l'app
+
+### Étape 5 : Installer les dépendances Python
+
+```bash
+# Mettre à jour pip
+pip install --upgrade pip
+
+# Dépendances principales (NE PAS installer PySide6 ou qt-themes !)
+pip install Flask>=2.3.0
+pip install Flask-SocketIO>=5.3.0
+pip install Flask-Cors>=4.0.0
+pip install python-socketio>=5.8.0
+pip install python-engineio>=4.5.0
+pip install eventlet>=0.33.0
+pip install requests>=2.31.0
+pip install cryptography>=41.0.0
+pip install openpyxl>=3.1.0
+pip install xmltodict>=0.13.0
+pip install urllib3>=2.0.0
+```
+
+Ou en une seule commande :
+
+```bash
+pip install Flask Flask-SocketIO Flask-Cors python-socketio python-engineio \
+    eventlet requests cryptography openpyxl xmltodict urllib3
+```
+
+### Étape 6 : Configurer les permissions ping
+
+```bash
+# Activer le ping sans sudo
 sudo sysctl -w net.ipv4.ping_group_range="0 2147483647"
+
+# Rendre permanent
 echo "net.ipv4.ping_group_range=0 2147483647" | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 ```
 
-### Erreur : "Fichier tab non trouvé"
+### Étape 7 : Initialisation
 
-**Cause** : Fichiers de configuration manquants (normal en première installation)
-
-**Solution** :
 ```bash
-cd ~/ping-u
-python3 init_raspberry.py
+cd ~/Ping-u
+
+# Script d'initialisation (crée les fichiers de config)
+python init_raspberry.py
+
+# Ou script de correction complet
+chmod +x fix_raspberry.sh
+./fix_raspberry.sh
 ```
 
-### Erreur : "write() before start_response" (Flask)
+### Étape 8 : Premier lancement (test)
 
-**Cause** : Bug corrigé dans les dernières versions
-
-**Solution** : Mettre à jour le code
 ```bash
-cd ~/ping-u
-git pull
+# Tester en mode direct (pour voir les erreurs)
+python Pingu.py --headless
 ```
 
-### Erreur : "No module named 'pythonping'"
-
-**Solution** :
-```bash
-pip3 install -r requirements.txt
+Si tout fonctionne, vous verrez :
+```
+[HEADLESS] Serveur web demarre sur http://0.0.0.0:9090
+[HEADLESS] Application demarree en mode headless
 ```
 
----
+Arrêtez avec `Ctrl+C`.
 
-## Mise a jour
-
-### Démarrage
+### Étape 9 : Lancement en arrière-plan
 
 ```bash
-cd ~/ping-u
-git pull https://github.com/Dynag1/Ping-u.git
-```
-
----
-
-## 🌐 Interface Web
-
-### Démarrage
-
-```bash
-cd ~/ping-u
+chmod +x start_headless.sh stop_headless.sh
 ./start_headless.sh
 ```
 
-L'application démarre en arrière-plan sans interface graphique.
+---
 
-### Accès
+## ⚙️ Configuration
+
+### Fichiers de configuration
+
+| Fichier | Description |
+|---------|-------------|
+| `tab` | Paramètres généraux |
+| `tab4` | Configuration des alertes |
+| `tabG` | Paramètres graphiques |
+| `web_users.json` | Utilisateurs web |
+| `bd/autosave.pin` | Sauvegarde auto des hôtes |
+
+### Créer les fichiers manuellement (si nécessaire)
+
+```bash
+cd ~/Ping-u
+
+# Fichiers de config vides
+echo "10,5,0,1,1,1,0,,0" > tab
+echo "0,,,,0,,,,0,0" > tab4
+echo "0,0,0,nord" > tabG
+
+# Utilisateur web par défaut (admin/a)
+echo '{"username": "admin", "password": "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"}' > web_users.json
+```
+
+---
+
+## 🌐 Utilisation
+
+### Démarrer l'application
+
+```bash
+cd ~/Ping-u
+./start_headless.sh
+```
+
+### Arrêter l'application
+
+```bash
+cd ~/Ping-u
+./stop_headless.sh
+```
+
+### Accès à l'interface web
 
 **URL** : `http://[IP_RASPBERRY]:9090/admin`
 
-Pour trouver l'IP de votre Raspberry Pi :
+Pour trouver l'IP du Raspberry Pi :
 ```bash
 hostname -I | awk '{print $1}'
 ```
 
-**Identifiants par défaut** : `admin` / `admin`  
-⚠️ **Changez-les immédiatement** via l'interface web !
+**Identifiants par défaut** : `admin` / `a`  
+⚠️ **Changez le mot de passe immédiatement !**
 
-### Fonctionnalités
+### Fonctionnalités web
 
-- ✅ Ajouter/supprimer des hôtes (avec scan réseau)
+- ✅ Ajouter/supprimer des hôtes
+- ✅ Scanner le réseau automatiquement
 - ✅ Démarrer/arrêter le monitoring
 - ✅ Configurer les alertes (Email, Telegram)
-- ✅ Export/Import CSV
+- ✅ Import/Export CSV
 - ✅ Statistiques en temps réel
-- ✅ Notifications navigateur (scan terminé, etc.)
-- ✅ Température équipements (si SNMP)
-- ✅ Débits réseau (si SNMP)
+- ✅ Température équipements (si SNMP configuré)
 
-### Notifications
+### Consulter les logs
 
-L'interface web envoie des notifications popup navigateur :
-- Quand un scan d'hôtes est terminé
-- Quand des hôtes changent d'état (optionnel)
+```bash
+# Logs en temps réel
+tail -f ~/Ping-u/pingu_headless.log
 
-Autorisez les notifications dans votre navigateur pour les recevoir.
+# Logs applicatifs
+tail -f ~/Ping-u/logs/app.log
+
+# Erreurs uniquement
+grep -i error ~/Ping-u/logs/app.log
+```
 
 ---
 
 ## 🔧 Service systemd
 
-Pour démarrer automatiquement au boot du Raspberry Pi :
+Pour démarrer automatiquement au boot :
 
 ### 1. Créer le service
 
@@ -185,7 +277,7 @@ Pour démarrer automatiquement au boot du Raspberry Pi :
 sudo nano /etc/systemd/system/pingu.service
 ```
 
-### 2. Contenu
+### 2. Contenu du fichier
 
 ```ini
 [Unit]
@@ -194,20 +286,21 @@ After=network.target
 
 [Service]
 Type=simple
-User=pingu
-WorkingDirectory=/home/pingu/ping-u
-ExecStart=/usr/bin/python3 /home/pingu/ping-u/Pingu.py --headless
-ExecStop=/usr/bin/python3 /home/pingu/ping-u/Pingu.py -stop
+User=dynag
+WorkingDirectory=/home/dynag/Ping-u
+Environment="PATH=/home/dynag/Ping-u/.venv/bin"
+ExecStart=/home/dynag/Ping-u/.venv/bin/python /home/dynag/Ping-u/Pingu.py --headless
+ExecStop=/home/dynag/Ping-u/.venv/bin/python /home/dynag/Ping-u/Pingu.py -stop
 Restart=on-failure
 RestartSec=10
-StandardOutput=append:/home/pingu/ping-u/pingu_headless.log
-StandardError=append:/home/pingu/ping-u/pingu_headless.log
+StandardOutput=append:/home/dynag/Ping-u/pingu_headless.log
+StandardError=append:/home/dynag/Ping-u/pingu_headless.log
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-⚠️ Remplacez `pingu` par votre nom d'utilisateur
+> ⚠️ Remplacez `dynag` par votre nom d'utilisateur
 
 ### 3. Activer et démarrer
 
@@ -221,10 +314,10 @@ sudo systemctl enable pingu.service
 # Démarrer
 sudo systemctl start pingu.service
 
-# Vérifier
+# Vérifier le statut
 sudo systemctl status pingu.service
 
-# Logs
+# Voir les logs
 sudo journalctl -u pingu.service -f
 ```
 
@@ -243,216 +336,205 @@ sudo systemctl disable pingu.service
 
 ---
 
-## 🌡️ SNMP
+## 🌡️ SNMP (optionnel)
 
 SNMP permet d'afficher la température et les débits réseau des équipements compatibles.
 
 ### Installation
 
 ```bash
-cd ~/ping-u
-
-# Désinstaller l'ancien pysnmp (abandonné)
-pip3 uninstall -y pysnmp
+cd ~/Ping-u
+source .venv/bin/activate
 
 # Installer pysnmp-lextudio (fork maintenu)
-pip3 install pysnmp-lextudio pyasn1 pyasn1-modules pycryptodomex
+pip install pysnmp-lextudio pyasn1 pyasn1-modules pycryptodomex
 
-# Redémarrer
+# Redémarrer l'application
 ./stop_headless.sh
 ./start_headless.sh
 ```
 
-### Vérification
+### Outils de test SNMP
 
 ```bash
 # Installer les outils SNMP
-sudo apt install snmp snmp-mibs-downloader
+sudo apt install -y snmp snmp-mibs-downloader
 
-# Tester un équipement (exemple)
+# Tester un équipement
 snmpwalk -v2c -c public 192.168.1.1 system
 ```
 
-### Configuration des équipements
+### Configuration équipements
 
-Pour que SNMP fonctionne, vos équipements doivent :
+Vos équipements doivent avoir :
+- SNMP activé (version 2c recommandée)
+- Community string : `public`
+- Port : 161 (UDP)
 
-1. **Avoir SNMP activé** (version 2c recommandée)
-2. **Community string** : `public` (lecture seule)
-3. **Port** : 161 (UDP)
-
-**Exemples** :
-- **NAS Synology** : Panneau de configuration → Terminal & SNMP → Activer SNMP
-- **Routeurs** : Interface admin → SNMP → Activer v2c
-- **Switches** : Configuration web → SNMP settings
-
-### Test Python
-
-```bash
-cd ~/ping-u
-python3 -c "
-from src.utils.snmp_helper import snmp_helper
-import asyncio
-
-async def test():
-    # Remplacez par l'IP d'un équipement SNMP
-    temp = await snmp_helper.get_temperature('192.168.1.1')
-    print(f'Température: {temp}')
-
-asyncio.run(test())
-"
-```
-
-### Dépannage SNMP
-
-**Erreur : "No module named 'pysnmp'"**
-```bash
-pip3 install pysnmp-lextudio
-```
-
-**Erreur : "No matching distribution found for pysnmp==6.0.0"**
-```bash
-pip3 uninstall -y pysnmp
-pip3 install pysnmp-lextudio
-```
-
-**SNMP ne retourne rien**
-- Vérifiez que SNMP est activé sur l'équipement
-- Vérifiez le community string (généralement `public`)
-- Testez avec `snmpwalk`
-- Vérifiez le pare-feu (port UDP 161)
-
-**Note** : SNMP est **optionnel**. Sans SNMP, le monitoring ping fonctionne normalement, vous n'aurez simplement pas la température et les débits réseau.
-
----
-
-## 🔒 Pare-feu
-
-```bash
-# Autoriser le port 9090
-sudo ufw allow 9090/tcp
-
-# Vérifier
-sudo ufw status
-```
+> **Note** : SNMP est **optionnel**. Sans SNMP, le monitoring ping fonctionne normalement.
 
 ---
 
 ## 🐛 Dépannage
 
-### Diagnostic complet
+### Erreur : "No module named 'flask'"
 
 ```bash
-# 1. Ping fonctionne ?
-ping -c 1 8.8.8.8
-
-# 2. Processus actif ?
-ps aux | grep Pingu
-
-# 3. Port 9090 ouvert ?
-netstat -tlnp | grep 9090
-# ou
-ss -tlnp | grep 9090
-
-# 4. API web répond ?
-curl http://localhost:9090/api/status
-
-# 5. Logs OK ?
-tail -20 ~/ping-u/pingu_headless.log
+cd ~/Ping-u
+source .venv/bin/activate
+pip install Flask Flask-SocketIO Flask-Cors
 ```
 
-### Logs
+### Erreur : "No module named 'cryptography'"
 
 ```bash
-# Logs temps réel
-tail -f ~/ping-u/pingu_headless.log
-
-# Logs applicatifs
-tail -f ~/ping-u/logs/app.log
-
-# Erreurs uniquement
-grep -i error ~/ping-u/pingu_headless.log
-
-# Logs des 50 dernières lignes
-tail -50 ~/ping-u/logs/app.log
+source .venv/bin/activate
+pip install cryptography
 ```
 
-### Port déjà utilisé
+### Erreur : "Operation not permitted" (ping)
 
 ```bash
-# Trouver qui utilise le port
+sudo sysctl -w net.ipv4.ping_group_range="0 2147483647"
+echo "net.ipv4.ping_group_range=0 2147483647" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
+
+### Erreur : "Port 9090 déjà utilisé"
+
+```bash
+# Trouver le processus
 sudo lsof -i :9090
 
 # Tuer le processus
-sudo kill -9 [PID]
+sudo kill -9 $(sudo lsof -t -i:9090)
+
+# Nettoyer
+rm -f ~/Ping-u/pingu_headless.pid
+```
+
+### L'application ne démarre pas
+
+```bash
+# Tester en mode direct pour voir les erreurs
+cd ~/Ping-u
+source .venv/bin/activate
+python Pingu.py --headless
+```
+
+### Diagnostic complet
+
+```bash
+# 1. Python OK ?
+python3 --version
+
+# 2. Venv activé ?
+which python
+# Doit afficher: /home/.../Ping-u/.venv/bin/python
+
+# 3. Modules installés ?
+pip list | grep -i flask
+
+# 4. Ping fonctionne ?
+ping -c 1 8.8.8.8
+
+# 5. Port 9090 libre ?
+ss -tlnp | grep 9090
+
+# 6. API répond ?
+curl http://localhost:9090/api/status
+
+# 7. Processus actif ?
+ps aux | grep Pingu
 ```
 
 ### Forcer l'arrêt
 
 ```bash
-cd ~/ping-u
-kill -9 $(cat pingu_headless.pid)
-rm pingu_headless.pid
+pkill -f "Pingu.py"
+rm -f ~/Ping-u/pingu_headless.pid
 ```
 
 ### Réinstallation propre
 
 ```bash
-cd ~/ping-u
+cd ~/Ping-u
 
-# Sauvegarder la config
-mkdir ~/backup
-cp tab* web_users.json bd/ ~/backup/
+# Sauvegarder
+mkdir -p ~/backup_pingu
+cp -r tab* web_users.json bd/ ~/backup_pingu/
 
-# Mise à jour
-git pull
-pip3 install --upgrade -r requirements.txt
+# Supprimer le venv
+rm -rf .venv
+
+# Recréer
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install Flask Flask-SocketIO Flask-Cors python-socketio python-engineio \
+    eventlet requests cryptography openpyxl xmltodict urllib3
+
+# Restaurer config
+cp ~/backup_pingu/* .
 
 # Relancer
-./stop_headless.sh
 ./start_headless.sh
-```
-
-### Problème de mémoire
-
-Si le Raspberry Pi manque de mémoire :
-
-```bash
-# Augmenter la swap
-sudo dphys-swapfile swapoff
-sudo nano /etc/dphys-swapfile
-# Changer CONF_SWAPSIZE=100 → CONF_SWAPSIZE=1024
-sudo dphys-swapfile setup
-sudo dphys-swapfile swapon
 ```
 
 ---
 
-## 📊 Utilisation avancée
+## 🔄 Mise à jour
 
-### Accès depuis l'extérieur (Internet)
+```bash
+cd ~/Ping-u
 
-1. **Redirection de port** sur votre box :
-   - Port externe : 9090
-   - Port interne : 9090
-   - IP : IP du Raspberry Pi
+# Arrêter l'application
+./stop_headless.sh
 
-2. **Accès** : `http://[IP_PUBLIQUE]:9090/admin`
+# Sauvegarder la config
+cp -r tab* web_users.json bd/ ~/backup_pingu/
 
-3. ⚠️ **Sécurité** :
-   - Utilisez un mot de passe fort
-   - Mettez en place un reverse proxy avec HTTPS (Nginx)
-   - Limitez l'accès par IP si possible
+# Mettre à jour le code
+git pull
 
-### Reverse Proxy avec Nginx
+# Mettre à jour les dépendances
+source .venv/bin/activate
+pip install --upgrade Flask Flask-SocketIO Flask-Cors eventlet requests cryptography
+
+# Relancer
+./start_headless.sh
+
+# Ou avec systemd
+sudo systemctl restart pingu.service
+```
+
+---
+
+## 🔒 Sécurité
+
+### Checklist
+
+- [ ] Changer le mot de passe par défaut (`admin`/`a`)
+- [ ] Configurer le pare-feu
+- [ ] Utiliser HTTPS (reverse proxy nginx)
+- [ ] Sauvegardes régulières
+
+### Pare-feu
+
+```bash
+# Autoriser le port 9090
+sudo ufw allow 9090/tcp
+sudo ufw enable
+sudo ufw status
+```
+
+### Reverse Proxy HTTPS (Nginx)
 
 ```bash
 sudo apt install nginx
 
 sudo nano /etc/nginx/sites-available/pingu
 ```
-
-Configuration :
 
 ```nginx
 server {
@@ -470,120 +552,24 @@ server {
 }
 ```
 
-Activer :
-
 ```bash
 sudo ln -s /etc/nginx/sites-available/pingu /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-### Sauvegarde automatique
-
-```bash
-# Script de sauvegarde
-nano ~/backup_pingu.sh
-```
-
-```bash
-#!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-mkdir -p ~/backups
-tar -czf ~/backups/pingu_$DATE.tar.gz \
-    ~/ping-u/tab* \
-    ~/ping-u/web_users.json \
-    ~/ping-u/bd/
-echo "Sauvegarde créée: pingu_$DATE.tar.gz"
-```
-
-```bash
-chmod +x ~/backup_pingu.sh
-
-# Crontab (tous les jours à 2h)
-crontab -e
-# Ajouter: 0 2 * * * /home/user/backup_pingu.sh
-```
-
-### Monitoring des performances
-
-```bash
-# CPU/RAM
-top -p $(cat pingu_headless.pid)
-
-# Température du Raspberry Pi
-vcgencmd measure_temp
-
-# Utilisation disque
-df -h
-du -sh ~/ping-u
-
-# Uptime
-uptime
-```
-
 ---
 
-## 🔄 Mise à jour
-
-```bash
-cd ~/ping-u
-
-# Sauvegarder
-cp tab* web_users.json ~/backup/
-
-# Mettre à jour
-git pull
-pip3 install --upgrade -r requirements.txt
-
-# Redémarrer
-./stop_headless.sh
-./start_headless.sh
-
-# Ou avec systemd
-sudo systemctl restart pingu.service
-```
-
----
-
-## 📝 Checklist de sécurité
-
-- [ ] Changer le mot de passe par défaut (`admin`/`admin`)
-- [ ] Configurer le pare-feu (limiter l'accès au port 9090)
-- [ ] Utiliser HTTPS (reverse proxy nginx)
-- [ ] Sauvegardes régulières
-- [ ] Mettre à jour régulièrement : `git pull && pip3 install --upgrade -r requirements.txt`
-- [ ] Surveiller les logs : `tail -f logs/app.log`
-
----
-
-## 📞 Support
-
-- **Logs** : `~/ping-u/logs/app.log`
-- **Documentation** : README.md
-- **GitHub Issues** : Signaler un problème
-
----
-
-## 💡 Astuces Raspberry Pi
-
-### Optimisation des performances
-
-```bash
-# Désactiver le Bluetooth (si non utilisé)
-echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt
-
-# Augmenter la mémoire GPU (si headless uniquement)
-sudo raspi-config
-# Advanced Options → Memory Split → 16
-```
+## 💡 Astuces
 
 ### IP fixe
 
 ```bash
-# Editer dhcpcd.conf
 sudo nano /etc/dhcpcd.conf
+```
 
-# Ajouter :
+Ajouter :
+```
 interface eth0
 static ip_address=192.168.1.100/24
 static routers=192.168.1.1
@@ -597,10 +583,41 @@ static domain_name_servers=192.168.1.1 8.8.8.8
 ssh user@[IP_RASPBERRY]
 
 # Copier des fichiers
-scp fichier.txt user@[IP_RASPBERRY]:~/ping-u/
+scp fichier.txt user@[IP_RASPBERRY]:~/Ping-u/
+```
+
+### Sauvegarde automatique (cron)
+
+```bash
+crontab -e
+```
+
+Ajouter :
+```
+0 2 * * * tar -czf ~/backups/pingu_$(date +\%Y\%m\%d).tar.gz ~/Ping-u/tab* ~/Ping-u/web_users.json ~/Ping-u/bd/
+```
+
+### Monitoring ressources
+
+```bash
+# CPU/RAM du processus
+top -p $(cat ~/Ping-u/pingu_headless.pid)
+
+# Température Raspberry Pi
+vcgencmd measure_temp
+
+# Espace disque
+df -h
 ```
 
 ---
 
-**🎉 Votre Raspberry Pi est prêt à surveiller votre réseau 24/7 !**
+## 📞 Support
 
+- **Logs** : `~/Ping-u/logs/app.log`
+- **Documentation** : README.md
+- **GitHub Issues** : Signaler un problème
+
+---
+
+**🎉 Votre Raspberry Pi est prêt à surveiller votre réseau 24/7 !**
