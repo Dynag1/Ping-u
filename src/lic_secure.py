@@ -11,9 +11,21 @@ import hmac
 import base64
 import json
 from datetime import datetime
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, padding as sym_padding
+
+# Import optionnel de cryptography (pas nécessaire en mode headless)
+try:
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes, padding as sym_padding
+    CRYPTO_AVAILABLE = True
+except ImportError:
+    CRYPTO_AVAILABLE = False
+    Cipher = None
+    algorithms = None
+    modes = None
+    default_backend = None
+    hashes = None
+    sym_padding = None
 
 class LicenseManager:
     """Gestionnaire de licence sécurisé (compatible avec génération PHP)"""
@@ -146,6 +158,10 @@ class LicenseManager:
         Returns:
             dict: Données de licence déchiffrées ou None
         """
+        # cryptography non disponible (mode headless)
+        if not CRYPTO_AVAILABLE:
+            return None
+        
         try:
             # Décoder depuis Base64
             encrypted_data = base64.b64decode(license_key)
