@@ -1,17 +1,64 @@
 #!/bin/bash
 # Script d'arrêt Ping ü en mode headless (Linux/Mac)
 
+# Obtenir le répertoire du script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 echo "🛑 Arrêt de Ping ü..."
 echo "===================="
 
-# Déterminer quel python utiliser
-PYTHON_CMD="python3"
-if [ -f ".venv/bin/python3" ]; then
-    PYTHON_CMD=".venv/bin/python3"
+# Vérifier et utiliser l'environnement virtuel
+if [ -d ".venv" ] && [ -f ".venv/bin/python" ]; then
+    source .venv/bin/activate
+    PYTHON_CMD="$SCRIPT_DIR/.venv/bin/python"
+elif [ -d "venv" ] && [ -f "venv/bin/python" ]; then
+    source venv/bin/activate
+    PYTHON_CMD="$SCRIPT_DIR/venv/bin/python"
+else
+    PYTHON_CMD="python3"
 fi
 
-# Arrêter l'application
-$PYTHON_CMD Pingu.py -stop
+# Méthode 1: Via le fichier PID
+if [ -f "pingu_headless.pid" ]; then
+    PID=$(cat pingu_headless.pid)
+    echo "📍 PID trouvé: $PID"
+    
+    if ps -p $PID > /dev/null 2>&1; then
+        echo "🔄 Arrêt du processus..."
+        kill $PID 2>/dev/null
+        
+        # Attendre l'arrêt
+        for i in {1..10}; do
+            if ! ps -p $PID > /dev/null 2>&1; then
+                break
+            fi
+            sleep 1
+        done
+        
+        # Forcer si nécessaire
+        if ps -p $PID > /dev/null 2>&1; then
+            echo "⚠️  Arrêt forcé..."
+            kill -9 $PID 2>/dev/null
+        fi
+    else
+        echo "⚠️  Processus déjà arrêté"
+    fi
+    
+    rm -f pingu_headless.pid
+fi
+
+# Méthode 2: Tuer tous les processus Pingu.py
+PIDS=$(pgrep -f "Pingu.py" 2>/dev/null)
+if [ -n "$PIDS" ]; then
+    echo "🔄 Arrêt des processus restants: $PIDS"
+    pkill -f "Pingu.py" 2>/dev/null
+    sleep 1
+    pkill -9 -f "Pingu.py" 2>/dev/null
+fi
+
+# Nettoyer
+rm -f pingu_headless.pid
 
 echo ""
 echo "✅ Terminé"
