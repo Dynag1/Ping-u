@@ -30,10 +30,70 @@ except ImportError:
     class QColor: pass
     class QAction: pass
     class QActionGroup: pass
-    class QStandardItemModel: pass
     class QStandardItem:
-        def __init__(self, text=""): self._text = text
+        def __init__(self, text=""): 
+            self._text = str(text) if text else ""
+            self._background = None
+            self._data = {}
         def text(self): return self._text
+        def setText(self, text): self._text = str(text)
+        def setBackground(self, color): self._background = color
+        def background(self): return self._background
+        def setData(self, data, role=0): self._data[role] = data
+        def data(self, role=0): return self._data.get(role)
+        def setEditable(self, editable): pass
+    class QStandardItemModel:
+        def __init__(self, *args):
+            self._rows = []
+            self._headers = []
+            self._column_count = 0
+        def rowCount(self): return len(self._rows)
+        def columnCount(self): return self._column_count
+        def appendRow(self, items):
+            self._rows.append(items)
+            if items and len(items) > self._column_count:
+                self._column_count = len(items)
+        def removeRows(self, start, count): 
+            del self._rows[start:start+count]
+        def removeRow(self, row): 
+            if 0 <= row < len(self._rows):
+                del self._rows[row]
+        def clear(self): 
+            self._rows = []
+            self._column_count = 0
+        def setHorizontalHeaderLabels(self, labels): 
+            self._headers = [QStandardItem(l) for l in labels]
+            if len(labels) > self._column_count:
+                self._column_count = len(labels)
+        def horizontalHeaderItem(self, col): 
+            return self._headers[col] if col < len(self._headers) else QStandardItem("")
+        def item(self, row, col=0):
+            if row < len(self._rows) and col < len(self._rows[row]):
+                return self._rows[row][col]
+            return None
+        def setItem(self, row, col, item):
+            while len(self._rows) <= row:
+                self._rows.append([])
+            while len(self._rows[row]) <= col:
+                self._rows[row].append(QStandardItem(""))
+            self._rows[row][col] = item
+        def index(self, row, col, parent=None):
+            return QModelIndex()
+        def data(self, index, role=0):
+            return None
+        def dataChanged(self):
+            class FakeSignal:
+                def connect(self, *args): pass
+                def emit(self, *args): pass
+            return FakeSignal()
+        def rowsInserted(self):
+            class FakeSignal:
+                def connect(self, *args): pass
+            return FakeSignal()
+        def rowsRemoved(self):
+            class FakeSignal:
+                def connect(self, *args): pass
+            return FakeSignal()
     class QEvent:
         LanguageChange = 0
     class Qt:
