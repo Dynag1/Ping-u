@@ -384,12 +384,20 @@ class WebServer(QObject):
                 data = request.get_json()
                 ip = data.get('ip')
                 
+                # Import QStandardItem selon le mode
+                if GUI_AVAILABLE:
+                    from PySide6.QtGui import QStandardItem
+                else:
+                    QStandardItem = type('QStandardItem', (), {
+                        '__init__': lambda self, text="": setattr(self, '_text', str(text)),
+                        'text': lambda self: self._text,
+                        'setText': lambda self, t: setattr(self, '_text', str(t))
+                    })
+                
                 model = self.main_window.treeIpModel
                 for row in range(model.rowCount()):
                     item_ip = model.item(row, 1)  # Colonne IP
                     if item_ip and item_ip.text() == ip:
-                        if GUI_AVAILABLE:
-                            from PySide6.QtGui import QStandardItem
                         excl_item = QStandardItem("x")
                         model.setItem(row, 9, excl_item)  # Colonne Excl
                         
@@ -414,12 +422,20 @@ class WebServer(QObject):
                 data = request.get_json()
                 ip = data.get('ip')
                 
+                # Import QStandardItem selon le mode
+                if GUI_AVAILABLE:
+                    from PySide6.QtGui import QStandardItem
+                else:
+                    QStandardItem = type('QStandardItem', (), {
+                        '__init__': lambda self, text="": setattr(self, '_text', str(text)),
+                        'text': lambda self: self._text,
+                        'setText': lambda self, t: setattr(self, '_text', str(t))
+                    })
+                
                 model = self.main_window.treeIpModel
                 for row in range(model.rowCount()):
                     item_ip = model.item(row, 1)  # Colonne IP
                     if item_ip and item_ip.text() == ip:
-                        if GUI_AVAILABLE:
-                            from PySide6.QtGui import QStandardItem
                         excl_item = QStandardItem("")
                         model.setItem(row, 9, excl_item)  # Colonne Excl (vide pour inclure)
                         logger.info(f"Hôte {ip} réinclus via API")
@@ -439,12 +455,21 @@ class WebServer(QObject):
                 ip = data.get('ip')
                 new_name = data.get('name', '')
                 
+                # Import QStandardItem selon le mode
+                if GUI_AVAILABLE:
+                    from PySide6.QtGui import QStandardItem
+                else:
+                    # Version headless
+                    class QStandardItem:
+                        def __init__(self, text=""): 
+                            self._text = str(text) if text else ""
+                        def text(self): return self._text
+                        def setText(self, text): self._text = str(text)
+                
                 model = self.main_window.treeIpModel
                 for row in range(model.rowCount()):
                     item_ip = model.item(row, 1)  # Colonne IP
                     if item_ip and item_ip.text() == ip:
-                        if GUI_AVAILABLE:
-                            from PySide6.QtGui import QStandardItem
                         name_item = QStandardItem(new_name)
                         model.setItem(row, 2, name_item)  # Colonne Nom
                         logger.info(f"Nom de l'hôte {ip} modifié en '{new_name}' via API")

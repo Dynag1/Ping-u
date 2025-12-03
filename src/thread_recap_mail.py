@@ -9,21 +9,26 @@ from src import var, thread_mail, db
 
 def jour_demande():
     jourDemande = tuple()
-    data = db.lire_param_mail_recap()
-    if data[1]:
-        jourDemande = jourDemande + ("0",)
-    if data[2]:
-        jourDemande = jourDemande + ("1",)
-    if data[3]:
-        jourDemande = jourDemande + ("2",)
-    if data[4]:
-        jourDemande = jourDemande + ("3",)
-    if data[5]:
-        jourDemande = jourDemande + ("4",)
-    if data[6]:
-        jourDemande = jourDemande + ("5",)
-    if data[7]:
-        jourDemande = jourDemande + ("6",)
+    try:
+        data = db.lire_param_mail_recap()
+        if not data or len(data) < 8:
+            return jourDemande
+        if data[1]:
+            jourDemande = jourDemande + ("0",)
+        if data[2]:
+            jourDemande = jourDemande + ("1",)
+        if data[3]:
+            jourDemande = jourDemande + ("2",)
+        if data[4]:
+            jourDemande = jourDemande + ("3",)
+        if data[5]:
+            jourDemande = jourDemande + ("4",)
+        if data[6]:
+            jourDemande = jourDemande + ("5",)
+        if data[7]:
+            jourDemande = jourDemande + ("6",)
+    except Exception as e:
+        print(f"Erreur jour_demande: {e}")
     return jourDemande
 
 
@@ -63,8 +68,16 @@ def prepaMail(self, tree_model):
 
 
 def main(self, tree_model):
-    data = db.lire_param_mail_recap()
-    heureDemande = data[0].strftime("%H:%M")
+    try:
+        data = db.lire_param_mail_recap()
+        if not data or len(data) < 8:
+            print("Configuration mail récap non trouvée, thread arrêté")
+            return
+        heureDemande = data[0].strftime("%H:%M") if data[0] else "00:00"
+    except Exception as e:
+        print(f"Erreur lecture config mail recap: {e}")
+        return
+    
     while True:
         try:
             if var.tourne == 1:
