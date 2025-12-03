@@ -11,10 +11,12 @@ try:
     from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QAction, QActionGroup
     from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, QEvent, QCoreApplication, QLocale, QSortFilterProxyModel
     from src.ui_mainwindow import Ui_MainWindow
+    import qt_themes
     GUI_AVAILABLE = True
 except ImportError:
     # Mode headless ou environnement sans GUI
     GUI_AVAILABLE = False
+    qt_themes = None
     # Créer des classes factices pour éviter les erreurs d'import
     class QObject: pass
     class Signal: 
@@ -31,7 +33,6 @@ from src.controllers.settings_controller import SettingsController
 from src.controllers.main_controller import MainController
 from src.web_server import WebServer
 import threading
-import qt_themes
 import webbrowser
 import importlib
 import platform
@@ -283,6 +284,8 @@ class MainWindow(QMainWindow):
         self.treeIpModel.rowsRemoved.connect(self.on_treeview_rows_removed)
 
     def change_theme(self, theme_name):
+        if qt_themes is None:
+            return
         try:
             qt_themes.set_theme(theme_name)
         except:
