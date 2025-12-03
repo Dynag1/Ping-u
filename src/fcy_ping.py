@@ -609,26 +609,50 @@ class SNMPWorker(QThread):
         return ips
 
     async def snmp_poll(self, ips):
-        """Interroge les équipements SNMP."""
-        tasks = []
-        for ip in ips:
+        """Interroge les équipements SNMP par petits lots pour éviter la surcharge."""
+        batch_size = 5  # Traiter 5 IPs à la fois max
+        
+        for i in range(0, len(ips), batch_size):
             if not self.is_running:
                 break
-            tasks.append(self.poll_host(ip))
-        
-        if tasks:
-            await asyncio.gather(*tasks)
+            
+            batch = ips[i:i + batch_size]
+            tasks = [self.poll_host(ip) for ip in batch]
+            
+            try:
+                # Gather avec return_exceptions pour ne pas bloquer sur les erreurs
+                await asyncio.gather(*tasks, return_exceptions=True)
+            except Exception as e:
+                logger.debug(f"Erreur batch SNMP: {e}")
+            
+            # Petite pause entre les batches pour ne pas surcharger
+            if i + batch_size < len(ips):
+                await asyncio.sleep(0.2)
 
     async def poll_host(self, ip):
-        """Interroge un hôte spécifique."""
+        """Interroge un hôte spécifique avec gestion d'erreurs robuste."""
+        if not self.is_running:
+            return
+        
+        temp = None
+        bandwidth = None
+        
         try:
-            # Timeout optimisé
+            # Température avec timeout court
             temp = await asyncio.wait_for(
                 snmp_helper.get_temperature(ip), 
                 timeout=2.0
             )
-            
-            bandwidth = None
+        except asyncio.TimeoutError:
+            pass
+        except Exception as e:
+            logger.debug(f"Erreur SNMP temp {ip}: {e}")
+        
+        if not self.is_running:
+            return
+        
+        try:
+            # Bande passante avec timeout court
             previous_data = self.traffic_cache.get(ip)
             bandwidth_result = await asyncio.wait_for(
                 snmp_helper.calculate_bandwidth(ip, interface_index=None, previous_data=previous_data),
@@ -641,12 +665,17 @@ class SNMPWorker(QThread):
                     'out_mbps': bandwidth_result['out_mbps']
                 }
                 self.traffic_cache[ip] = bandwidth_result['raw_data']
-            
-            if temp or bandwidth:
-                self.snmp_update_signal.emit(ip, str(temp) if temp else "", bandwidth)
-                
-        except (asyncio.TimeoutError, Exception):
+        except asyncio.TimeoutError:
             pass
+        except Exception as e:
+            logger.debug(f"Erreur SNMP bandwidth {ip}: {e}")
+        
+        # Émettre les résultats si disponibles
+        if temp or bandwidth:
+            try:
+                self.snmp_update_signal.emit(ip, str(temp) if temp else "", bandwidth)
+            except Exception as e:
+                logger.debug(f"Erreur émission signal SNMP {ip}: {e}")
 
     def apply_update(self, ip, temp, bandwidth):
         """Mise à jour thread-safe via signal."""

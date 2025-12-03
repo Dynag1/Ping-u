@@ -390,13 +390,13 @@ Ce message a été envoyé automatiquement par Ping ü.
         message.attach(part1)
         message.attach(part2)
         
-        # Envoyer l'email
+        # Envoyer l'email avec timeout réduit
         if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=10) as server:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5) as server:
                 server.login(smtp_email, smtp_password)
                 server.send_message(message)
         else:
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
                 server.starttls()
                 server.login(smtp_email, smtp_password)
                 server.send_message(message)
@@ -405,7 +405,7 @@ Ce message a été envoyé automatiquement par Ping ü.
         return True
         
     except Exception as e:
-        logger.error(f"Erreur envoi email alerte: {e}", exc_info=True)
+        logger.error(f"Erreur envoi email alerte: {e}")
         return False
 
 
@@ -489,13 +489,13 @@ LISTE DES HÔTES :
         message.attach(part1)
         message.attach(part2)
         
-        # Envoyer l'email
+        # Envoyer l'email avec timeout réduit
         if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=10) as server:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5) as server:
                 server.login(smtp_email, smtp_password)
                 server.send_message(message)
         else:
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
                 server.starttls()
                 server.login(smtp_email, smtp_password)
                 server.send_message(message)
@@ -504,6 +504,6 @@ LISTE DES HÔTES :
         return True
         
     except Exception as e:
-        logger.error(f"Erreur envoi email récapitulatif: {e}", exc_info=True)
+        logger.error(f"Erreur envoi email récapitulatif: {e}")
         return False
 
