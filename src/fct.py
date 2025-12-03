@@ -30,13 +30,42 @@ except ImportError:
     class QAbstractItemModel: pass
     class QModelIndex: pass
     class QStandardItem:
-        def __init__(self, text=""): self._text = text
+        def __init__(self, text=""): 
+            self._text = str(text) if text else ""
+            self._data = {}
         def text(self): return self._text
+        def setText(self, text): self._text = str(text)
+        def setData(self, data, role=0): self._data[role] = data
+        def data(self, role=0): return self._data.get(role)
     class QStandardItemModel:
-        def rowCount(self): return 0
-        def columnCount(self): return 0
-        def appendRow(self, items): pass
-        def removeRows(self, row, count): pass
+        def __init__(self):
+            self._rows = []
+            self._headers = []
+            self._column_count = 0
+        def rowCount(self): return len(self._rows)
+        def columnCount(self): return self._column_count
+        def appendRow(self, items): 
+            self._rows.append(items)
+            if len(items) > self._column_count:
+                self._column_count = len(items)
+        def removeRows(self, row, count): 
+            del self._rows[row:row+count]
+        def setHorizontalHeaderLabels(self, labels):
+            class HeaderItem:
+                def __init__(self, text): self._text = str(text)
+                def text(self): return self._text
+            self._headers = [HeaderItem(l) for l in labels]
+            self._column_count = len(labels)
+        def horizontalHeaderItem(self, col):
+            if 0 <= col < len(self._headers):
+                return self._headers[col]
+            class DummyItem:
+                def text(self): return ""
+            return DummyItem()
+        def item(self, row, col):
+            if 0 <= row < len(self._rows) and 0 <= col < len(self._rows[row]):
+                return self._rows[row][col]
+            return None
     class QWidget: pass
 
 
@@ -56,8 +85,9 @@ def save_csv(self, treeModel, filepath=None, return_path=False, silent=False):
         # Récupérer le modèle depuis le QTreeView
         model = treeModel
 
-        if not isinstance(model, QAbstractItemModel):
-            raise ValueError("Modèle invalide - doit hériter de QAbstractItemModel")
+        # Vérifier que le modèle a les méthodes nécessaires (duck typing pour mode headless)
+        if not hasattr(model, 'rowCount') or not hasattr(model, 'item'):
+            raise ValueError("Modèle invalide - doit avoir rowCount() et item()")
 
         # Si pas de fichier spécifié, afficher la boîte de dialogue
         if filepath is None:

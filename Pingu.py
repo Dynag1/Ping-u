@@ -985,21 +985,39 @@ def run_headless_mode():
     if GUI_AVAILABLE:
         from PySide6.QtGui import QStandardItemModel
     else:
-        # Modèle minimal pour headless
+        # Modèle complet pour headless
         class QStandardItemModel:
             def __init__(self):
                 self._rows = []
                 self._headers = []
+                self._column_count = 10
             def rowCount(self, parent=None): return len(self._rows)
-            def columnCount(self, parent=None): return 10
-            def setHorizontalHeaderLabels(self, labels): self._headers = labels
-            def appendRow(self, items): self._rows.append(items)
+            def columnCount(self, parent=None): return self._column_count
+            def setHorizontalHeaderLabels(self, labels): 
+                # Créer des items pour les headers
+                class HeaderItem:
+                    def __init__(self, text): self._text = str(text)
+                    def text(self): return self._text
+                self._headers = [HeaderItem(l) for l in labels]
+                self._column_count = len(labels)
+            def horizontalHeaderItem(self, col):
+                if 0 <= col < len(self._headers):
+                    return self._headers[col]
+                class DummyItem:
+                    def text(self): return ""
+                return DummyItem()
+            def appendRow(self, items): 
+                self._rows.append(items)
+                if len(items) > self._column_count:
+                    self._column_count = len(items)
             def removeRow(self, row): 
                 if 0 <= row < len(self._rows):
                     self._rows.pop(row)
             def removeRows(self, row, count):
                 if 0 <= row < len(self._rows):
                     del self._rows[row:row+count]
+            def clear(self):
+                self._rows = []
             def item(self, row, col):
                 if 0 <= row < len(self._rows) and 0 <= col < len(self._rows[row]):
                     return self._rows[row][col]
