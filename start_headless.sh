@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script de démarrage Ping ü en mode headless (Linux/Mac)
-
+ 
 # Obtenir le répertoire du script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
