@@ -1078,10 +1078,25 @@ def run_headless_mode():
             if GUI_AVAILABLE:
                 from PySide6.QtGui import QStandardItem
             else:
-                # Version Headless
+                # Version Headless - classe complète
                 class QStandardItem:
-                    def __init__(self, text=""): self._text = text
+                    def __init__(self, text=""): 
+                        self._text = str(text) if text else ""
+                        self._background = None
+                        self._foreground = None
+                        self._data = {}
+                        self._flags = 0
                     def text(self): return self._text
+                    def setText(self, text): self._text = str(text)
+                    def setBackground(self, brush): self._background = brush
+                    def background(self): return self._background
+                    def setForeground(self, brush): self._foreground = brush
+                    def foreground(self): return self._foreground
+                    def setData(self, data, role=0): self._data[role] = data
+                    def data(self, role=0): return self._data.get(role)
+                    def flags(self): return self._flags
+                    def setFlags(self, flags): self._flags = flags
+                    def setEditable(self, editable): pass
             
             items = [
                 QStandardItem(str(i)),    # 0: Id
