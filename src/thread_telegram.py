@@ -2,12 +2,22 @@
 
 # if __name__ == "__main__":
 #     pass
-import requests
 import json
 from src import db
 
+# Import optionnel de requests
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+    requests = None
+
 
 def main(message):
+    if not REQUESTS_AVAILABLE:
+        print("⚠️ Telegram non disponible: module 'requests' manquant")
+        return
     variables = db.lire_param_mail()
     chat_id1 = variables[5]
     id1 = chat_id1.split(",")
@@ -16,6 +26,9 @@ def main(message):
 
 
 def send_telegram_message(message, chat_id):
+    if not REQUESTS_AVAILABLE:
+        return "requests non disponible"
+    
     api = "5584289469:AAHYRhZhDCXKE5l1v1UbLs-MUKGPoimMYAQ"
     responses = {}
     proxies = None

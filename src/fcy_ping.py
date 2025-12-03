@@ -13,34 +13,90 @@ try:
     GUI_AVAILABLE = True
 except ImportError:
     GUI_AVAILABLE = False
-    class QObject: pass
+    import threading
+    
     class Signal: 
-        def __init__(self, *args): pass
-        def emit(self, *args): pass
-        def connect(self, *args): pass
-    class QThread: 
-        def __init__(self): pass
-        def start(self): self.run()
-        def wait(self, *args): return True
-        def isRunning(self): return False
-        def stop(self): pass
+        """Signal fonctionnel pour mode headless"""
+        def __init__(self, *args): 
+            self._callbacks = []
+        def emit(self, *args): 
+            for callback in self._callbacks:
+                try:
+                    callback(*args)
+                except Exception as e:
+                    print(f"Signal emit error: {e}")
+        def connect(self, callback): 
+            self._callbacks.append(callback)
+    
+    class QObject: 
+        pass
+    
+    class QThread:
+        """QThread fonctionnel pour mode headless utilisant threading.Thread"""
+        def __init__(self):
+            self._thread = None
+            self._running = False
+            self.finished = Signal()
+        
+        def start(self):
+            self._running = True
+            self._thread = threading.Thread(target=self._run_wrapper, daemon=True)
+            self._thread.start()
+        
+        def _run_wrapper(self):
+            try:
+                self.run()
+            finally:
+                self._running = False
+                self.finished.emit()
+        
+        def run(self):
+            """À surcharger dans les sous-classes"""
+            pass
+        
+        def wait(self, timeout_ms=None):
+            if self._thread:
+                timeout_sec = timeout_ms / 1000 if timeout_ms else None
+                self._thread.join(timeout=timeout_sec)
+                return not self._thread.is_alive()
+            return True
+        
+        def isRunning(self):
+            return self._running
+        
+        def quit(self):
+            self._running = False
+        
+        def stop(self):
+            self._running = False
+    
     class QStandardItem:
-        def __init__(self, text=""): self._text = text
-        def text(self): return self._text
-        def setText(self, text): self._text = text
+        def __init__(self, text=""): 
+            self._text = str(text) if text else ""
+        def text(self): 
+            return self._text
+        def setText(self, text): 
+            self._text = str(text)
         def setForeground(self, *args): pass
         def setBackground(self, *args): pass
+    
     class QColor:
         def __init__(self, *args): pass
+    
     class QBrush:
         def __init__(self, *args): pass
+    
     class Qt:
         pass
+    
     class QTimer:
         @staticmethod
         def singleShot(ms, callback):
-            # Simulation basique pour headless
-            pass
+            """Timer fonctionnel pour mode headless"""
+            import threading
+            timer = threading.Timer(ms / 1000, callback)
+            timer.daemon = True
+            timer.start()
 
 logger = get_logger(__name__)
 
@@ -258,15 +314,13 @@ class PingManager(QObject):
         ips = self.get_all_ips()
         
         if not ips:
-            # Si pas d'IPs, on attend quand même
-            # On utilise QTimer.singleShot
+            # Si pas d'IPs, on attend quand même avec un timer non-bloquant
             if GUI_AVAILABLE:
                 from PySide6.QtCore import QTimer
                 QTimer.singleShot(int(var.delais) * 1000, self.schedule_next_run)
             else:
-                import time
-                time.sleep(int(var.delais))
-                self.schedule_next_run()
+                # Mode headless: utiliser QTimer factice (threading.Timer)
+                QTimer.singleShot(int(var.delais) * 1000, self.schedule_next_run)
             return
 
         # Lancement du worker
@@ -279,16 +333,14 @@ class PingManager(QObject):
     def on_worker_finished(self):
         """Appelé quand une vague de pings est terminée."""
         if var.tourne:
+            # Délai avant la prochaine vague (non-bloquant)
+            delay_ms = max(1, int(var.delais)) * 1000
             if GUI_AVAILABLE:
                 from PySide6.QtCore import QTimer
-                # On attend le délai configuré avant la prochaine vague
-                # Note: var.delais est en secondes
-                delay_ms = max(1, int(var.delais)) * 1000
                 QTimer.singleShot(delay_ms, self.schedule_next_run)
             else:
-                import time
-                time.sleep(max(1, int(var.delais)))
-                self.schedule_next_run()
+                # Mode headless: utiliser QTimer factice (threading.Timer)
+                QTimer.singleShot(delay_ms, self.schedule_next_run)
 
     def get_all_ips(self):
         """Récupère toutes les IPs du modèle, y compris les exclues."""
