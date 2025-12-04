@@ -1,3 +1,6 @@
+# Ce fichier s'ignore lui-même (ne sera pas sur GitHub)
+.gitignore
+
 # Fichiers Python
 __pycache__/
 **/__pycache__/
@@ -10,6 +13,7 @@ __pycache__/
 # Environnements virtuels
 .qtcreator/
 venv/
+.venv/
 env/
 ENV/
 Pythonvenv/
@@ -54,10 +58,6 @@ tabG
 *.bak
 *~
 
-# Fichiers de traduction compilés (garder uniquement les .ts en source)
-# Décommenter si vous ne voulez pas versionner les .qm
-# src/languages/*.qm
-
 # Scripts de build
 build.ps1
 build-py313-full.ps1
@@ -65,14 +65,21 @@ clean_and_build.ps1
 install_dependencies_py313.ps1
 setup.iss
 
-# Documentation et notes
+# Documentation temporaire
 Translate.md
 update.log
-creer requirement.txt
 
 # Scripts de test temporaires
 test_ping_parsing.py
 test_web_server.py
+debug_snmp.py
+verif_raspberry.py
+check_config.py
+
+# Hooks PyInstaller
+hook-pysnmp.py
+hook-pyasn1.py
+hooks/
 
 # Windows
 Thumbs.db
@@ -83,24 +90,11 @@ $RECYCLE.BIN/
 .DS_Store
 .AppleDouble
 .LSOverride
-hook-pysnmp.py
-hook-pyasn1.py
-hooks/hook-PyngOuin.py
-installer/Ping_u_Setup.exe
-bd/Test.xlsx
-bd/TestIp.xlsx.xlsx
-debug_snmp.py
-installer/changelog.xml
-SOLUTIONS_RASPBERRY.md
-CORRECTIONS_LINUX_SMTP.md
-NOUVELLES_FONCTIONNALITES.md
-RESUME_CORRECTIONS_RASPBERRY.md
-SYNC_RASPBERRY.md
-TEST_EXE.md
-verif_raspberry.py
-pingu_headless.pid
 
-# Dossiers d'installation et de build
-installer/
-installer_script/
+# Fichiers divers à ignorer
+pingu_headless.pid
+pingu_headless.log
+pingu_headless.stop
 installer_scripts/
+web_users.json
+bd

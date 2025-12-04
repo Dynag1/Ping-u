@@ -538,7 +538,7 @@ class PingManager(QObject):
         # Nettoyer le cache SNMP à l'arrêt (force une nouvelle détection au prochain démarrage)
         if SNMP_AVAILABLE and snmp_helper:
             snmp_helper.clear_cache()
-            logger.info("Cache SNMP nettoyé à l'arrêt du monitoring")
+            logger.debug("Cache SNMP nettoyé")
 
 class SNMPWorker(QThread):
     """Worker autonome pour la mise à jour SNMP toutes les 5 secondes"""
@@ -556,7 +556,7 @@ class SNMPWorker(QThread):
 
     def run(self):
         """Point d'entrée du thread."""
-        logger.info(f"Démarrage du worker SNMP sur {self.system}")
+        logger.debug(f"Worker SNMP démarré ({self.system})")
         try:
             # Création et exécution de la boucle asyncio
             if platform.system().lower() == "windows":
@@ -571,14 +571,14 @@ class SNMPWorker(QThread):
             logger.error(f"Erreur boucle asyncio SNMP: {e}", exc_info=True)
 
     def stop(self):
-        logger.info("Arrêt du worker SNMP demandé")
+        logger.debug("Arrêt worker SNMP")
         self.is_running = False
         # Permettre un arrêt rapide en attendant le thread
         self.wait()
 
     async def run_loop(self):
         """Boucle principale SNMP avec délai fixe de 5 secondes."""
-        logger.info("Début de la boucle principale SNMP")
+        logger.debug("Boucle SNMP démarrée")
         while self.is_running:
             try:
                 start_time = asyncio.get_event_loop().time()

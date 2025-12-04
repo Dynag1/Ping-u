@@ -16,12 +16,10 @@ logger = get_logger(__name__)
 try:
     from pysnmp.hlapi.asyncio import *
     SNMP_AVAILABLE = True
-    logger.info("✅ Module SNMP chargé avec succès (pysnmp 6.x)")
+    logger.debug("Module SNMP chargé (pysnmp 6.x)")
 except ImportError as e:
     SNMP_AVAILABLE = False
-    logger.warning(f"⚠️ Module SNMP non disponible: {e}")
-    logger.warning("Les fonctionnalités de surveillance de température ne seront pas disponibles")
-    logger.info("Pour activer SNMP, installez: pip install pysnmp>=6.0")
+    logger.debug(f"Module SNMP non disponible: {e}")
 
 # OIDs standards pour la température selon les constructeurs
 TEMPERATURE_OIDS = {
@@ -102,11 +100,11 @@ class SNMPHelper:
         # Cache des meilleures interfaces pour les débits par IP
         self._best_interfaces = {}  # {ip: interface_index}
         
-        # Log d'initialisation
+        # Log d'initialisation en mode debug uniquement
         if SNMP_AVAILABLE:
-            logger.info(f"SNMPHelper initialisé : communauté='{community}', timeout={timeout}s, {len(TEMPERATURE_OIDS)} types d'équipements supportés")
+            logger.debug(f"SNMPHelper initialisé (communauté='{community}', timeout={timeout}s)")
         else:
-            logger.warning("SNMPHelper initialisé SANS support SNMP (module non chargé)")
+            logger.debug("SNMPHelper initialisé sans support SNMP")
 
     async def get_device_type(self, ip):
         """
@@ -135,7 +133,7 @@ class SNMPHelper:
             synology_model = await self._query_oid(ip, '1.3.6.1.4.1.6574.1.5.1.0', return_type='string')
             if synology_model and synology_model != 'No Such Instance':
                 device_type = 'synology'
-                logger.info(f"📋 Type d'équipement détecté pour {ip}: synology (via OID modèle: {synology_model})")
+                logger.debug(f"Type équipement {ip}: synology ({synology_model})")
                 if ip not in self._working_oids:
                     self._working_oids[ip] = {}
                 self._working_oids[ip]['device_type'] = device_type
@@ -145,7 +143,7 @@ class SNMPHelper:
             qnap_model = await self._query_oid(ip, '1.3.6.1.4.1.24681.1.2.12.0', return_type='string')
             if qnap_model and qnap_model != 'No Such Instance':
                 device_type = 'qnap'
-                logger.info(f"📋 Type d'équipement détecté pour {ip}: qnap (via OID modèle)")
+                logger.debug(f"Type équipement {ip}: qnap")
                 if ip not in self._working_oids:
                     self._working_oids[ip] = {}
                 self._working_oids[ip]['device_type'] = device_type
@@ -180,7 +178,7 @@ class SNMPHelper:
                 else:
                     device_type = 'unknown'
                 
-                logger.info(f"📋 Type d'équipement détecté pour {ip}: {device_type} (via sysDescr: {sys_descr[:60]}...)")
+                logger.debug(f"Type équipement {ip}: {device_type}")
                 
                 # Mettre en cache
                 if ip not in self._working_oids:
@@ -193,7 +191,7 @@ class SNMPHelper:
         
         # Si aucune détection, retourner unknown
         if device_type == 'unknown':
-            logger.info(f"📋 Type d'équipement pour {ip}: unknown (testera tous les OIDs)")
+            logger.debug(f"Type équipement {ip}: unknown")
         
         return device_type
     
@@ -305,7 +303,7 @@ class SNMPHelper:
             try:
                 temp = await self._query_oid(ip, oid_value, return_type='numeric')
                 if temp is not None and isinstance(temp, (int, float)):
-                    logger.info(f"✅ Température trouvée pour {ip} via OID '{name}': {temp}°C")
+                    logger.debug(f"Température {ip}: {temp}°C (OID: {name})")
                     # Sauvegarder l'OID qui fonctionne pour cette IP
                     if ip not in self._working_oids:
                         self._working_oids[ip] = {}
@@ -315,7 +313,7 @@ class SNMPHelper:
                 logger.debug(f"Échec OID {name} pour {ip}: {e}")
                 continue
         
-        logger.info(f"❌ Aucune température trouvée pour {ip} (testé {len(oids_to_test)} OIDs, type: {device_type})")
+        logger.debug(f"Pas de température SNMP pour {ip}")
         return None
     
     def _filter_oids_by_device_type(self, device_type):
@@ -527,7 +525,7 @@ class SNMPHelper:
                 
                 if data and (data['in'] > 1000 or data['out'] > 1000):
                     # Cette interface a des compteurs significatifs
-                    logger.info(f"   ✅ Interface {idx} trouvée (IN:{data['in']:,}, OUT:{data['out']:,})")
+                    logger.debug(f"Interface {idx} pour {ip}")
                     self._best_interfaces[ip] = idx
                     return idx
                 elif data:
@@ -537,7 +535,7 @@ class SNMPHelper:
                 continue
         
         # Aucune interface trouvée, utiliser 1 par défaut
-        logger.warning(f"   ⚠️  Aucune interface avec trafic trouvée pour {ip}, utilisation interface 1")
+        logger.debug(f"Pas d'interface SNMP pour {ip}, utilisation interface 1")
         self._best_interfaces[ip] = 1
         return 1
     
@@ -603,7 +601,7 @@ class SNMPHelper:
         # Détection automatique de l'interface si non spécifiée
         if interface_index is None:
             interface_index = await self.find_best_interface(ip)
-            logger.info(f"Interface {interface_index} utilisée pour {ip}")
+            logger.debug(f"Interface {interface_index} pour {ip}")
         
         try:
             import time
@@ -699,10 +697,7 @@ class SNMPHelper:
                     'out_octets': int(octets_out)
                 }
                 
-                logger.info(f"📊 Compteurs directs pour {ip}:")
-                logger.info(f"   Vitesse interface: {speed_mbps} Mb/s")
-                logger.info(f"   Total IN: {total_in_mb:.2f} MB ({octets_in:,} octets)")
-                logger.info(f"   Total OUT: {total_out_mb:.2f} MB ({octets_out:,} octets)")
+                logger.debug(f"Compteurs SNMP {ip}: IN={total_in_mb:.2f}MB, OUT={total_out_mb:.2f}MB")
                 
                 return result
             
@@ -753,25 +748,18 @@ class SNMPHelper:
         octets_in_delta = current_data['in'] - previous_data['in']
         octets_out_delta = current_data['out'] - previous_data['out']
         
-        # Log détaillé pour debug
-        logger.info(f"📊 Calcul débit pour {ip}:")
-        logger.info(f"   Temps delta: {time_delta:.1f}s")
-        logger.info(f"   IN  - Avant: {previous_data['in']:,} | Après: {current_data['in']:,} | Delta: {octets_in_delta:,} octets")
-        logger.info(f"   OUT - Avant: {previous_data['out']:,} | Après: {current_data['out']:,} | Delta: {octets_out_delta:,} octets")
+        # Log détaillé pour debug uniquement
+        logger.debug(f"Calcul débit {ip}: delta={time_delta:.1f}s")
         
         # Gérer le wraparound (compteur qui déborde)
         if octets_in_delta < 0:
-            logger.warning(f"⚠️  Wraparound détecté pour {ip} (IN), reset à 0")
             octets_in_delta = 0
         if octets_out_delta < 0:
-            logger.warning(f"⚠️  Wraparound détecté pour {ip} (OUT), reset à 0")
             octets_out_delta = 0
         
         # Convertir en Mbps (octets/sec -> bits/sec -> Mbits/sec)
         in_mbps = (octets_in_delta * 8) / (time_delta * 1_000_000)
         out_mbps = (octets_out_delta * 8) / (time_delta * 1_000_000)
-        
-        logger.info(f"   ✅ Débit calculé: IN={in_mbps:.6f} Mbps, OUT={out_mbps:.6f} Mbps")
         
         # Utiliser 6 décimales pour capturer même les très petits débits (quelques bps)
         return {
@@ -836,12 +824,12 @@ class SNMPHelper:
             self._has_snmp_cache.discard(ip)
             if ip in self._working_oids:
                 del self._working_oids[ip]
-            logger.info(f"Cache SNMP vidé pour {ip}")
+            logger.debug(f"Cache SNMP vidé pour {ip}")
         else:
             self._no_snmp_cache.clear()
             self._has_snmp_cache.clear()
             self._working_oids.clear()
-            logger.info("Cache SNMP entièrement vidé")
+            logger.debug("Cache SNMP vidé")
     
     def get_cache_stats(self):
         """Retourne des statistiques sur le cache SNMP (utile pour le debug)"""
