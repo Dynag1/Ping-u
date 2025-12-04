@@ -443,9 +443,10 @@ class PingManager(QObject):
                     return # Pas d'alerte pour les exclus
 
             if latency == 500:
-                self.list_increment(var.liste_hs, ip)
-                self.list_increment(var.liste_mail, ip)
-                self.list_increment(var.liste_telegram, ip)
+                # Incrémenter les 3 listes (un seul log pour les 3)
+                self.list_increment(var.liste_hs, ip, log=True)
+                self.list_increment(var.liste_mail, ip, log=False)
+                self.list_increment(var.liste_telegram, ip, log=False)
             else:
                 self.list_ok(var.liste_hs, ip)
                 self.list_ok(var.liste_mail, ip)
@@ -453,10 +454,11 @@ class PingManager(QObject):
         except Exception as e:
             logger.error(f"Erreur update lists {ip}: {e}")
 
-    def list_increment(self, liste, ip):
+    def list_increment(self, liste, ip, log=True):
         # Protection contre les IPs vides ou None
         if not ip or ip.strip() == "":
-            logger.warning(f"[PING HS] IP vide ignorée dans list_increment")
+            if log:
+                logger.warning(f"[PING HS] IP vide ignorée dans list_increment")
             return
             
         if ip in liste:
@@ -468,13 +470,16 @@ class PingManager(QObject):
             target_hs = int(var.nbrHs)
             if current_count < target_hs:
                 liste[ip] += 1
-                # Log INFO pour diagnostic (visible dans les logs normaux)
-                logger.info(f"[PING HS] {ip}: compteur {current_count} -> {liste[ip]} (seuil: {target_hs})")
+                # Log INFO pour diagnostic (un seul log pour les 3 listes)
+                if log:
+                    logger.info(f"[PING HS] {ip}: compteur {current_count} -> {liste[ip]} (seuil: {target_hs})")
             else:
-                logger.info(f"[PING HS] {ip}: compteur={current_count} déjà au seuil {target_hs}, en attente d'alerte")
+                if log:
+                    logger.info(f"[PING HS] {ip}: compteur={current_count} déjà au seuil {target_hs}, en attente d'alerte")
         else:
             liste[ip] = 1
-            logger.info(f"[PING HS] {ip}: premier échec, compteur=1 (seuil: {int(var.nbrHs)})")
+            if log:
+                logger.info(f"[PING HS] {ip}: premier échec, compteur=1 (seuil: {int(var.nbrHs)})")
 
     def list_ok(self, liste, ip):
         if ip in liste:
