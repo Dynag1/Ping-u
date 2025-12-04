@@ -121,6 +121,8 @@ class AlertManager(QObject):
                 self.process_mail()
             if var.telegram:
                 self.process_telegram()
+            if var.tempAlert:
+                self.process_temp_alerts()
         except Exception as e:
             logger.error(f"Erreur vérification alertes: {e}", exc_info=True)
 
@@ -275,3 +277,113 @@ class AlertManager(QObject):
                 
         except Exception as e:
             logger.error(f"Erreur process telegram: {e}", exc_info=True)
+
+    def process_temp_alerts(self):
+        """Traite les alertes de température élevée."""
+        try:
+            seuil = int(var.tempSeuil)
+            hosts_high_temp = []
+            hosts_normal_temp = []
+            
+            # Parcourir tous les hôtes pour vérifier leur température
+            for row in range(self.model.rowCount()):
+                item_ip = self.model.item(row, 1)
+                item_temp = self.model.item(row, 6)  # Colonne température
+                
+                if not item_ip or not item_temp:
+                    continue
+                    
+                ip = item_ip.text()
+                temp_text = item_temp.text()
+                
+                # Extraire la valeur numérique de la température
+                try:
+                    # Gérer les formats "45°C", "45", "45.5°C", etc.
+                    temp_str = temp_text.replace('°C', '').replace('°', '').strip()
+                    if not temp_str or temp_str == '-':
+                        continue
+                    temp = float(temp_str)
+                except (ValueError, AttributeError):
+                    continue
+                
+                # Vérifier si la température dépasse le seuil
+                if temp >= seuil:
+                    # Température élevée
+                    if ip not in var.liste_temp_alert:
+                        var.liste_temp_alert[ip] = 1
+                    elif var.liste_temp_alert[ip] < 10:
+                        # Première alerte (compteur = 1), on envoie
+                        if var.liste_temp_alert[ip] == 1:
+                            nom = db.lireNom(ip, self.model) or "Inconnu"
+                            hosts_high_temp.append({
+                                'ip': ip,
+                                'nom': nom,
+                                'temp': temp,
+                                'seuil': seuil
+                            })
+                            logger.warning(f"🌡️ Alerte température: {ip} ({nom}) = {temp}°C (seuil: {seuil}°C)")
+                            var.liste_temp_alert[ip] = 10  # Marquer comme alerté
+                else:
+                    # Température normale - retirer de la liste si présent
+                    if ip in var.liste_temp_alert:
+                        if var.liste_temp_alert[ip] == 10:
+                            nom = db.lireNom(ip, self.model) or "Inconnu"
+                            hosts_normal_temp.append({
+                                'ip': ip,
+                                'nom': nom,
+                                'temp': temp
+                            })
+                            logger.info(f"🌡️ Température normalisée: {ip} ({nom}) = {temp}°C")
+                        del var.liste_temp_alert[ip]
+            
+            # Envoyer les alertes
+            if hosts_high_temp:
+                self._send_temp_alerts(hosts_high_temp, 'high')
+            if hosts_normal_temp:
+                self._send_temp_alerts(hosts_normal_temp, 'normal')
+                
+        except Exception as e:
+            logger.error(f"Erreur process temp alerts: {e}", exc_info=True)
+
+    def _send_temp_alerts(self, hosts, alert_type):
+        """Envoie les alertes température via les canaux configurés."""
+        try:
+            # Construire le message
+            if alert_type == 'high':
+                title = "🌡️ ALERTE TEMPÉRATURE ÉLEVÉE"
+                hosts_text = "\n".join([f"  • {h['nom']} ({h['ip']}): {h['temp']}°C (seuil: {h['seuil']}°C)" for h in hosts])
+            else:
+                title = "✅ Température normalisée"
+                hosts_text = "\n".join([f"  • {h['nom']} ({h['ip']}): {h['temp']}°C" for h in hosts])
+            
+            message = f"{title}\n{hosts_text}"
+            
+            # Popup
+            if var.popup:
+                self.popup_signal.emit(message)
+            
+            # Email
+            if var.mail:
+                try:
+                    from src import email_sender
+                    for host in hosts:
+                        host_info = {
+                            'ip': host['ip'],
+                            'nom': host['nom'],
+                            'temp': host['temp'],
+                            'seuil': host.get('seuil', var.tempSeuil)
+                        }
+                        threading.Thread(
+                            target=email_sender.send_temp_alert_email,
+                            args=(host_info, alert_type)
+                        ).start()
+                except Exception as e:
+                    logger.error(f"Erreur envoi email température: {e}")
+            
+            # Telegram
+            if var.telegram:
+                full_message = self.main_window.tr("Alerte sur le site ") + var.nom_site + "\n\n" + message
+                threading.Thread(target=thread_telegram.main, args=(full_message,)).start()
+                
+        except Exception as e:
+            logger.error(f"Erreur envoi alertes température: {e}", exc_info=True)

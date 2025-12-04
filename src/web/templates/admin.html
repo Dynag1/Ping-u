@@ -555,6 +555,22 @@
                     <input type="checkbox" id="check-db-externe">
                     <label for="check-db-externe">💾 Base de données externe</label>
                 </div>
+                
+                <!-- Alerte Température -->
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="check-temp-alert">
+                        <label for="check-temp-alert">🌡️ Alerte température élevée</label>
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="input-temp-seuil">Seuil de température (°C)</label>
+                        <input type="number" id="input-temp-seuil" value="70" min="30" max="120" style="width: 100px;">
+                        <small style="color: #666; font-size: 12px; margin-left: 10px;">
+                            Alerte si température ≥ seuil
+                        </small>
+                    </div>
+                </div>
+                
                 <button id="btn-save-alerts" class="btn btn-info" style="width: 100%; margin-top: 15px;">
                     💾 Sauvegarder les alertes
                 </button>
@@ -1116,7 +1132,9 @@
                 mail: document.getElementById('check-mail').checked,
                 telegram: document.getElementById('check-telegram').checked,
                 mail_recap: document.getElementById('check-mail-recap').checked,
-                db_externe: document.getElementById('check-db-externe').checked
+                db_externe: document.getElementById('check-db-externe').checked,
+                temp_alert: document.getElementById('check-temp-alert').checked,
+                temp_seuil: parseInt(document.getElementById('input-temp-seuil').value) || 70
             };
 
             try {
@@ -1310,6 +1328,8 @@
                     document.getElementById('check-telegram').checked = result.alerts.telegram || false;
                     document.getElementById('check-mail-recap').checked = result.alerts.mail_recap || false;
                     document.getElementById('check-db-externe').checked = result.alerts.db_externe || false;
+                    document.getElementById('check-temp-alert').checked = result.alerts.temp_alert || false;
+                    document.getElementById('input-temp-seuil').value = result.alerts.temp_seuil || 70;
                 }
                 
                 // Statut monitoring

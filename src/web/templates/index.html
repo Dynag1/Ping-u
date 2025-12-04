@@ -101,6 +101,7 @@
         .stat-card.total .value { color: #3b82f6; }
         .stat-card.online .value { color: #10b981; }
         .stat-card.offline .value { color: #ef4444; }
+        .stat-card.high-temp .value { color: #f59e0b; }
 
         .hosts-grid {
             display: grid;
@@ -131,6 +132,16 @@
         .host-card.offline {
             border-left-color: #ef4444;
             opacity: 0.85;
+        }
+
+        .host-card.high-temp {
+            border-left-color: #f59e0b;
+            background: rgba(255, 251, 235, 0.98);
+        }
+
+        .host-card.high-temp .detail-value.temp-warning {
+            color: #f59e0b;
+            font-weight: bold;
         }
 
         .host-header {
@@ -306,6 +317,11 @@
                     <span class="label">Hors ligne:</span>
                     <span class="value" id="offline-hosts">0</span>
                 </div>
+                <div class="stat-card high-temp">
+                    <span class="icon">🌡️</span>
+                    <span class="label">Temp. élevée:</span>
+                    <span class="value" id="high-temp-hosts">0</span>
+                </div>
             </div>
         </div>
 
@@ -328,6 +344,28 @@
         
         let hostsData = [];
         let currentSort = 'status-offline-first';
+        let tempSeuil = 70; // Seuil de température par défaut (sera mis à jour depuis les settings)
+        
+        // Charger le seuil de température depuis les settings
+        async function loadTempSeuil() {
+            try {
+                const response = await fetch('/api/get_settings');
+                const result = await response.json();
+                if (result.alerts && result.alerts.temp_seuil) {
+                    tempSeuil = result.alerts.temp_seuil;
+                }
+            } catch (e) {
+                console.log('Utilisation du seuil par défaut:', tempSeuil);
+            }
+        }
+        loadTempSeuil();
+        
+        // Fonction pour vérifier si la température est élevée
+        function isHighTemp(tempValue) {
+            if (!tempValue || tempValue === '-') return false;
+            const temp = parseFloat(tempValue.replace('°C', '').replace('°', '').trim());
+            return !isNaN(temp) && temp >= tempSeuil;
+        }
         
         socket.on('connect', function() {
             updateStatusBadge(true);
@@ -498,13 +536,22 @@
         function createHostCardElement(host, cardId) {
             const card = document.createElement('div');
             card.id = cardId;
-            card.className = `host-card ${host.status}`;
+            
+            const temperature = host.temp || '-';
+            const highTemp = isHighTemp(temperature);
+            
+            // Classe de la carte: offline prioritaire, puis high-temp, puis online
+            let cardClass = `host-card ${host.status}`;
+            if (highTemp && host.status === 'online') {
+                cardClass += ' high-temp';
+            }
+            card.className = cardClass;
             
             const displayName = host.nom || 'Sans nom';
             const statusText = host.status === 'online' ? 'En ligne' : 'Hors ligne';
-            const temperature = host.temp || '-';
             const debitIn = host.debit_in || 'N/A';
             const debitOut = host.debit_out || 'N/A';
+            const tempClass = highTemp ? 'detail-value temp-warning' : 'detail-value';
             
             card.innerHTML = `
                 <div class="host-header">
@@ -519,7 +566,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">🌡️ Température</div>
-                        <div class="detail-value">${escapeHtml(temperature)}</div>
+                        <div class="${tempClass}">${escapeHtml(temperature)}${highTemp ? ' ⚠️' : ''}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">📥 Débit IN</div>
@@ -539,11 +586,16 @@
             const displayName = host.nom || 'Sans nom';
             const statusText = host.status === 'online' ? 'En ligne' : 'Hors ligne';
             const temperature = host.temp || '-';
+            const highTemp = isHighTemp(temperature);
             const debitIn = host.debit_in || 'N/A';
             const debitOut = host.debit_out || 'N/A';
             
-            // Mettre à jour la classe de statut
-            card.className = `host-card ${host.status}`;
+            // Mettre à jour la classe de statut (avec high-temp si applicable)
+            let cardClass = `host-card ${host.status}`;
+            if (highTemp && host.status === 'online') {
+                cardClass += ' high-temp';
+            }
+            card.className = cardClass;
             
             // Mettre à jour le nom
             const nameEl = card.querySelector('.host-name');
@@ -567,9 +619,11 @@
                 if (details[0].textContent !== (host.mac || '-')) {
                     details[0].textContent = host.mac || '-';
                 }
-                // Température (index 1)
-                if (details[1].textContent !== temperature) {
-                    details[1].textContent = temperature;
+                // Température (index 1) - avec indicateur d'alerte
+                const tempDisplay = temperature + (highTemp ? ' ⚠️' : '');
+                details[1].className = highTemp ? 'detail-value temp-warning' : 'detail-value';
+                if (details[1].textContent !== tempDisplay) {
+                    details[1].textContent = tempDisplay;
                 }
                 // Débit IN (index 2)
                 if (details[2].textContent !== debitIn) {
@@ -586,10 +640,12 @@
             const total = hosts.length;
             const online = hosts.filter(h => h.status === 'online').length;
             const offline = total - online;
+            const highTempCount = hosts.filter(h => h.status === 'online' && isHighTemp(h.temp)).length;
 
             document.getElementById('total-hosts').textContent = total;
             document.getElementById('online-hosts').textContent = online;
             document.getElementById('offline-hosts').textContent = offline;
+            document.getElementById('high-temp-hosts').textContent = highTempCount;
         }
 
         function updateLastUpdateTime() {

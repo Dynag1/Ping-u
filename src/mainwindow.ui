@@ -694,6 +694,53 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                <widget class="QFrame" name="frame_temp">
+                 <property name="frameShape">
+                  <enum>QFrame::Shape::NoFrame</enum>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_temp">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QCheckBox" name="checkTempAlert">
+                    <property name="text">
+                     <string>🌡️ Temp</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSpinBox" name="spinTempSeuil">
+                    <property name="toolTip">
+                     <string>Seuil de température (°C)</string>
+                    </property>
+                    <property name="suffix">
+                     <string>°C</string>
+                    </property>
+                    <property name="minimum">
+                     <number>30</number>
+                    </property>
+                    <property name="maximum">
+                     <number>120</number>
+                    </property>
+                    <property name="value">
+                     <number>70</number>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
               </layout>
              </widget>
             </item>

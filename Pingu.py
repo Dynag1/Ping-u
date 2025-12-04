@@ -328,8 +328,8 @@ class MainWindow(QMainWindow):
         self.ui.checkTelegram.clicked.connect(self.telegram)
         self.ui.checkMailRecap.clicked.connect(self.mailRecap)
         self.ui.checkDbExterne.clicked.connect(self.pingDb)
-        # Fentres
-        self.ui.checkDbExterne.clicked.connect(self.pingDb)
+        self.ui.checkTempAlert.clicked.connect(self.tempAlert)
+        self.ui.spinTempSeuil.valueChanged.connect(self.on_spin_temp_seuil_changed)
         # Fentres
         self.ui.actionSauvegarder_les_r_glages.triggered.connect(self.settings_controller.save_settings)
         self.ui.actionEnvoies.triggered.connect(sFenetre.fenetreParamEnvoie)
@@ -539,6 +539,15 @@ class MainWindow(QMainWindow):
             var.dbExterne = True
         else:
             var.dbExterne = False
+
+    def tempAlert(self):
+        if self.ui.checkTempAlert.isChecked():
+            var.tempAlert = True
+        else:
+            var.tempAlert = False
+
+    def on_spin_temp_seuil_changed(self, value):
+        var.tempSeuil = value
 
     def close(self):
         self.cleanup_resources()
@@ -955,7 +964,14 @@ def run_headless_mode():
             var.telegram = result_db[4]
             var.mailRecap = result_db[5]
             var.dbExterne = result_db[6]
-            logger.info(f"Paramètres chargés: Délai={var.delais}s, nbrHs={var.nbrHs}, Mail={var.mail}, Telegram={var.telegram}, Popup={var.popup}")
+            
+            # Paramètres alerte température (ajoutés en v99)
+            if len(result_db) > 7:
+                var.tempAlert = result_db[7]
+            if len(result_db) > 8:
+                var.tempSeuil = result_db[8]
+            
+            logger.info(f"Paramètres chargés: Délai={var.delais}s, nbrHs={var.nbrHs}, Mail={var.mail}, Telegram={var.telegram}, TempAlert={var.tempAlert} (seuil: {var.tempSeuil}°C)")
         else:
             logger.warning("Paramètres d'alertes manquants ou incomplets, utilisation des valeurs par défaut")
             # Valeurs par défaut pour éviter les alertes immédiates
@@ -966,6 +982,8 @@ def run_headless_mode():
             var.telegram = False
             var.mailRecap = False
             var.dbExterne = False
+            var.tempAlert = False
+            var.tempSeuil = 70
             logger.info(f"Valeurs par défaut appliquées: Délai={var.delais}s, nbrHs={var.nbrHs}")
             
     except Exception as e:
