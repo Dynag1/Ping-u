@@ -22,7 +22,12 @@ class MainController:
     def start_monitoring(self):
         """Démarre tous les services de monitoring."""
         try:
-            logger.info("Démarrage du monitoring via MainController")
+            # LOG CRITIQUE - Valeur de nbrHs au démarrage
+            logger.info(f"======== DÉMARRAGE MONITORING ========")
+            logger.info(f"var.nbrHs = {var.nbrHs} (type: {type(var.nbrHs).__name__})")
+            logger.info(f"var.delais = {var.delais}")
+            logger.info(f"var.mail = {var.mail}, var.telegram = {var.telegram}")
+            logger.info(f"======================================")
             
             # Sécurité : Vérifier si le monitoring est déjà en cours
             if self.ping_manager is not None or var.tourne:

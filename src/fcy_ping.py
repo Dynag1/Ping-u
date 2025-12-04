@@ -448,12 +448,13 @@ class PingManager(QObject):
             target_hs = int(var.nbrHs)
             if current_count < target_hs:
                 liste[ip] += 1
-                logger.debug(f"Compteur incrémenté pour {ip}: {current_count} -> {liste[ip]} (Seuil: {target_hs})")
+                # Log INFO pour diagnostic (visible dans les logs normaux)
+                logger.info(f"[PING HS] {ip}: compteur {current_count} -> {liste[ip]} (seuil: {target_hs})")
             else:
-                logger.debug(f"Compteur max atteint pour {ip}: {current_count} (Seuil: {target_hs})")
+                logger.info(f"[PING HS] {ip}: compteur={current_count} déjà au seuil {target_hs}, en attente d'alerte")
         else:
             liste[ip] = 1
-            logger.debug(f"Compteur initialisé pour {ip}: 1 (Seuil: {int(var.nbrHs)})")
+            logger.info(f"[PING HS] {ip}: premier échec, compteur=1 (seuil: {int(var.nbrHs)})")
 
     def list_ok(self, liste, ip):
         if ip in liste:
