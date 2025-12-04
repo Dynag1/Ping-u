@@ -364,8 +364,8 @@ class PingManager(QObject):
             QTimer.singleShot(delay_ms, self.schedule_next_run)
 
     def get_all_ips(self):
-        """Récupère toutes les IPs du modèle, y compris les exclues."""
-        ips = []
+        """Récupère toutes les IPs du modèle, y compris les exclues (dédupliquées)."""
+        ips_set = set()  # Utiliser un set pour éviter les doublons
         for row in range(self.tree_model.rowCount()):
             # On inclut TOUTES les IPs, même exclues, pour le ping
             item = self.tree_model.item(row, 1)
@@ -373,10 +373,13 @@ class PingManager(QObject):
                 ip_text = item.text().strip()
                 # Ignorer les IPs vides ou invalides
                 if ip_text and ip_text != "":
-                    ips.append(ip_text)
+                    if ip_text in ips_set:
+                        logger.debug(f"[PING] IP {ip_text} en doublon, ignorée")
+                    else:
+                        ips_set.add(ip_text)
                 else:
                     logger.warning(f"[PING] Ligne {row}: IP vide ignorée")
-        return ips
+        return list(ips_set)
 
     def handle_result(self, ip, latency, color, temperature, bandwidth):
         """Met à jour l'interface avec le résultat."""
