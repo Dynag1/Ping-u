@@ -15,7 +15,7 @@ u = 0
 
 tourne = True
 delais = 5
-nbrHs = 1
+nbrHs = 3  # Nombre de tentatives échouées avant d'envoyer une alerte (par défaut: 3)
 
 popup = False
 mail = False

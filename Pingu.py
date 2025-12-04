@@ -955,9 +955,18 @@ def run_headless_mode():
             var.telegram = result_db[4]
             var.mailRecap = result_db[5]
             var.dbExterne = result_db[6]
-            logger.info(f"Paramètres chargés: Délai={var.delais}s, Mail={var.mail}, Telegram={var.telegram}, Popup={var.popup}")
+            logger.info(f"Paramètres chargés: Délai={var.delais}s, nbrHs={var.nbrHs}, Mail={var.mail}, Telegram={var.telegram}, Popup={var.popup}")
         else:
-            logger.warning("Paramètres d'alertes manquants ou incomplets")
+            logger.warning("Paramètres d'alertes manquants ou incomplets, utilisation des valeurs par défaut")
+            # Valeurs par défaut pour éviter les alertes immédiates
+            var.nbrHs = 3  # 3 tentatives avant alerte (CRITIQUE!)
+            var.delais = 10  # 10 secondes entre chaque ping
+            var.popup = False
+            var.mail = False
+            var.telegram = False
+            var.mailRecap = False
+            var.dbExterne = False
+            logger.info(f"Valeurs par défaut appliquées: Délai={var.delais}s, nbrHs={var.nbrHs}")
             
     except Exception as e:
         logger.warning(f"Erreur chargement paramètres: {e}")

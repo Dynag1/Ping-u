@@ -19,7 +19,7 @@ xmltodict>=0.13.0
 
 # --- Windows Only (GUI) ---
 PySide6>=6.5.0; sys_platform == 'win32'
-qt-themes>=1.0.0; sys_platform == 'win32'
+qt-themes; sys_platform == 'win32'
 
 # --- Linux / Raspberry Pi (async server) ---
 eventlet>=0.33.0; sys_platform != 'win32'
