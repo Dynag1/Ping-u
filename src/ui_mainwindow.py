@@ -385,6 +385,29 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_5.addWidget(self.checkDbExterne)
 
+        # Frame pour alerte température
+        self.frame_temp = QFrame(self.frame_7)
+        self.frame_temp.setObjectName(u"frame_temp")
+        self.frame_temp.setFrameShape(QFrame.Shape.NoFrame)
+        self.horizontalLayout_temp = QHBoxLayout(self.frame_temp)
+        self.horizontalLayout_temp.setObjectName(u"horizontalLayout_temp")
+        self.horizontalLayout_temp.setContentsMargins(0, 5, 0, 0)
+        
+        self.checkTempAlert = QCheckBox(self.frame_temp)
+        self.checkTempAlert.setObjectName(u"checkTempAlert")
+        self.horizontalLayout_temp.addWidget(self.checkTempAlert)
+        
+        self.spinTempSeuil = QSpinBox(self.frame_temp)
+        self.spinTempSeuil.setObjectName(u"spinTempSeuil")
+        self.spinTempSeuil.setMinimum(30)
+        self.spinTempSeuil.setMaximum(120)
+        self.spinTempSeuil.setValue(70)
+        self.spinTempSeuil.setSuffix(u"°C")
+        self.spinTempSeuil.setToolTip(u"Seuil de température (°C)")
+        self.horizontalLayout_temp.addWidget(self.spinTempSeuil)
+        
+        self.verticalLayout_5.addWidget(self.frame_temp)
+
 
         self.verticalLayout_2.addWidget(self.frame_7)
 
@@ -509,6 +532,7 @@ class Ui_MainWindow(object):
         self.checkTelegram.setText(QCoreApplication.translate("MainWindow", u"Telegram", None))
         self.checkMailRecap.setText(QCoreApplication.translate("MainWindow", u"Mail Recap", None))
         self.checkDbExterne.setText(QCoreApplication.translate("MainWindow", u"Db Externe", None))
+        self.checkTempAlert.setText(QCoreApplication.translate("MainWindow", u"🌡️ Temp", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"Fichier", None))
         self.menuParametres.setTitle(QCoreApplication.translate("MainWindow", u"Parametres", None))
         self.menuLangue.setTitle(QCoreApplication.translate("MainWindow", u"Langue", None))

@@ -24,6 +24,11 @@ mailRecap = False
 dbExterne = False
 envoie_alert = False
 
+# Alerte température
+tempAlert = False  # Activer/désactiver les alertes température
+tempSeuil = 70     # Seuil de température en °C (par défaut: 70°C)
+liste_temp_alert = {}  # Format: {'ip': compteur}
+
 liste_hs = {}
 liste_mail = {}
 liste_telegram = {}

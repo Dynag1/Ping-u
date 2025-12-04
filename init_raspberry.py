@@ -46,8 +46,8 @@ def create_config_files():
     # Fichier tab4 - Paramètres principaux
     if not os.path.exists('tab4'):
         print("🔄 Création du fichier 'tab4' (paramètres monitoring)...")
-        # [delais, nbr_hs, popup, mail, telegram, mail_recap, db_externe]
-        monitoring_params = [10, 3, False, False, False, False, False]
+        # [delais, nbr_hs, popup, mail, telegram, mail_recap, db_externe, temp_alert, temp_seuil]
+        monitoring_params = [10, 3, False, False, False, False, False, False, 70]
         try:
             with open('tab4', 'wb') as f:
                 pickle.dump(monitoring_params, f)

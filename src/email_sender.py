@@ -409,6 +409,215 @@ Ce message a été envoyé automatiquement par Ping ü.
         return False
 
 
+def get_email_template_temp_alert(host_info, alert_type='high'):
+    """
+    Template HTML pour les alertes de température
+    alert_type: 'high' (température élevée) ou 'normal' (retour à la normale)
+    """
+    
+    # Couleurs selon le type d'alerte
+    if alert_type == 'high':
+        color = '#e74c3c'
+        bg_color = '#fadbd8'
+        icon = '🌡️'
+        status_text = 'TEMPÉRATURE ÉLEVÉE'
+    else:
+        color = '#27ae60'
+        bg_color = '#d5f4e6'
+        icon = '✅'
+        status_text = 'TEMPÉRATURE NORMALISÉE'
+    
+    ip = host_info.get('ip', 'N/A')
+    nom = host_info.get('nom', ip)
+    temp = host_info.get('temp', 'N/A')
+    seuil = host_info.get('seuil', var.tempSeuil)
+    timestamp = datetime.now().strftime('%d/%m/%Y à %H:%M:%S')
+    site_name = var.nom_site if hasattr(var, 'nom_site') and var.nom_site else 'Votre réseau'
+    
+    html = f"""
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerte Température - Ping ü</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 40px 0; text-align: center;">
+                <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                {icon} Ping ü
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #ffcccc; font-size: 16px;">
+                                Alerte Température
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Alert Badge -->
+                    <tr>
+                        <td style="padding: 30px 30px 20px 30px; text-align: center;">
+                            <div style="background-color: {bg_color}; border-left: 5px solid {color}; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h2 style="margin: 0 0 10px 0; color: {color}; font-size: 24px; font-weight: 700;">
+                                    {icon} {status_text}
+                                </h2>
+                                <p style="margin: 0; color: #555555; font-size: 14px;">
+                                    Alerte détectée le {timestamp}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Temperature Display -->
+                    <tr>
+                        <td style="padding: 0 30px 20px 30px; text-align: center;">
+                            <div style="background: linear-gradient(135deg, {color}22 0%, {color}11 100%); padding: 30px; border-radius: 10px;">
+                                <p style="margin: 0 0 10px 0; color: #666666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Température actuelle</p>
+                                <p style="margin: 0; color: {color}; font-size: 48px; font-weight: 700;">{temp}°C</p>
+                                <p style="margin: 10px 0 0 0; color: #888888; font-size: 14px;">Seuil configuré : {seuil}°C</p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Host Information -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8f9fa; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td colspan="2" style="padding: 15px; background-color: #667eea; color: #ffffff; font-weight: 700; font-size: 16px;">
+                                        📊 Informations de l'équipement
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #dee2e6;">
+                                    <td style="padding: 15px; font-weight: 600; color: #495057; width: 40%;">
+                                        🌐 Nom :
+                                    </td>
+                                    <td style="padding: 15px; color: #212529; font-weight: 500;">
+                                        {nom}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 15px; font-weight: 600; color: #495057;">
+                                        🔢 Adresse IP :
+                                    </td>
+                                    <td style="padding: 15px; color: #212529; font-family: 'Courier New', monospace; font-weight: 600;">
+                                        {ip}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Site Info -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px; text-align: center;">
+                            <p style="margin: 0; color: #6c757d; font-size: 14px;">
+                                Site surveillé : <strong>{site_name}</strong>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 25px 30px; text-align: center; border-radius: 0 0 12px 12px;">
+                            <p style="margin: 0 0 10px 0; color: #6c757d; font-size: 12px;">
+                                Ce message a été envoyé automatiquement par Ping ü
+                            </p>
+                            <p style="margin: 0; color: #adb5bd; font-size: 11px;">
+                                © {datetime.now().year} Ping ü - Tous droits réservés
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+    return html
+
+
+def send_temp_alert_email(host_info, alert_type='high'):
+    """
+    Envoie un email d'alerte pour une température élevée
+    """
+    try:
+        # Charger les paramètres SMTP
+        smtp_params = db.lire_param_mail()
+        if not smtp_params or len(smtp_params) < 5:
+            logger.error("Paramètres SMTP non configurés")
+            return False
+        
+        smtp_email = smtp_params[0]
+        smtp_password = smtp_params[1]
+        smtp_port = int(smtp_params[2])
+        smtp_server = smtp_params[3]
+        recipients = smtp_params[4]
+        
+        if not all([smtp_server, smtp_email, recipients]):
+            logger.error("Configuration SMTP incomplète")
+            return False
+        
+        # Créer le message
+        message = MIMEMultipart('alternative')
+        message['From'] = smtp_email
+        message['To'] = recipients
+        
+        # Sujet selon le type d'alerte
+        if alert_type == 'high':
+            message['Subject'] = f"🌡️ Alerte : Température élevée sur {host_info.get('nom', host_info.get('ip'))} ({host_info.get('temp')}°C)"
+        else:
+            message['Subject'] = f"✅ Température normalisée sur {host_info.get('nom', host_info.get('ip'))} ({host_info.get('temp')}°C)"
+        
+        # Version texte simple
+        text_body = f"""
+Alerte Température Ping ü - {alert_type.upper()}
+
+Équipement : {host_info.get('nom', 'N/A')}
+IP : {host_info.get('ip', 'N/A')}
+Température : {host_info.get('temp', 'N/A')}°C
+Seuil configuré : {host_info.get('seuil', var.tempSeuil)}°C
+Date : {datetime.now().strftime('%d/%m/%Y à %H:%M:%S')}
+
+Ce message a été envoyé automatiquement par Ping ü.
+"""
+        
+        # Version HTML
+        html_body = get_email_template_temp_alert(host_info, alert_type)
+        
+        # Attacher les deux versions
+        part1 = MIMEText(text_body, 'plain', 'utf-8')
+        part2 = MIMEText(html_body, 'html', 'utf-8')
+        message.attach(part1)
+        message.attach(part2)
+        
+        # Envoyer l'email
+        if smtp_port == 465:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5) as server:
+                server.login(smtp_email, smtp_password)
+                server.send_message(message)
+        else:
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
+                server.starttls()
+                server.login(smtp_email, smtp_password)
+                server.send_message(message)
+        
+        logger.info(f"Email alerte température {alert_type} envoyé pour {host_info.get('ip')}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Erreur envoi email alerte température: {e}")
+        return False
+
+
 def send_recap_email(hosts_data, test_mode=False):
     """
     Envoie un email récapitulatif

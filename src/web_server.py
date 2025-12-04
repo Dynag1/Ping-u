@@ -329,13 +329,18 @@ class WebServer(QObject):
         def save_alerts():
             try:
                 data = request.get_json()
-                from src import var
+                from src import var, db
                 
                 var.popup = data.get('popup', False)
                 var.mail = data.get('mail', False)
                 var.telegram = data.get('telegram', False)
                 var.mailRecap = data.get('mail_recap', False)
                 var.dbExterne = data.get('db_externe', False)
+                var.tempAlert = data.get('temp_alert', False)
+                var.tempSeuil = data.get('temp_seuil', 70)
+                
+                # Sauvegarder dans le fichier de configuration
+                db.save_param_db()
                 
                 logger.info(f"Alertes sauvegardées via API: {data}")
                 return jsonify({'success': True, 'message': 'Alertes sauvegardées'})
@@ -626,7 +631,9 @@ class WebServer(QObject):
                         'mail': var.mail,
                         'telegram': var.telegram,
                         'mail_recap': var.mailRecap,
-                        'db_externe': var.dbExterne
+                        'db_externe': var.dbExterne,
+                        'temp_alert': var.tempAlert,
+                        'temp_seuil': var.tempSeuil
                     },
                     'monitoring_running': monitoring_running,
                     'smtp': {
