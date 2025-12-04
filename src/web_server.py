@@ -349,29 +349,24 @@ class WebServer(QObject):
             try:
                 model = self.main_window.treeIpModel
                 count_before = model.rowCount()
-                logger.info(f"[CLEAR] Suppression demandée. Nombre d'hôtes avant: {count_before}")
                 
                 # Utiliser clear() si disponible, sinon removeRows
                 if hasattr(model, 'clear'):
                     model.clear()
-                    # Remettre les headers après clear
                     model.setHorizontalHeaderLabels([
                         "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "Comm", "Excl"
                     ])
                 else:
-                    # Fallback: supprimer ligne par ligne en partant de la fin
                     for i in range(count_before - 1, -1, -1):
                         model.removeRow(i)
-                
-                count_after = model.rowCount()
-                logger.info(f"[CLEAR] Suppression terminée. Nombre d'hôtes après: {count_after}")
                 
                 # Vider aussi les listes d'alertes
                 from src import var
                 var.liste_hs.clear()
                 var.liste_mail.clear()
                 var.liste_telegram.clear()
-                logger.info("[CLEAR] Listes d'alertes vidées")
+                
+                logger.info(f"{count_before} hôtes supprimés")
                 
                 self.broadcast_update()
                 return jsonify({'success': True, 'message': f'{count_before} hôtes supprimés'})
@@ -389,9 +384,10 @@ class WebServer(QObject):
                 count_before = model.rowCount()
                 
                 duplicates_removed = fct.remove_duplicates_from_model(model)
-                
                 count_after = model.rowCount()
-                logger.info(f"[DUPLICATES] {duplicates_removed} doublon(s) supprimé(s). {count_before} -> {count_after} hôtes")
+                
+                if duplicates_removed > 0:
+                    logger.info(f"{duplicates_removed} doublon(s) supprimé(s)")
                 
                 self.broadcast_update()
                 return jsonify({

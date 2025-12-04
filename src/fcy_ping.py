@@ -366,26 +366,12 @@ class PingManager(QObject):
     def get_all_ips(self):
         """Récupère toutes les IPs du modèle, y compris les exclues (dédupliquées)."""
         ips_set = set()  # Utiliser un set pour éviter les doublons
-        duplicates_count = 0
         for row in range(self.tree_model.rowCount()):
-            # On inclut TOUTES les IPs, même exclues, pour le ping
             item = self.tree_model.item(row, 1)
             if item:
                 ip_text = item.text().strip()
-                # Ignorer les IPs vides ou invalides
-                if ip_text and ip_text != "":
-                    if ip_text in ips_set:
-                        duplicates_count += 1
-                        logger.warning(f"[PING] IP {ip_text} en doublon (ignorée)")
-                    else:
-                        ips_set.add(ip_text)
-                else:
-                    logger.warning(f"[PING] Ligne {row}: IP vide ignorée")
-        
-        if duplicates_count > 0:
-            logger.warning(f"[PING] {duplicates_count} IP(s) en doublon ignorée(s). Total unique: {len(ips_set)}")
-        
-        logger.info(f"[PING] {len(ips_set)} IP(s) à pinger (lignes dans modèle: {self.tree_model.rowCount()})")
+                if ip_text:
+                    ips_set.add(ip_text)
         return list(ips_set)
 
     def handle_result(self, ip, latency, color, temperature, bandwidth):
@@ -457,8 +443,6 @@ class PingManager(QObject):
     def list_increment(self, liste, ip, log=True):
         # Protection contre les IPs vides ou None
         if not ip or ip.strip() == "":
-            if log:
-                logger.warning(f"[PING HS] IP vide ignorée dans list_increment")
             return
             
         if ip in liste:
@@ -470,16 +454,12 @@ class PingManager(QObject):
             target_hs = int(var.nbrHs)
             if current_count < target_hs:
                 liste[ip] += 1
-                # Log INFO pour diagnostic (un seul log pour les 3 listes)
                 if log:
-                    logger.info(f"[PING HS] {ip}: compteur {current_count} -> {liste[ip]} (seuil: {target_hs})")
-            else:
-                if log:
-                    logger.info(f"[PING HS] {ip}: compteur={current_count} déjà au seuil {target_hs}, en attente d'alerte")
+                    logger.debug(f"[PING] {ip}: compteur {current_count} -> {liste[ip]}/{target_hs}")
         else:
             liste[ip] = 1
             if log:
-                logger.info(f"[PING HS] {ip}: premier échec, compteur=1 (seuil: {int(var.nbrHs)})")
+                logger.debug(f"[PING] {ip}: premier échec 1/{int(var.nbrHs)}")
 
     def list_ok(self, liste, ip):
         if ip in liste:

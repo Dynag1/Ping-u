@@ -90,7 +90,7 @@ class AlertManager(QObject):
 
     def start(self):
         """Démarre la surveillance des alertes."""
-        logger.info(f"Démarrage du gestionnaire d'alertes avec nbrHs={var.nbrHs} (alertes après {var.nbrHs} pings échoués)")
+        logger.info(f"Gestionnaire d'alertes démarré (seuil: {var.nbrHs})")
         self.check_mail_recap()
         
         # Démarrer le timer avec le délai configuré
@@ -169,14 +169,10 @@ class AlertManager(QObject):
             hosts_down = []
             hosts_up = []
             
-            # Log de diagnostic pour voir l'état des compteurs
-            if var.liste_mail:
-                logger.debug(f"[ALERTE] Vérification alertes mail - nbrHs={var.nbrHs}, compteurs: {dict(var.liste_mail)}")
-            
             for key, value in list(var.liste_mail.items()):
                 if int(value) == int(var.nbrHs):
-                    # Hôte qui vient de tomber - LOG IMPORTANT
-                    logger.info(f"[ALERTE] Déclenchement alerte pour {key}: compteur={value} atteint seuil nbrHs={var.nbrHs}")
+                    # Hôte qui vient de tomber
+                    logger.info(f"Alerte mail: {key} HS")
                     nom = db.lireNom(key, self.model) or "Inconnu"
                     
                     # Récupérer les infos de l'hôte depuis le modèle
@@ -252,13 +248,9 @@ class AlertManager(QObject):
             
             message = self.main_window.tr("Alerte sur le site ") + var.nom_site + "\n \n"
             
-            # Log de diagnostic
-            if var.liste_telegram:
-                logger.debug(f"[ALERTE] Vérification alertes telegram - nbrHs={var.nbrHs}, compteurs: {dict(var.liste_telegram)}")
-            
             for key, value in list(var.liste_telegram.items()):
                 if int(value) == int(var.nbrHs):
-                    logger.info(f"[ALERTE TELEGRAM] Déclenchement pour {key}: compteur={value} atteint seuil nbrHs={var.nbrHs}")
+                    logger.info(f"Alerte Telegram: {key} HS")
                     nom = db.lireNom(key, self.model) or "Inconnu"
                     ip_hs_text += f"{nom} : {key}\n"
                     var.liste_telegram[key] = 10

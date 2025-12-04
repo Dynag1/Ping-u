@@ -22,18 +22,11 @@ class MainController:
     def start_monitoring(self):
         """Démarre tous les services de monitoring."""
         try:
-            # LOG CRITIQUE - Valeur de nbrHs au démarrage
-            logger.info(f"======== DÉMARRAGE MONITORING ========")
-            logger.info(f"var.nbrHs = {var.nbrHs} (type: {type(var.nbrHs).__name__})")
-            logger.info(f"var.delais = {var.delais}")
-            logger.info(f"var.mail = {var.mail}, var.telegram = {var.telegram}")
-            logger.info(f"======================================")
+            logger.info(f"Démarrage monitoring (délai: {var.delais}s, seuil HS: {var.nbrHs})")
             
             # Sécurité : Vérifier si le monitoring est déjà en cours
             if self.ping_manager is not None or var.tourne:
-                logger.warning("Tentative de démarrage alors que le monitoring est déjà actif. Redémarrage...")
                 self.stop_monitoring()
-                # Laisser un peu de temps pour l'arrêt des threads
                 try:
                     from PySide6.QtCore import QThread
                     QThread.msleep(500)
@@ -41,12 +34,10 @@ class MainController:
                     import time
                     time.sleep(0.5)
             
-            # Réinitialiser les listes d'alertes pour éviter les fausses alertes
-            # avec d'anciens compteurs qui ne correspondent plus au nbrHs actuel
+            # Réinitialiser les listes d'alertes
             var.liste_hs.clear()
             var.liste_mail.clear()
             var.liste_telegram.clear()
-            logger.info(f"Listes d'alertes réinitialisées (nbrHs={var.nbrHs})")
             
             # Instanciation des managers
             # Note: PingManager prend le modèle de données + main_window pour broadcast
