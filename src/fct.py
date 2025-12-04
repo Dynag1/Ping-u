@@ -210,6 +210,79 @@ def clear(self, treeModel):
     treeModel.removeRows(0, treeModel.rowCount())
 
 
+def ip_exists_in_model(model, ip):
+    """
+    Vérifie si une IP existe déjà dans le modèle.
+    
+    Args:
+        model: Le modèle de données (QStandardItemModel ou équivalent)
+        ip: L'adresse IP à vérifier
+        
+    Returns:
+        bool: True si l'IP existe déjà, False sinon
+    """
+    if not ip or ip.strip() == "":
+        return False
+    
+    ip_clean = ip.strip()
+    for row in range(model.rowCount()):
+        item = model.item(row, 1)  # Colonne 1 = IP
+        if item:
+            existing_ip = item.text().strip()
+            if existing_ip == ip_clean:
+                return True
+    return False
+
+
+def get_all_ips_from_model(model):
+    """
+    Récupère toutes les IPs uniques du modèle.
+    
+    Args:
+        model: Le modèle de données
+        
+    Returns:
+        set: Ensemble des IPs présentes dans le modèle
+    """
+    ips = set()
+    for row in range(model.rowCount()):
+        item = model.item(row, 1)  # Colonne 1 = IP
+        if item:
+            ip_text = item.text().strip()
+            if ip_text:
+                ips.add(ip_text)
+    return ips
+
+
+def remove_duplicates_from_model(model):
+    """
+    Supprime les doublons d'IP du modèle.
+    
+    Args:
+        model: Le modèle de données
+        
+    Returns:
+        int: Nombre de doublons supprimés
+    """
+    seen_ips = set()
+    rows_to_remove = []
+    
+    for row in range(model.rowCount()):
+        item = model.item(row, 1)  # Colonne 1 = IP
+        if item:
+            ip_text = item.text().strip()
+            if ip_text in seen_ips:
+                rows_to_remove.append(row)
+            elif ip_text:
+                seen_ips.add(ip_text)
+    
+    # Supprimer les lignes en partant de la fin pour éviter les décalages d'index
+    for row in reversed(rows_to_remove):
+        model.removeRow(row)
+    
+    return len(rows_to_remove)
+
+
 def add_row(self, model, row_data):
     """Ajoute une ligne selon le type de modèle"""
     if isinstance(model, QStandardItemModel):

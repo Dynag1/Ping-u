@@ -379,6 +379,32 @@ class WebServer(QObject):
                 logger.error(f"Erreur suppression tous les hôtes: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
+        @self.app.route('/api/remove_duplicates', methods=['POST'])
+        @WebAuth.login_required
+        def remove_duplicates():
+            """Supprime les doublons d'IP du modèle"""
+            try:
+                from src import fct
+                model = self.main_window.treeIpModel
+                count_before = model.rowCount()
+                
+                duplicates_removed = fct.remove_duplicates_from_model(model)
+                
+                count_after = model.rowCount()
+                logger.info(f"[DUPLICATES] {duplicates_removed} doublon(s) supprimé(s). {count_before} -> {count_after} hôtes")
+                
+                self.broadcast_update()
+                return jsonify({
+                    'success': True, 
+                    'message': f'{duplicates_removed} doublon(s) supprimé(s)',
+                    'duplicates_removed': duplicates_removed,
+                    'hosts_before': count_before,
+                    'hosts_after': count_after
+                })
+            except Exception as e:
+                logger.error(f"Erreur suppression doublons: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
         @self.app.route('/api/delete_host', methods=['POST'])
         @WebAuth.login_required
         def delete_host():

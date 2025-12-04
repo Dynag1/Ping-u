@@ -567,6 +567,9 @@
                     <button id="btn-clear-all" class="btn btn-danger">
                         🗑️ Tout effacer
                     </button>
+                    <button id="btn-remove-duplicates" class="btn btn-warning">
+                        🔄 Suppr. doublons
+                    </button>
                     <button id="btn-export-csv" class="btn btn-info">
                         📥 Exporter CSV
                     </button>
@@ -1132,6 +1135,20 @@
             try {
                 const result = await apiCall('/api/clear_all', 'POST');
                 showNotification('Tous les hôtes ont été supprimés', 'info');
+                socket.emit('request_update');
+            } catch (error) {
+                // Erreur déjà affichée
+            }
+        });
+
+        document.getElementById('btn-remove-duplicates').addEventListener('click', async function() {
+            try {
+                const result = await apiCall('/api/remove_duplicates', 'POST');
+                if (result.duplicates_removed > 0) {
+                    showNotification(`${result.duplicates_removed} doublon(s) supprimé(s)`, 'success');
+                } else {
+                    showNotification('Aucun doublon trouvé', 'info');
+                }
                 socket.emit('request_update');
             } catch (error) {
                 // Erreur déjà affichée

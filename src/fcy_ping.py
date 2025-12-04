@@ -366,6 +366,7 @@ class PingManager(QObject):
     def get_all_ips(self):
         """Récupère toutes les IPs du modèle, y compris les exclues (dédupliquées)."""
         ips_set = set()  # Utiliser un set pour éviter les doublons
+        duplicates_count = 0
         for row in range(self.tree_model.rowCount()):
             # On inclut TOUTES les IPs, même exclues, pour le ping
             item = self.tree_model.item(row, 1)
@@ -374,11 +375,17 @@ class PingManager(QObject):
                 # Ignorer les IPs vides ou invalides
                 if ip_text and ip_text != "":
                     if ip_text in ips_set:
-                        logger.debug(f"[PING] IP {ip_text} en doublon, ignorée")
+                        duplicates_count += 1
+                        logger.warning(f"[PING] IP {ip_text} en doublon (ignorée)")
                     else:
                         ips_set.add(ip_text)
                 else:
                     logger.warning(f"[PING] Ligne {row}: IP vide ignorée")
+        
+        if duplicates_count > 0:
+            logger.warning(f"[PING] {duplicates_count} IP(s) en doublon ignorée(s). Total unique: {len(ips_set)}")
+        
+        logger.info(f"[PING] {len(ips_set)} IP(s) à pinger (lignes dans modèle: {self.tree_model.rowCount()})")
         return list(ips_set)
 
     def handle_result(self, ip, latency, color, temperature, bandwidth):
