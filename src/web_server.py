@@ -348,10 +348,33 @@ class WebServer(QObject):
         def clear_all():
             try:
                 model = self.main_window.treeIpModel
-                model.removeRows(0, model.rowCount())
-                logger.info("Tous les hôtes supprimés via API")
+                count_before = model.rowCount()
+                logger.info(f"[CLEAR] Suppression demandée. Nombre d'hôtes avant: {count_before}")
+                
+                # Utiliser clear() si disponible, sinon removeRows
+                if hasattr(model, 'clear'):
+                    model.clear()
+                    # Remettre les headers après clear
+                    model.setHorizontalHeaderLabels([
+                        "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "Comm", "Excl"
+                    ])
+                else:
+                    # Fallback: supprimer ligne par ligne en partant de la fin
+                    for i in range(count_before - 1, -1, -1):
+                        model.removeRow(i)
+                
+                count_after = model.rowCount()
+                logger.info(f"[CLEAR] Suppression terminée. Nombre d'hôtes après: {count_after}")
+                
+                # Vider aussi les listes d'alertes
+                from src import var
+                var.liste_hs.clear()
+                var.liste_mail.clear()
+                var.liste_telegram.clear()
+                logger.info("[CLEAR] Listes d'alertes vidées")
+                
                 self.broadcast_update()
-                return jsonify({'success': True, 'message': 'Tous les hôtes supprimés'})
+                return jsonify({'success': True, 'message': f'{count_before} hôtes supprimés'})
             except Exception as e:
                 logger.error(f"Erreur suppression tous les hôtes: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
