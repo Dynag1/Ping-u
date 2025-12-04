@@ -370,7 +370,12 @@ class PingManager(QObject):
             # On inclut TOUTES les IPs, même exclues, pour le ping
             item = self.tree_model.item(row, 1)
             if item:
-                ips.append(item.text())
+                ip_text = item.text().strip()
+                # Ignorer les IPs vides ou invalides
+                if ip_text and ip_text != "":
+                    ips.append(ip_text)
+                else:
+                    logger.warning(f"[PING] Ligne {row}: IP vide ignorée")
         return ips
 
     def handle_result(self, ip, latency, color, temperature, bandwidth):
@@ -439,6 +444,11 @@ class PingManager(QObject):
             logger.error(f"Erreur update lists {ip}: {e}")
 
     def list_increment(self, liste, ip):
+        # Protection contre les IPs vides ou None
+        if not ip or ip.strip() == "":
+            logger.warning(f"[PING HS] IP vide ignorée dans list_increment")
+            return
+            
         if ip in liste:
             current_count = int(liste[ip])
             # Ne jamais incrémenter les états spéciaux (10 = alerte envoyée, 20 = retour OK détecté)
