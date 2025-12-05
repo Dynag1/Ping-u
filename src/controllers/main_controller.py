@@ -48,14 +48,19 @@ class MainController:
             self.ping_manager.start()
             self.alert_manager.start()
             
-            # Mise à jour UI
+            # Mise à jour UI - bloquer les signaux pour éviter les triggers en cascade
+            self.ui.butStart.blockSignals(True)
+            self.ui.butStart.setChecked(True)
+            self.ui.butStart.blockSignals(False)
             self.ui.butStart.setStyleSheet(f"background-color: {var.couleur_rouge}; color: black;")
             self.ui.butStart.setText("Stop")
             
         except Exception as e:
             logger.error(f"Erreur démarrage monitoring: {e}", exc_info=True)
             # En cas d'erreur, on remet l'état visuel à l'arrêt
+            self.ui.butStart.blockSignals(True)
             self.ui.butStart.setChecked(False)
+            self.ui.butStart.blockSignals(False)
             self.stop_monitoring()
 
     def stop_monitoring(self):
@@ -83,10 +88,12 @@ class MainController:
             # Mise à jour UI
             # On vérifie si l'UI existe encore (cas de fermeture)
             if hasattr(self.ui, 'butStart'):
+                # Bloquer les signaux pour éviter les triggers en cascade
+                self.ui.butStart.blockSignals(True)
+                self.ui.butStart.setChecked(False)
+                self.ui.butStart.blockSignals(False)
                 self.ui.butStart.setStyleSheet(f"background-color: {var.couleur_vert}; color: black;")
                 self.ui.butStart.setText("Start")
-                if self.ui.butStart.isChecked():
-                    self.ui.butStart.setChecked(False)
                     
         except Exception as e:
             logger.error(f"Erreur arrêt monitoring: {e}", exc_info=True)

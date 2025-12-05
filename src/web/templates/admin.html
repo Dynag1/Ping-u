@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -34,6 +33,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .header h1 {
@@ -48,6 +49,37 @@
             display: flex;
             gap: 15px;
             align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Language selector */
+        .lang-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f3f4f6;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .lang-selector label {
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .lang-selector select {
+            background: transparent;
+            border: none;
+            color: #374151;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
+        .lang-selector select:focus {
+            outline: none;
         }
 
         .btn {
@@ -86,6 +118,11 @@
 
         .btn-info {
             background: #3b82f6;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
             color: white;
         }
 
@@ -411,6 +448,11 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
@@ -418,38 +460,45 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>⚙️ Administration - Ping ü</h1>
+            <h1>⚙️ <span data-i18n="admin_title">Administration - Ping ü</span></h1>
             <div class="header-actions">
+                <div class="lang-selector">
+                    <label>🌍</label>
+                    <select id="lang-select" onchange="changeLanguage(this.value)">
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
                 <div class="status-indicator" id="monitoring-status">
                     <span class="status-dot stopped"></span>
-                    <span>Arrêté</span>
+                    <span data-i18n="status_stopped">Arrêté</span>
                 </div>
-                <button id="btn-change-password" class="btn btn-info">🔑 Changer identifiants</button>
-                <a href="/" class="btn btn-secondary">📊 Vue Monitoring</a>
-                <button id="btn-logout" class="btn btn-danger">🚪 Déconnexion</button>
+                <button id="btn-change-password" class="btn btn-info">🔑 <span data-i18n="change_credentials">Changer identifiants</span></button>
+                <a href="/" class="btn btn-secondary">📊 <span data-i18n="monitoring_view">Vue Monitoring</span></a>
+                <button id="btn-logout" class="btn btn-danger">🚪 <span data-i18n="logout">Déconnexion</span></button>
             </div>
         </div>
 
         <!-- Modal Changement de mot de passe -->
         <div id="modal-change-password" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
             <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%;">
-                <h2 style="margin-bottom: 20px; color: #333;">Changer les identifiants</h2>
+                <h2 style="margin-bottom: 20px; color: #333;" data-i18n="change_credentials_title">Changer les identifiants</h2>
                 <form id="form-change-password">
                     <div class="form-group">
-                        <label>Mot de passe actuel</label>
+                        <label data-i18n="current_password">Mot de passe actuel</label>
                         <input type="password" id="old-password" required>
                     </div>
                     <div class="form-group">
-                        <label>Nouveau nom d'utilisateur</label>
+                        <label data-i18n="new_username">Nouveau nom d'utilisateur</label>
                         <input type="text" id="new-username" required>
                     </div>
                     <div class="form-group">
-                        <label>Nouveau mot de passe</label>
+                        <label data-i18n="new_password">Nouveau mot de passe</label>
                         <input type="password" id="new-password" required>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">💾 Enregistrer</button>
-                        <button type="button" id="btn-cancel-change" class="btn btn-secondary" style="flex: 1;">❌ Annuler</button>
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">💾 <span data-i18n="save">Enregistrer</span></button>
+                        <button type="button" id="btn-cancel-change" class="btn btn-secondary" style="flex: 1;">❌ <span data-i18n="cancel">Annuler</span></button>
                     </div>
                 </form>
             </div>
@@ -459,19 +508,19 @@
         <div class="stats-grid">
             <div class="stat-card total">
                 <div class="value" id="stat-total">0</div>
-                <div class="label">Total Hôtes</div>
+                <div class="label" data-i18n="total_hosts">Total Hôtes</div>
             </div>
             <div class="stat-card online">
                 <div class="value" id="stat-online">0</div>
-                <div class="label">En ligne</div>
+                <div class="label" data-i18n="online">En ligne</div>
             </div>
             <div class="stat-card offline">
                 <div class="value" id="stat-offline">0</div>
-                <div class="label">Hors ligne</div>
+                <div class="label" data-i18n="offline">Hors ligne</div>
             </div>
             <div class="stat-card monitoring">
                 <div class="value" id="stat-delai">0</div>
-                <div class="label">Délai (sec)</div>
+                <div class="label" data-i18n="delay_sec">Délai (sec)</div>
             </div>
         </div>
 
@@ -479,15 +528,15 @@
         <div class="main-grid">
             <!-- Ajout d'IP -->
             <div class="card">
-                <h2>➕ Ajout d'Hôtes</h2>
+                <h2>➕ <span data-i18n="add_hosts">Ajout d'Hôtes</span></h2>
                 <form id="form-add-hosts">
                     <div class="form-group">
-                        <label for="input-ip">Adresse IP de base</label>
+                        <label for="input-ip" data-i18n="base_ip">Adresse IP de base</label>
                         <input type="text" id="input-ip" placeholder="192.168.1.1" required>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="input-hosts">Nombre d'hôtes</label>
+                            <label for="input-hosts" data-i18n="hosts_count">Nombre d'hôtes</label>
                             <input type="number" id="input-hosts" value="1" min="1" max="255">
                         </div>
                         <div class="form-group">
@@ -496,52 +545,52 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="select-scan-type">Type de scan</label>
+                        <label for="select-scan-type" data-i18n="scan_type">Type de scan</label>
                         <select id="select-scan-type">
-                            <option value="alive">Alive (actifs uniquement)</option>
-                            <option value="all">Tous les hôtes</option>
-                            <option value="site">Site spécifique</option>
+                            <option value="alive" data-i18n="scan_alive">Alive (actifs uniquement)</option>
+                            <option value="all" data-i18n="scan_all">Tous les hôtes</option>
+                            <option value="site" data-i18n="scan_site">Site spécifique</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        🔍 Scanner les hôtes
+                        🔍 <span data-i18n="scan_hosts">Scanner les hôtes</span>
                     </button>
                 </form>
             </div>
 
             <!-- Contrôle du Monitoring -->
             <div class="card">
-                <h2>🎮 Contrôle du Monitoring</h2>
+                <h2>🎮 <span data-i18n="monitoring_control">Contrôle du Monitoring</span></h2>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="input-delai">Délai entre pings (sec)</label>
+                        <label for="input-delai" data-i18n="ping_delay">Délai entre pings (sec)</label>
                         <input type="number" id="input-delai" value="10" min="1" max="3600">
                     </div>
                     <div class="form-group">
-                        <label for="input-nb-hs">Nombre de HS avant alerte</label>
+                        <label for="input-nb-hs" data-i18n="hs_before_alert">Nombre de HS avant alerte</label>
                         <input type="number" id="input-nb-hs" value="3" min="1" max="10">
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button id="btn-start-monitoring" class="btn btn-primary" style="flex: 1;">
-                        ▶️ Démarrer
+                        ▶️ <span data-i18n="start">Démarrer</span>
                     </button>
                     <button id="btn-stop-monitoring" class="btn btn-danger" style="flex: 1;">
-                        ⏹️ Arrêter
+                        ⏹️ <span data-i18n="stop">Arrêter</span>
                     </button>
                 </div>
             </div>
 
             <!-- Alertes -->
             <div class="card">
-                <h2>🔔 Configuration des Alertes</h2>
+                <h2>🔔 <span data-i18n="alerts_config">Configuration des Alertes</span></h2>
                 <div class="checkbox-group">
                     <input type="checkbox" id="check-popup">
-                    <label for="check-popup">💬 Popup (notification visuelle)</label>
+                    <label for="check-popup">💬 <span data-i18n="alert_popup">Popup (notification visuelle)</span></label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="check-mail">
-                    <label for="check-mail">📧 Email d'alerte</label>
+                    <label for="check-mail">📧 <span data-i18n="alert_email">Email d'alerte</span></label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="check-telegram">
@@ -549,51 +598,51 @@
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="check-mail-recap">
-                    <label for="check-mail-recap">📊 Email récapitulatif</label>
+                    <label for="check-mail-recap">📊 <span data-i18n="alert_recap">Email récapitulatif</span></label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="check-db-externe">
-                    <label for="check-db-externe">💾 Base de données externe</label>
+                    <label for="check-db-externe">💾 <span data-i18n="alert_db">Base de données externe</span></label>
                 </div>
                 
                 <!-- Alerte Température -->
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
                     <div class="checkbox-group">
                         <input type="checkbox" id="check-temp-alert">
-                        <label for="check-temp-alert">🌡️ Alerte température élevée</label>
+                        <label for="check-temp-alert">🌡️ <span data-i18n="alert_temp">Alerte température élevée</span></label>
                     </div>
                     <div class="form-group" style="margin-top: 10px;">
-                        <label for="input-temp-seuil">Seuil de température (°C)</label>
+                        <label for="input-temp-seuil" data-i18n="temp_threshold">Seuil de température (°C)</label>
                         <input type="number" id="input-temp-seuil" value="70" min="30" max="120" style="width: 100px;">
-                        <small style="color: #666; font-size: 12px; margin-left: 10px;">
+                        <small style="color: #666; font-size: 12px; margin-left: 10px;" data-i18n="alert_if_temp">
                             Alerte si température ≥ seuil
                         </small>
                     </div>
                 </div>
                 
                 <button id="btn-save-alerts" class="btn btn-info" style="width: 100%; margin-top: 15px;">
-                    💾 Sauvegarder les alertes
+                    💾 <span data-i18n="save_alerts">Sauvegarder les alertes</span>
                 </button>
             </div>
 
             <!-- Actions rapides -->
             <div class="card">
-                <h2>⚡ Actions Rapides</h2>
+                <h2>⚡ <span data-i18n="quick_actions">Actions Rapides</span></h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <button id="btn-clear-all" class="btn btn-danger">
-                        🗑️ Tout effacer
+                        🗑️ <span data-i18n="clear_all">Tout effacer</span>
                     </button>
                     <button id="btn-remove-duplicates" class="btn btn-warning">
-                        🔄 Suppr. doublons
+                        🔄 <span data-i18n="remove_duplicates">Suppr. doublons</span>
                     </button>
                     <button id="btn-export-csv" class="btn btn-info">
-                        📥 Exporter CSV
+                        📥 <span data-i18n="export_csv">Exporter CSV</span>
                     </button>
                     <button id="btn-import-csv" class="btn btn-info">
-                        📤 Importer CSV
+                        📤 <span data-i18n="import_csv">Importer CSV</span>
                     </button>
                     <button id="btn-save-settings" class="btn btn-primary">
-                        💾 Sauvegarder
+                        💾 <span data-i18n="save">Sauvegarder</span>
                     </button>
                 </div>
                 <input type="file" id="file-import-csv" accept=".csv" style="display: none;">
@@ -602,47 +651,47 @@
 
         <!-- Paramètres Avancés -->
         <div class="card full-width">
-            <h2>⚙️ Paramètres Avancés</h2>
+            <h2>⚙️ <span data-i18n="advanced_settings">Paramètres Avancés</span></h2>
             
             <!-- Configuration SMTP -->
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion('smtp')">
-                    <span>📧 Configuration Email (SMTP)</span>
+                    <span>📧 <span data-i18n="smtp_config">Configuration Email (SMTP)</span></span>
                     <span class="accordion-icon" id="icon-smtp">▼</span>
                 </div>
                 <div class="accordion-content" id="content-smtp">
                     <form id="form-smtp">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="smtp-server">Serveur SMTP</label>
+                                <label for="smtp-server" data-i18n="smtp_server">Serveur SMTP</label>
                                 <input type="text" id="smtp-server" placeholder="smtp.gmail.com">
                             </div>
                             <div class="form-group">
                                 <label for="smtp-port">Port</label>
                                 <input type="number" id="smtp-port" placeholder="587" value="587">
                                 <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
-                                    💡 Port 587 (STARTTLS) ou 465 (SSL/TLS)
+                                    💡 Port 587 (STARTTLS) <span data-i18n="or">ou</span> 465 (SSL/TLS)
                                 </small>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="smtp-email">Email expéditeur</label>
+                            <label for="smtp-email" data-i18n="sender_email">Email expéditeur</label>
                             <input type="email" id="smtp-email" placeholder="votre-email@gmail.com">
                         </div>
                         <div class="form-group">
-                            <label for="smtp-password">Mot de passe</label>
-                            <input type="password" id="smtp-password" placeholder="Mot de passe ou app password">
+                            <label for="smtp-password" data-i18n="password">Mot de passe</label>
+                            <input type="password" id="smtp-password" data-placeholder-i18n="password_placeholder" placeholder="Mot de passe ou app password">
                         </div>
                         <div class="form-group">
-                            <label for="smtp-recipients">Destinataires (séparés par des virgules)</label>
+                            <label for="smtp-recipients" data-i18n="recipients">Destinataires (séparés par des virgules)</label>
                             <input type="text" id="smtp-recipients" placeholder="email1@exemple.com, email2@exemple.com">
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <button type="submit" class="btn btn-primary" style="flex: 1;">
-                                💾 Sauvegarder
+                                💾 <span data-i18n="save">Sauvegarder</span>
                             </button>
                             <button type="button" class="btn btn-info" onclick="testSMTP()" style="flex: 1;">
-                                ✉️ Tester
+                                ✉️ <span data-i18n="test">Tester</span>
                             </button>
                         </div>
                     </form>
@@ -652,13 +701,13 @@
             <!-- Configuration Telegram -->
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion('telegram')">
-                    <span>📱 Configuration Telegram</span>
+                    <span>📱 <span data-i18n="telegram_config">Configuration Telegram</span></span>
                     <span class="accordion-icon" id="icon-telegram">▼</span>
                 </div>
                 <div class="accordion-content" id="content-telegram">
                     <form id="form-telegram">
                         <div class="form-group">
-                            <label for="telegram-token">Token du Bot</label>
+                            <label for="telegram-token" data-i18n="bot_token">Token du Bot</label>
                             <input type="text" id="telegram-token" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
                         </div>
                         <div class="form-group">
@@ -667,10 +716,10 @@
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <button type="submit" class="btn btn-primary" style="flex: 1;">
-                                💾 Sauvegarder
+                                💾 <span data-i18n="save">Sauvegarder</span>
                             </button>
                             <button type="button" class="btn btn-info" onclick="testTelegram()" style="flex: 1;">
-                                📲 Tester
+                                📲 <span data-i18n="test">Tester</span>
                             </button>
                         </div>
                     </form>
@@ -680,54 +729,54 @@
             <!-- Configuration Email Récapitulatif -->
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion('mailrecap')">
-                    <span>📊 Email Récapitulatif Périodique</span>
+                    <span>📊 <span data-i18n="recap_email_config">Email Récapitulatif Périodique</span></span>
                     <span class="accordion-icon" id="icon-mailrecap">▼</span>
                 </div>
                 <div class="accordion-content" id="content-mailrecap">
                     <form id="form-mail-recap">
                         <div class="form-group">
-                            <label for="recap-heure">Heure d'envoi</label>
+                            <label for="recap-heure" data-i18n="send_time">Heure d'envoi</label>
                             <input type="time" id="recap-heure" value="08:00">
                         </div>
                         <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #374151;">Jours d'envoi</label>
+                            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #374151;" data-i18n="send_days">Jours d'envoi</label>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
                                 <div class="checkbox-group" style="margin: 0;">
                                     <input type="checkbox" id="recap-lundi">
-                                    <label for="recap-lundi">Lundi</label>
+                                    <label for="recap-lundi" data-i18n="monday">Lundi</label>
                                 </div>
                                 <div class="checkbox-group" style="margin: 0;">
                                     <input type="checkbox" id="recap-mardi">
-                                    <label for="recap-mardi">Mardi</label>
+                                    <label for="recap-mardi" data-i18n="tuesday">Mardi</label>
                                 </div>
                                 <div class="checkbox-group" style="margin: 0;">
                                     <input type="checkbox" id="recap-mercredi">
-                                    <label for="recap-mercredi">Mercredi</label>
+                                    <label for="recap-mercredi" data-i18n="wednesday">Mercredi</label>
                                 </div>
                                 <div class="checkbox-group" style="margin: 0;">
                                     <input type="checkbox" id="recap-jeudi">
-                                    <label for="recap-jeudi">Jeudi</label>
+                                    <label for="recap-jeudi" data-i18n="thursday">Jeudi</label>
                                 </div>
                                 <div class="checkbox-group" style="margin: 0;">
                                     <input type="checkbox" id="recap-vendredi">
-                                    <label for="recap-vendredi">Vendredi</label>
+                                    <label for="recap-vendredi" data-i18n="friday">Vendredi</label>
                                 </div>
                                 <div class="checkbox-group" style="margin: 0;">
                                     <input type="checkbox" id="recap-samedi">
-                                    <label for="recap-samedi">Samedi</label>
+                                    <label for="recap-samedi" data-i18n="saturday">Samedi</label>
                                 </div>
                                 <div class="checkbox-group" style="margin: 0; grid-column: 1 / -1;">
                                     <input type="checkbox" id="recap-dimanche">
-                                    <label for="recap-dimanche">Dimanche</label>
+                                    <label for="recap-dimanche" data-i18n="sunday">Dimanche</label>
                                 </div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <button type="submit" class="btn btn-primary" style="flex: 1;">
-                                💾 Sauvegarder
+                                💾 <span data-i18n="save">Sauvegarder</span>
                             </button>
                             <button type="button" class="btn btn-info" onclick="sendTestRecap()" style="flex: 1;">
-                                📨 Envoyer un test
+                                📨 <span data-i18n="send_test">Envoyer un test</span>
                             </button>
                         </div>
                     </form>
@@ -737,17 +786,17 @@
             <!-- Paramètres Généraux -->
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion('general')">
-                    <span>🌐 Paramètres Généraux</span>
+                    <span>🌐 <span data-i18n="general_settings">Paramètres Généraux</span></span>
                     <span class="accordion-icon" id="icon-general">▼</span>
                 </div>
                 <div class="accordion-content" id="content-general">
                     <form id="form-general">
                         <div class="form-group">
-                            <label for="general-site">Nom du Site</label>
+                            <label for="general-site" data-i18n="site_name">Nom du Site</label>
                             <input type="text" id="general-site" placeholder="Site">
                         </div>
                         <div class="form-group">
-                            <label for="general-theme">Thème</label>
+                            <label for="general-theme" data-i18n="theme">Thème</label>
                             <select id="general-theme">
                                 <option value="nord">Nord</option>
                                 <option value="dark">Dark</option>
@@ -755,7 +804,7 @@
                             </select>
                         </div>
                         <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            💾 Sauvegarder
+                            💾 <span data-i18n="save">Sauvegarder</span>
                         </button>
                     </form>
                 </div>
@@ -764,7 +813,7 @@
             <!-- Licence -->
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion('license')">
-                    <span>🔑 Gestion de Licence</span>
+                    <span>🔑 <span data-i18n="license_management">Gestion de Licence</span></span>
                     <span class="accordion-icon" id="icon-license">▼</span>
                 </div>
                 <div class="accordion-content" id="content-license">
@@ -772,25 +821,25 @@
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                             <span style="font-size: 24px;" id="license-icon">❌</span>
                             <div>
-                                <div style="font-weight: 600; color: #374151;" id="license-status">Pas de licence active</div>
+                                <div style="font-weight: 600; color: #374151;" id="license-status" data-i18n="no_license">Pas de licence active</div>
                                 <div style="font-size: 13px; color: #6b7280;" id="license-days"></div>
                             </div>
                         </div>
                         <div style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
-                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 5px;">Code d'activation (Hardware ID) à envoyer :</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 5px;" data-i18n="activation_code_label">Code d'activation (Hardware ID) à envoyer :</div>
                             <div style="display: flex; gap: 10px;">
                                 <input type="text" id="activation-code" readonly style="background: #e5e7eb; color: #374151; font-family: monospace; font-size: 14px;" onclick="this.select()">
-                                <button class="btn btn-secondary btn-small" onclick="navigator.clipboard.writeText(document.getElementById('activation-code').value); showNotification('Copié !', 'success')">📋</button>
+                                <button class="btn btn-secondary btn-small" onclick="navigator.clipboard.writeText(document.getElementById('activation-code').value); showNotification(t('copied'), 'success')">📋</button>
                             </div>
                         </div>
                     </div>
                     <form id="form-license">
                         <div class="form-group">
-                            <label for="license-key">Clé de licence</label>
-                            <input type="text" id="license-key" placeholder="Entrez votre clé de licence">
+                            <label for="license-key" data-i18n="license_key">Clé de licence</label>
+                            <input type="text" id="license-key" data-placeholder-i18n="enter_license" placeholder="Entrez votre clé de licence">
                         </div>
                         <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            🔓 Activer la licence
+                            🔓 <span data-i18n="activate_license">Activer la licence</span>
                         </button>
                     </form>
                 </div>
@@ -799,7 +848,7 @@
             <!-- Informations Système -->
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion('system')">
-                    <span>ℹ️ Informations Système</span>
+                    <span>ℹ️ <span data-i18n="system_info">Informations Système</span></span>
                     <span class="accordion-icon" id="icon-system">▼</span>
                 </div>
                 <div class="accordion-content" id="content-system">
@@ -808,13 +857,13 @@
                             <strong>Version:</strong> <span id="system-version">-</span>
                         </div>
                         <div style="margin-bottom: 10px;">
-                            <strong>Mode:</strong> <span>Serveur Web</span>
+                            <strong>Mode:</strong> <span data-i18n="web_server">Serveur Web</span>
                         </div>
                         <div style="margin-bottom: 10px;">
                             <strong>Port:</strong> <span>9090</span>
                         </div>
                         <div>
-                            <strong>Utilisateur connecté:</strong> <span id="system-user">admin</span>
+                            <strong data-i18n="connected_user">Utilisateur connecté:</strong> <span id="system-user">admin</span>
                         </div>
                     </div>
                 </div>
@@ -823,24 +872,24 @@
 
         <!-- Liste des hôtes -->
         <div class="card full-width">
-            <h2>📋 Liste des Hôtes Monitorés</h2>
+            <h2>📋 <span data-i18n="hosts_list">Liste des Hôtes Monitorés</span></h2>
             <div class="hosts-table">
                 <table>
                     <thead>
                         <tr>
                             <th style="cursor: pointer;" onclick="sortHosts('ip')">IP <span id="sort-ip" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('nom')">Nom <span id="sort-nom" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('nom')" data-i18n="name">Nom <span id="sort-nom" class="sort-icon">↕️</span></th>
                             <th style="cursor: pointer;" onclick="sortHosts('mac')">MAC <span id="sort-mac" class="sort-icon">↕️</span></th>
                             <th style="cursor: pointer;" onclick="sortHosts('port')">Port <span id="sort-port" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('latence')">Latence <span id="sort-latence" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('temp')">Température <span id="sort-temp" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('status')">Statut <span id="sort-status" class="sort-icon">↕️</span></th>
-                            <th style="width: 150px;">Actions</th>
+                            <th style="cursor: pointer;" onclick="sortHosts('latence')" data-i18n="latency">Latence <span id="sort-latence" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('temp')" data-i18n="temperature">Température <span id="sort-temp" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('status')" data-i18n="status">Statut <span id="sort-status" class="sort-icon">↕️</span></th>
+                            <th style="width: 150px;" data-i18n="actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="hosts-table-body">
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;" data-i18n="no_hosts_configured">
                                 Aucun hôte configuré. Ajoutez des hôtes pour commencer le monitoring.
                             </td>
                         </tr>
@@ -851,7 +900,335 @@
     </div>
 
     <script>
-        // Socket.IO connection
+        // ==================== Système de traduction ====================
+        const translations = {
+            fr: {
+                admin_title: "Administration - Ping ü",
+                change_credentials: "Changer identifiants",
+                monitoring_view: "Vue Monitoring",
+                logout: "Déconnexion",
+                status_running: "En cours",
+                status_stopped: "Arrêté",
+                change_credentials_title: "Changer les identifiants",
+                current_password: "Mot de passe actuel",
+                new_username: "Nouveau nom d'utilisateur",
+                new_password: "Nouveau mot de passe",
+                save: "Enregistrer",
+                cancel: "Annuler",
+                total_hosts: "Total Hôtes",
+                online: "En ligne",
+                offline: "Hors ligne",
+                delay_sec: "Délai (sec)",
+                add_hosts: "Ajout d'Hôtes",
+                base_ip: "Adresse IP de base",
+                hosts_count: "Nombre d'hôtes",
+                scan_type: "Type de scan",
+                scan_alive: "Alive (actifs uniquement)",
+                scan_all: "Tous les hôtes",
+                scan_site: "Site spécifique",
+                scan_hosts: "Scanner les hôtes",
+                monitoring_control: "Contrôle du Monitoring",
+                ping_delay: "Délai entre pings (sec)",
+                hs_before_alert: "Nombre de HS avant alerte",
+                start: "Démarrer",
+                stop: "Arrêter",
+                alerts_config: "Configuration des Alertes",
+                alert_popup: "Popup (notification visuelle)",
+                alert_email: "Email d'alerte",
+                alert_recap: "Email récapitulatif",
+                alert_db: "Base de données externe",
+                alert_temp: "Alerte température élevée",
+                temp_threshold: "Seuil de température (°C)",
+                alert_if_temp: "Alerte si température ≥ seuil",
+                save_alerts: "Sauvegarder les alertes",
+                quick_actions: "Actions Rapides",
+                clear_all: "Tout effacer",
+                remove_duplicates: "Suppr. doublons",
+                export_csv: "Exporter CSV",
+                import_csv: "Importer CSV",
+                advanced_settings: "Paramètres Avancés",
+                smtp_config: "Configuration Email (SMTP)",
+                smtp_server: "Serveur SMTP",
+                or: "ou",
+                sender_email: "Email expéditeur",
+                password: "Mot de passe",
+                password_placeholder: "Mot de passe ou app password",
+                recipients: "Destinataires (séparés par des virgules)",
+                test: "Tester",
+                telegram_config: "Configuration Telegram",
+                bot_token: "Token du Bot",
+                recap_email_config: "Email Récapitulatif Périodique",
+                send_time: "Heure d'envoi",
+                send_days: "Jours d'envoi",
+                monday: "Lundi",
+                tuesday: "Mardi",
+                wednesday: "Mercredi",
+                thursday: "Jeudi",
+                friday: "Vendredi",
+                saturday: "Samedi",
+                sunday: "Dimanche",
+                send_test: "Envoyer un test",
+                general_settings: "Paramètres Généraux",
+                site_name: "Nom du Site",
+                theme: "Thème",
+                license_management: "Gestion de Licence",
+                no_license: "Pas de licence active",
+                license_active: "Licence active",
+                days_remaining: "jours restants",
+                features_limited: "Certaines fonctionnalités sont limitées (Alertes)",
+                activation_code_label: "Code d'activation (Hardware ID) à envoyer :",
+                license_key: "Clé de licence",
+                enter_license: "Entrez votre clé de licence",
+                activate_license: "Activer la licence",
+                system_info: "Informations Système",
+                web_server: "Serveur Web",
+                connected_user: "Utilisateur connecté:",
+                hosts_list: "Liste des Hôtes Monitorés",
+                name: "Nom",
+                latency: "Latence",
+                temperature: "Température",
+                status: "Statut",
+                actions: "Actions",
+                no_hosts_configured: "Aucun hôte configuré. Ajoutez des hôtes pour commencer le monitoring.",
+                status_online: "En ligne",
+                status_offline: "Hors ligne",
+                copied: "Copié !",
+                confirm_delete_all: "Voulez-vous vraiment effacer tous les hôtes ?",
+                confirm_delete_host: "Voulez-vous vraiment supprimer l'hôte",
+                confirm_logout: "Voulez-vous vraiment vous déconnecter ?",
+                monitoring_started: "Monitoring démarré",
+                monitoring_stopped: "Monitoring arrêté",
+                alerts_saved: "Alertes sauvegardées",
+                all_hosts_deleted: "Tous les hôtes ont été supprimés",
+                duplicates_removed: "doublon(s) supprimé(s)",
+                no_duplicates: "Aucun doublon trouvé",
+                export_started: "Export CSV démarré",
+                import_success: "Import réussi",
+                settings_saved: "Paramètres sauvegardés",
+                host_deleted: "Hôte supprimé",
+                host_excluded: "Hôte exclu",
+                host_included: "Hôte réinclus",
+                name_modified: "Nom modifié pour",
+                smtp_saved: "Configuration SMTP sauvegardée",
+                test_email_sent: "Email de test envoyé",
+                telegram_saved: "Configuration Telegram sauvegardée",
+                telegram_test_sent: "Message de test envoyé sur Telegram",
+                recap_saved: "Configuration email récapitulatif sauvegardée",
+                recap_test_sent: "Email récapitulatif de test envoyé",
+                general_saved: "Paramètres généraux sauvegardés",
+                license_saved: "Licence enregistrée",
+                credentials_changed: "Identifiants modifiés ! Reconnexion nécessaire.",
+                scan_complete: "Scan terminé !",
+                hosts_scanned: "hôte(s) scanné(s)",
+                requires_license: "Nécessite une licence active",
+                edit_name: "Modifier le nom",
+                delete: "Supprimer",
+                include_excluded: "Inclure (Actuellement exclu)",
+                exclude: "Exclure"
+            },
+            en: {
+                admin_title: "Administration - Ping ü",
+                change_credentials: "Change credentials",
+                monitoring_view: "Monitoring View",
+                logout: "Logout",
+                status_running: "Running",
+                status_stopped: "Stopped",
+                change_credentials_title: "Change credentials",
+                current_password: "Current password",
+                new_username: "New username",
+                new_password: "New password",
+                save: "Save",
+                cancel: "Cancel",
+                total_hosts: "Total Hosts",
+                online: "Online",
+                offline: "Offline",
+                delay_sec: "Delay (sec)",
+                add_hosts: "Add Hosts",
+                base_ip: "Base IP address",
+                hosts_count: "Number of hosts",
+                scan_type: "Scan type",
+                scan_alive: "Alive (active only)",
+                scan_all: "All hosts",
+                scan_site: "Specific site",
+                scan_hosts: "Scan hosts",
+                monitoring_control: "Monitoring Control",
+                ping_delay: "Delay between pings (sec)",
+                hs_before_alert: "Failures before alert",
+                start: "Start",
+                stop: "Stop",
+                alerts_config: "Alerts Configuration",
+                alert_popup: "Popup (visual notification)",
+                alert_email: "Alert email",
+                alert_recap: "Summary email",
+                alert_db: "External database",
+                alert_temp: "High temperature alert",
+                temp_threshold: "Temperature threshold (°C)",
+                alert_if_temp: "Alert if temperature ≥ threshold",
+                save_alerts: "Save alerts",
+                quick_actions: "Quick Actions",
+                clear_all: "Clear all",
+                remove_duplicates: "Remove duplicates",
+                export_csv: "Export CSV",
+                import_csv: "Import CSV",
+                advanced_settings: "Advanced Settings",
+                smtp_config: "Email Configuration (SMTP)",
+                smtp_server: "SMTP Server",
+                or: "or",
+                sender_email: "Sender email",
+                password: "Password",
+                password_placeholder: "Password or app password",
+                recipients: "Recipients (comma separated)",
+                test: "Test",
+                telegram_config: "Telegram Configuration",
+                bot_token: "Bot Token",
+                recap_email_config: "Periodic Summary Email",
+                send_time: "Send time",
+                send_days: "Send days",
+                monday: "Monday",
+                tuesday: "Tuesday",
+                wednesday: "Wednesday",
+                thursday: "Thursday",
+                friday: "Friday",
+                saturday: "Saturday",
+                sunday: "Sunday",
+                send_test: "Send a test",
+                general_settings: "General Settings",
+                site_name: "Site Name",
+                theme: "Theme",
+                license_management: "License Management",
+                no_license: "No active license",
+                license_active: "License active",
+                days_remaining: "days remaining",
+                features_limited: "Some features are limited (Alerts)",
+                activation_code_label: "Activation code (Hardware ID) to send:",
+                license_key: "License key",
+                enter_license: "Enter your license key",
+                activate_license: "Activate license",
+                system_info: "System Information",
+                web_server: "Web Server",
+                connected_user: "Connected user:",
+                hosts_list: "Monitored Hosts List",
+                name: "Name",
+                latency: "Latency",
+                temperature: "Temperature",
+                status: "Status",
+                actions: "Actions",
+                no_hosts_configured: "No hosts configured. Add hosts to start monitoring.",
+                status_online: "Online",
+                status_offline: "Offline",
+                copied: "Copied!",
+                confirm_delete_all: "Are you sure you want to delete all hosts?",
+                confirm_delete_host: "Are you sure you want to delete host",
+                confirm_logout: "Are you sure you want to logout?",
+                monitoring_started: "Monitoring started",
+                monitoring_stopped: "Monitoring stopped",
+                alerts_saved: "Alerts saved",
+                all_hosts_deleted: "All hosts have been deleted",
+                duplicates_removed: "duplicate(s) removed",
+                no_duplicates: "No duplicates found",
+                export_started: "CSV export started",
+                import_success: "Import successful",
+                settings_saved: "Settings saved",
+                host_deleted: "Host deleted",
+                host_excluded: "Host excluded",
+                host_included: "Host re-included",
+                name_modified: "Name modified for",
+                smtp_saved: "SMTP configuration saved",
+                test_email_sent: "Test email sent",
+                telegram_saved: "Telegram configuration saved",
+                telegram_test_sent: "Test message sent on Telegram",
+                recap_saved: "Summary email configuration saved",
+                recap_test_sent: "Test summary email sent",
+                general_saved: "General settings saved",
+                license_saved: "License saved",
+                credentials_changed: "Credentials changed! Reconnection required.",
+                scan_complete: "Scan complete!",
+                hosts_scanned: "host(s) scanned",
+                requires_license: "Requires active license",
+                edit_name: "Edit name",
+                delete: "Delete",
+                include_excluded: "Include (Currently excluded)",
+                exclude: "Exclude"
+            }
+        };
+
+        let currentLang = 'fr';
+
+        // Détecter la langue du navigateur
+        function detectBrowserLanguage() {
+            const browserLang = navigator.language || navigator.userLanguage;
+            return browserLang.startsWith('fr') ? 'fr' : 'en';
+        }
+
+        // Charger la langue sauvegardée ou détecter automatiquement
+        function loadLanguage() {
+            const savedLang = localStorage.getItem('pingü_lang');
+            if (savedLang && translations[savedLang]) {
+                currentLang = savedLang;
+            } else {
+                currentLang = detectBrowserLanguage();
+            }
+            document.getElementById('lang-select').value = currentLang;
+            applyTranslations();
+        }
+
+        // Changer la langue
+        function changeLanguage(lang) {
+            if (translations[lang]) {
+                currentLang = lang;
+                localStorage.setItem('pingü_lang', lang);
+                applyTranslations();
+                // Re-render le tableau des hôtes
+                if (hostsData.length > 0) {
+                    updateHostsTable(hostsData);
+                }
+            }
+        }
+
+        // Appliquer les traductions
+        function applyTranslations() {
+            const trans = translations[currentLang];
+            
+            // Mettre à jour les éléments avec data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (trans[key]) {
+                    el.textContent = trans[key];
+                }
+            });
+
+            // Mettre à jour les placeholders
+            document.querySelectorAll('[data-placeholder-i18n]').forEach(el => {
+                const key = el.getAttribute('data-placeholder-i18n');
+                if (trans[key]) {
+                    el.placeholder = trans[key];
+                }
+            });
+
+            // Mettre à jour les options des selects
+            document.querySelectorAll('select option[data-i18n]').forEach(option => {
+                const key = option.getAttribute('data-i18n');
+                if (key && trans[key]) {
+                    option.textContent = trans[key];
+                }
+            });
+
+            // Mettre à jour le titre de la page
+            document.title = trans.admin_title;
+            
+            // Mettre à jour l'attribut lang du HTML
+            document.documentElement.lang = currentLang;
+
+            // Mettre à jour le statut du monitoring
+            updateMonitoringStatus(monitoringRunning);
+        }
+
+        // Fonction d'aide pour obtenir une traduction
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        // ==================== Socket.IO ====================
         const socket = io({
             transports: ['websocket', 'polling'],
             reconnection: true,
@@ -864,13 +1241,13 @@
 
         // ==================== Socket Events ====================
         socket.on('connect', function() {
-            console.log('✅ Connecté au serveur');
+            console.log('✅ Connected to server');
             loadSettings();
             socket.emit('request_update');
         });
 
         socket.on('disconnect', function() {
-            console.log('❌ Déconnecté du serveur');
+            console.log('❌ Disconnected from server');
         });
 
         socket.on('hosts_update', function(hosts) {
@@ -880,9 +1257,7 @@
             hostsData = hosts;
             // Appliquer le tri actuel si défini
             if (currentSort.column) {
-                // Réappliquer le tri sans inverser la direction
                 const savedDirection = currentSort.direction;
-                // On inverse temporairement car sortHosts va inverser
                 currentSort.direction = savedDirection === 'asc' ? 'desc' : 'asc';
                 sortHosts(currentSort.column);
             } else {
@@ -901,13 +1276,9 @@
         });
 
         socket.on('scan_complete', function(data) {
-            console.log('📡 Scan terminé:', data.count, 'hôte(s)');
-            showNotification(`Scan terminé ! ${data.count} hôte(s) scanné(s)`, 'success');
-            
-            // Notification navigateur
-            showBrowserNotification('Scan terminé', `${data.count} hôte(s) scanné(s)`);
-            
-            // Actualiser les données
+            console.log('📡 Scan complete:', data.count, 'host(s)');
+            showNotification(`${t('scan_complete')} ${data.count} ${t('hosts_scanned')}`, 'success');
+            showBrowserNotification(t('scan_complete'), `${data.count} ${t('hosts_scanned')}`);
             socket.emit('request_update');
         });
 
@@ -915,24 +1286,19 @@
         let currentSort = { column: 'ip', direction: 'asc' };
 
         function naturalSort(a, b) {
-            // Fonction pour le tri naturel (gère les nombres dans les chaînes)
             const ax = [], bx = [];
-            
             a.replace(/(\d+)|(\D+)/g, function(_, $1, $2) { ax.push([$1 || Infinity, $2 || ""]) });
             b.replace(/(\d+)|(\D+)/g, function(_, $1, $2) { bx.push([$1 || Infinity, $2 || ""]) });
-            
             while(ax.length && bx.length) {
                 const an = ax.shift();
                 const bn = bx.shift();
                 const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
                 if(nn) return nn;
             }
-            
             return ax.length - bx.length;
         }
 
         function sortHosts(column) {
-            // Inverser la direction si on clique sur la même colonne
             if (currentSort.column === column) {
                 currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
             } else {
@@ -940,23 +1306,19 @@
                 currentSort.direction = 'asc';
             }
 
-            // Mettre à jour les icônes de tri
             document.querySelectorAll('.sort-icon').forEach(icon => icon.textContent = '↕️');
             const currentIcon = document.getElementById(`sort-${column}`);
             if (currentIcon) {
                 currentIcon.textContent = currentSort.direction === 'asc' ? '⬆️' : '⬇️';
             }
 
-            // Trier les données
             hostsData.sort((a, b) => {
                 let valA = a[column] || '';
                 let valB = b[column] || '';
 
-                // Cas spécifique pour les IPs (tri numérique des octets)
                 if (column === 'ip') {
                     const ipA = valA.split('.').map(Number);
                     const ipB = valB.split('.').map(Number);
-                    
                     for (let i = 0; i < 4; i++) {
                         if (ipA[i] !== ipB[i]) {
                             return (ipA[i] - ipB[i]) * (currentSort.direction === 'asc' ? 1 : -1);
@@ -965,12 +1327,10 @@
                     return 0;
                 }
 
-                // Tri naturel pour les autres colonnes (nom, port...)
                 const comparison = naturalSort(String(valA), String(valB));
                 return currentSort.direction === 'asc' ? comparison : -comparison;
             });
 
-            // Réafficher le tableau
             updateHostsTable(hostsData);
         }
 
@@ -987,16 +1347,18 @@
         function updateMonitoringStatus(running) {
             const statusEl = document.getElementById('monitoring-status');
             const dot = statusEl.querySelector('.status-dot');
-            const text = statusEl.querySelector('span:last-child');
+            const text = statusEl.querySelector('span[data-i18n]');
 
             if (running) {
                 statusEl.className = 'status-indicator running';
                 dot.className = 'status-dot running';
-                text.textContent = 'En cours';
+                text.textContent = t('status_running');
+                text.setAttribute('data-i18n', 'status_running');
             } else {
                 statusEl.className = 'status-indicator stopped';
                 dot.className = 'status-dot stopped';
-                text.textContent = 'Arrêté';
+                text.textContent = t('status_stopped');
+                text.setAttribute('data-i18n', 'status_stopped');
             }
         }
 
@@ -1007,7 +1369,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">
-                            Aucun hôte configuré. Ajoutez des hôtes pour commencer le monitoring.
+                            ${t('no_hosts_configured')}
                         </td>
                     </tr>
                 `;
@@ -1028,22 +1390,22 @@
                     <td>${escapeHtml(host.temp) || '-'}</td>
                     <td>
                         <span class="host-status ${host.status}">
-                            ${host.status === 'online' ? 'En ligne' : 'Hors ligne'}
+                            ${host.status === 'online' ? t('status_online') : t('status_offline')}
                         </span>
                     </td>
                     <td class="host-actions">
-                        <button class="btn btn-info btn-small" onclick="editHostName('${host.ip}')" id="edit-btn-${escapeHtml(host.ip).replace(/\./g, '-')}" title="Modifier le nom">
+                        <button class="btn btn-info btn-small" onclick="editHostName('${host.ip}')" id="edit-btn-${escapeHtml(host.ip).replace(/\./g, '-')}" title="${t('edit_name')}">
                             ✏️
                         </button>
-                        <button class="btn btn-primary btn-small" onclick="saveHostName('${host.ip}')" id="save-btn-${escapeHtml(host.ip).replace(/\./g, '-')}" style="display: none;" title="Sauvegarder">
+                        <button class="btn btn-primary btn-small" onclick="saveHostName('${host.ip}')" id="save-btn-${escapeHtml(host.ip).replace(/\./g, '-')}" style="display: none;" title="${t('save')}">
                             💾
                         </button>
-                        <button class="btn btn-danger btn-small" onclick="deleteHost('${host.ip}')" title="Supprimer">
+                        <button class="btn btn-danger btn-small" onclick="deleteHost('${host.ip}')" title="${t('delete')}">
                             🗑️
                         </button>
                         <button class="btn ${host.excl === 'x' ? 'btn-secondary' : 'btn-secondary'} btn-small" 
                                 onclick="excludeHost('${host.ip}', ${host.excl === 'x' ? true : false})" 
-                                title="${host.excl === 'x' ? 'Inclure (Actuellement exclu)' : 'Exclure'}"
+                                title="${host.excl === 'x' ? t('include_excluded') : t('exclude')}"
                                 style="${host.excl === 'x' ? 'background: #f59e0b;' : ''}">
                             ${host.excl === 'x' ? '⚠️' : '🚫'}
                         </button>
@@ -1070,13 +1432,13 @@
                 const result = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(result.error || 'Erreur API');
+                    throw new Error(result.error || 'API Error');
                 }
 
                 return result;
             } catch (error) {
-                console.error('Erreur API:', error);
-                showNotification('Erreur: ' + error.message, 'error');
+                console.error('API Error:', error);
+                showNotification('Error: ' + error.message, 'error');
                 throw error;
             }
         }
@@ -1094,11 +1456,9 @@
 
             try {
                 const result = await apiCall('/api/add_hosts', 'POST', data);
-                showNotification(result.message || 'Scan démarré', 'success');
+                showNotification(result.message || t('scan_hosts'), 'success');
                 setTimeout(() => socket.emit('request_update'), 2000);
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         });
 
         document.getElementById('btn-start-monitoring').addEventListener('click', async function() {
@@ -1107,23 +1467,19 @@
 
             try {
                 const result = await apiCall('/api/start_monitoring', 'POST', { delai, nb_hs: nbHs });
-                showNotification('Monitoring démarré', 'success');
+                showNotification(t('monitoring_started'), 'success');
                 monitoringRunning = true;
                 updateMonitoringStatus(true);
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         });
 
         document.getElementById('btn-stop-monitoring').addEventListener('click', async function() {
             try {
                 const result = await apiCall('/api/stop_monitoring', 'POST');
-                showNotification('Monitoring arrêté', 'info');
+                showNotification(t('monitoring_stopped'), 'info');
                 monitoringRunning = false;
                 updateMonitoringStatus(false);
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         });
 
         document.getElementById('btn-save-alerts').addEventListener('click', async function() {
@@ -1139,46 +1495,40 @@
 
             try {
                 const result = await apiCall('/api/save_alerts', 'POST', alerts);
-                showNotification('Alertes sauvegardées', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(t('alerts_saved'), 'success');
+            } catch (error) {}
         });
 
         document.getElementById('btn-clear-all').addEventListener('click', async function() {
-            if (!confirm('Voulez-vous vraiment effacer tous les hôtes ?')) {
+            if (!confirm(t('confirm_delete_all'))) {
                 return;
             }
 
             try {
                 const result = await apiCall('/api/clear_all', 'POST');
-                showNotification('Tous les hôtes ont été supprimés', 'info');
+                showNotification(t('all_hosts_deleted'), 'info');
                 socket.emit('request_update');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         });
 
         document.getElementById('btn-remove-duplicates').addEventListener('click', async function() {
             try {
                 const result = await apiCall('/api/remove_duplicates', 'POST');
                 if (result.duplicates_removed > 0) {
-                    showNotification(`${result.duplicates_removed} doublon(s) supprimé(s)`, 'success');
+                    showNotification(`${result.duplicates_removed} ${t('duplicates_removed')}`, 'success');
                 } else {
-                    showNotification('Aucun doublon trouvé', 'info');
+                    showNotification(t('no_duplicates'), 'info');
                 }
                 socket.emit('request_update');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         });
 
         document.getElementById('btn-export-csv').addEventListener('click', async function() {
             try {
                 window.location.href = '/api/export_csv';
-                showNotification('Export CSV démarré', 'success');
+                showNotification(t('export_started'), 'success');
             } catch (error) {
-                showNotification('Erreur lors de l\'export', 'error');
+                showNotification('Export error', 'error');
             }
         });
 
@@ -1202,13 +1552,13 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    showNotification(result.message || 'Import réussi', 'success');
+                    showNotification(result.message || t('import_success'), 'success');
                     socket.emit('request_update');
                 } else {
-                    showNotification(result.error || 'Erreur lors de l\'import', 'error');
+                    showNotification(result.error || 'Import error', 'error');
                 }
             } catch (error) {
-                showNotification('Erreur lors de l\'import', 'error');
+                showNotification('Import error', 'error');
             }
 
             e.target.value = '';
@@ -1217,42 +1567,34 @@
         document.getElementById('btn-save-settings').addEventListener('click', async function() {
             try {
                 const result = await apiCall('/api/save_settings', 'POST');
-                showNotification('Paramètres sauvegardés', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(t('settings_saved'), 'success');
+            } catch (error) {}
         });
 
         // ==================== Host Actions ====================
         async function deleteHost(ip) {
-            if (!confirm(`Voulez-vous vraiment supprimer l'hôte ${ip} ?`)) {
+            if (!confirm(`${t('confirm_delete_host')} ${ip} ?`)) {
                 return;
             }
 
             try {
                 const result = await apiCall('/api/delete_host', 'POST', { ip });
-                showNotification(`Hôte ${ip} supprimé`, 'info');
+                showNotification(`${t('host_deleted')}: ${ip}`, 'info');
                 socket.emit('request_update');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         }
 
         async function excludeHost(ip, isExcluded) {
             try {
                 const endpoint = isExcluded ? '/api/include_host' : '/api/exclude_host';
-                const message = isExcluded ? `Hôte ${ip} réinclus` : `Hôte ${ip} exclu`;
+                const message = isExcluded ? `${t('host_included')}: ${ip}` : `${t('host_excluded')}: ${ip}`;
                 const type = isExcluded ? 'success' : 'info';
                 
                 const result = await apiCall(endpoint, 'POST', { ip });
                 showNotification(message, type);
                 socket.emit('request_update');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         }
-
-        // Ancienne fonction includeHost supprimée car fusionnée dans excludeHost
 
         function editHostName(ip) {
             const ipClean = ip.replace(/\./g, '-');
@@ -1300,11 +1642,9 @@
                     saveBtn.style.display = 'none';
                 }
                 
-                showNotification(`Nom modifié pour ${ip}`, 'success');
+                showNotification(`${t('name_modified')} ${ip}`, 'success');
                 socket.emit('request_update');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         }
 
         // ==================== Settings ====================
@@ -1312,7 +1652,6 @@
             try {
                 const result = await apiCall('/api/get_settings');
                 
-                // Monitoring
                 if (result.delai) {
                     document.getElementById('input-delai').value = result.delai;
                     document.getElementById('stat-delai').textContent = result.delai;
@@ -1321,7 +1660,6 @@
                     document.getElementById('input-nb-hs').value = result.nb_hs;
                 }
                 
-                // Alertes
                 if (result.alerts) {
                     document.getElementById('check-popup').checked = result.alerts.popup || false;
                     document.getElementById('check-mail').checked = result.alerts.mail || false;
@@ -1332,13 +1670,11 @@
                     document.getElementById('input-temp-seuil').value = result.alerts.temp_seuil || 70;
                 }
                 
-                // Statut monitoring
                 if (typeof result.monitoring_running !== 'undefined') {
                     monitoringRunning = result.monitoring_running;
                     updateMonitoringStatus(result.monitoring_running);
                 }
                 
-                // SMTP
                 if (result.smtp) {
                     document.getElementById('smtp-server').value = result.smtp.server || '';
                     document.getElementById('smtp-port').value = result.smtp.port || '587';
@@ -1346,24 +1682,21 @@
                     document.getElementById('smtp-recipients').value = result.smtp.recipients || '';
                 }
                 
-                // Telegram
                 if (result.telegram) {
                     document.getElementById('telegram-token').value = result.telegram.token || '';
                     document.getElementById('telegram-chatid').value = result.telegram.chatid || '';
                 }
                 
-                // Paramètres généraux
                 if (result.general) {
                     document.getElementById('general-site').value = result.general.site || '';
                     document.getElementById('general-theme').value = result.general.theme || 'nord';
                 }
                 
-                // Version système
                 if (result.version) {
                     document.getElementById('system-version').textContent = result.version;
                 }
             } catch (error) {
-                console.error('Erreur chargement paramètres:', error);
+                console.error('Settings load error:', error);
             }
         }
 
@@ -1380,17 +1713,12 @@
             }, 3000);
         }
 
-        // Notification navigateur (popup système)
         function showBrowserNotification(title, body) {
-            // Vérifier si les notifications sont supportées
             if (!("Notification" in window)) {
-                console.log("Ce navigateur ne supporte pas les notifications");
                 return;
             }
 
-            // Vérifier la permission
             if (Notification.permission === "granted") {
-                // Permission accordée, afficher la notification
                 new Notification(title, {
                     body: body,
                     icon: '/static/favicon.ico',
@@ -1399,7 +1727,6 @@
                     requireInteraction: false
                 });
             } else if (Notification.permission !== "denied") {
-                // Demander la permission
                 Notification.requestPermission().then(function(permission) {
                     if (permission === "granted") {
                         new Notification(title, {
@@ -1413,9 +1740,7 @@
             }
         }
 
-        // Demander la permission de notification au chargement
         if ("Notification" in window && Notification.permission === "default") {
-            // Attendre 2 secondes après le chargement pour ne pas être intrusif
             setTimeout(() => {
                 Notification.requestPermission();
             }, 2000);
@@ -1464,19 +1789,15 @@
 
             try {
                 const result = await apiCall('/api/save_smtp', 'POST', data);
-                showNotification('Configuration SMTP sauvegardée', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(t('smtp_saved'), 'success');
+            } catch (error) {}
         });
 
         async function testSMTP() {
             try {
                 const result = await apiCall('/api/test_smtp', 'POST', {});
-                showNotification(result.message || 'Email de test envoyé', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(result.message || t('test_email_sent'), 'success');
+            } catch (error) {}
         }
 
         // ==================== Configuration Telegram ====================
@@ -1490,19 +1811,15 @@
 
             try {
                 const result = await apiCall('/api/save_telegram', 'POST', data);
-                showNotification('Configuration Telegram sauvegardée', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(t('telegram_saved'), 'success');
+            } catch (error) {}
         });
 
         async function testTelegram() {
             try {
                 const result = await apiCall('/api/test_telegram', 'POST', {});
-                showNotification(result.message || 'Message de test envoyé sur Telegram', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(result.message || t('telegram_test_sent'), 'success');
+            } catch (error) {}
         }
 
         // ==================== Email Récapitulatif ====================
@@ -1522,19 +1839,15 @@
 
             try {
                 const result = await apiCall('/api/save_mail_recap', 'POST', data);
-                showNotification('Configuration email récapitulatif sauvegardée', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(t('recap_saved'), 'success');
+            } catch (error) {}
         });
 
         async function sendTestRecap() {
             try {
                 const result = await apiCall('/api/send_test_recap', 'POST', {});
-                showNotification(result.message || 'Email récapitulatif de test envoyé', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(result.message || t('recap_test_sent'), 'success');
+            } catch (error) {}
         }
 
         async function loadMailRecapSettings() {
@@ -1553,7 +1866,7 @@
                 document.getElementById('recap-samedi').checked = result.samedi || false;
                 document.getElementById('recap-dimanche').checked = result.dimanche || false;
             } catch (error) {
-                console.error('Erreur chargement paramètres mail recap:', error);
+                console.error('Mail recap settings load error:', error);
             }
         }
 
@@ -1563,16 +1876,14 @@
 
             const data = {
                 site: document.getElementById('general-site').value,
-                license: '', // Géré séparément dans la section licence
+                license: '',
                 theme: document.getElementById('general-theme').value
             };
 
             try {
                 const result = await apiCall('/api/save_general', 'POST', data);
-                showNotification('Paramètres généraux sauvegardés', 'success');
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+                showNotification(t('general_saved'), 'success');
+            } catch (error) {}
         });
 
         // ==================== Licence ====================
@@ -1589,12 +1900,9 @@
 
             try {
                 const result = await apiCall('/api/save_general', 'POST', data);
-                showNotification('Licence enregistrée', 'success');
-                // Recharger les infos de licence
+                showNotification(t('license_saved'), 'success');
                 loadLicenseInfo();
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         });
 
         async function loadLicenseInfo() {
@@ -1612,7 +1920,6 @@
                 
                 const isLicenseActive = result.active;
                 
-                // Gestion des champs d'alerte (seul Popup est gratuit)
                 const paidAlerts = ['check-mail', 'check-telegram', 'check-mail-recap', 'check-db-externe'];
                 paidAlerts.forEach(id => {
                     const el = document.getElementById(id);
@@ -1620,7 +1927,7 @@
                         el.disabled = !isLicenseActive;
                         if (!isLicenseActive) {
                             el.checked = false;
-                            el.parentElement.title = "Nécessite une licence active";
+                            el.parentElement.title = t('requires_license');
                             el.parentElement.style.opacity = "0.6";
                         } else {
                             el.parentElement.title = "";
@@ -1631,32 +1938,30 @@
 
                 if (isLicenseActive) {
                     icon.textContent = '✅';
-                    status.textContent = 'Licence active';
-                    days.textContent = `${result.days_remaining} jours restants`;
+                    status.textContent = t('license_active');
+                    days.textContent = `${result.days_remaining} ${t('days_remaining')}`;
                     status.style.color = '#10b981';
                 } else {
                     icon.textContent = '❌';
-                    status.textContent = 'Pas de licence active';
-                    days.textContent = 'Certaines fonctionnalités sont limitées (Alertes)';
+                    status.textContent = t('no_license');
+                    days.textContent = t('features_limited');
                     status.style.color = '#ef4444';
                 }
             } catch (error) {
-                console.error('Erreur chargement info licence:', error);
+                console.error('License info load error:', error);
             }
         }
 
         // ==================== Authentification ====================
         document.getElementById('btn-logout').addEventListener('click', async function() {
-            if (!confirm('Voulez-vous vraiment vous déconnecter ?')) {
+            if (!confirm(t('confirm_logout'))) {
                 return;
             }
 
             try {
                 const result = await apiCall('/api/logout', 'POST');
                 window.location.href = '/login';
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         });
 
         document.getElementById('btn-change-password').addEventListener('click', function() {
@@ -1681,13 +1986,11 @@
 
             try {
                 const result = await apiCall('/api/change_credentials', 'POST', data);
-                showNotification('Identifiants modifiés ! Reconnexion nécessaire.', 'success');
+                showNotification(t('credentials_changed'), 'success');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
-            } catch (error) {
-                // Erreur déjà affichée
-            }
+            } catch (error) {}
         });
 
         // ==================== User Info ====================
@@ -1698,11 +2001,12 @@
                     document.getElementById('system-user').textContent = result.username;
                 }
             } catch (error) {
-                console.error('Erreur chargement info utilisateur:', error);
+                console.error('User info load error:', error);
             }
         }
 
         // Initial load
+        loadLanguage();
         loadSettings();
         loadLicenseInfo();
         loadUserInfo();
@@ -1710,4 +2014,3 @@
     </script>
 </body>
 </html>
-

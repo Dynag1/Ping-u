@@ -32,13 +32,26 @@
             margin-bottom: 30px;
         }
 
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
         .header h1 {
             color: #333;
             font-size: 32px;
-            margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badges-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .status-badge {
@@ -51,6 +64,28 @@
             border-radius: 25px;
             font-size: 14px;
             font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.disconnected {
+            background: #ef4444;
+            animation: none;
+        }
+
+        .scan-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #6b7280;
+            color: white;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .scan-badge.running {
+            background: #3b82f6;
             animation: pulse 2s infinite;
         }
 
@@ -67,9 +102,59 @@
             animation: blink 1.5s infinite;
         }
 
+        .status-badge.disconnected .status-dot {
+            animation: none;
+        }
+
+        .scan-badge .status-dot {
+            animation: none;
+        }
+
+        .scan-badge.running .status-dot {
+            animation: blink 1.5s infinite;
+        }
+
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
+        }
+
+        /* Language selector */
+        .lang-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f3f4f6;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .lang-selector label {
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .lang-selector select {
+            background: transparent;
+            border: none;
+            color: #374151;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
+        .lang-selector select:focus {
+            outline: none;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .stats {
@@ -271,6 +356,11 @@
                 font-size: 24px;
             }
 
+            .header-top {
+                flex-direction: column;
+                gap: 15px;
+            }
+
             .host-metrics {
                 grid-template-columns: 1fr;
             }
@@ -284,57 +374,206 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>
-                🌐 Monitoring Réseau - Ping ü
-                <span class="status-badge">
+            <div class="header-top">
+                <h1>
+                    🌐 <span data-i18n="title">Monitoring Réseau - Ping ü</span>
+                </h1>
+                <div class="lang-selector">
+                    <label>🌍</label>
+                    <select id="lang-select" onchange="changeLanguage(this.value)">
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+            <div class="badges-container" style="margin-bottom: 15px;">
+                <span class="status-badge" id="connection-badge">
                     <span class="status-dot"></span>
-                    <span>Connecté</span>
+                    <span data-i18n="connected">Connecté</span>
                 </span>
-            </h1>
-            <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
-                <label style="color: #6b7280; font-weight: 600;">Trier par :</label>
+                <span class="scan-badge" id="scan-badge">
+                    <span class="status-dot"></span>
+                    <span data-i18n="scan_stopped">Scan arrêté</span>
+                </span>
+            </div>
+            <div class="controls-row">
+                <label style="color: #6b7280; font-weight: 600;" data-i18n="sort_by">Trier par :</label>
                 <select id="sort-select" onchange="changeSort()" style="padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                    <option value="status-offline-first">Statut (HS en premier)</option>
-                    <option value="status-online-first">Statut (En ligne en premier)</option>
-                    <option value="ip-asc">Adresse IP (Croissant)</option>
-                    <option value="ip-desc">Adresse IP (Décroissant)</option>
-                    <option value="name-asc">Nom (A-Z)</option>
-                    <option value="name-desc">Nom (Z-A)</option>
+                    <option value="status-offline-first" data-i18n="sort_offline_first">Statut (HS en premier)</option>
+                    <option value="status-online-first" data-i18n="sort_online_first">Statut (En ligne en premier)</option>
+                    <option value="ip-asc" data-i18n="sort_ip_asc">Adresse IP (Croissant)</option>
+                    <option value="ip-desc" data-i18n="sort_ip_desc">Adresse IP (Décroissant)</option>
+                    <option value="name-asc" data-i18n="sort_name_asc">Nom (A-Z)</option>
+                    <option value="name-desc" data-i18n="sort_name_desc">Nom (Z-A)</option>
                 </select>
             </div>
             <div class="stats">
                 <div class="stat-card total">
-                    <span class="label">Total:</span>
+                    <span class="label" data-i18n="total">Total:</span>
                     <span class="value" id="total-hosts">0</span>
                 </div>
                 <div class="stat-card online">
                     <span class="icon">🟢</span>
-                    <span class="label">En ligne:</span>
+                    <span class="label" data-i18n="online">En ligne:</span>
                     <span class="value" id="online-hosts">0</span>
                 </div>
                 <div class="stat-card offline">
                     <span class="icon">🔴</span>
-                    <span class="label">Hors ligne:</span>
+                    <span class="label" data-i18n="offline">Hors ligne:</span>
                     <span class="value" id="offline-hosts">0</span>
                 </div>
                 <div class="stat-card high-temp">
                     <span class="icon">🌡️</span>
-                    <span class="label">Temp. élevée:</span>
+                    <span class="label" data-i18n="high_temp">Temp. élevée:</span>
                     <span class="value" id="high-temp-hosts">0</span>
                 </div>
             </div>
         </div>
 
         <div id="hosts-container">
-            <div class="loading">Chargement des hôtes</div>
+            <div class="loading" data-i18n="loading">Chargement des hôtes</div>
         </div>
 
         <div class="last-update">
-            Dernière mise à jour: <span id="last-update-time">-</span>
+            <span data-i18n="last_update">Dernière mise à jour:</span> <span id="last-update-time">-</span>
         </div>
     </div>
 
     <script>
+        // ==================== Système de traduction ====================
+        const translations = {
+            fr: {
+                title: "Monitoring Réseau - Ping ü",
+                connected: "Connecté",
+                disconnected: "Déconnecté",
+                scan_running: "Scan en cours",
+                scan_stopped: "Scan arrêté",
+                sort_by: "Trier par :",
+                sort_offline_first: "Statut (HS en premier)",
+                sort_online_first: "Statut (En ligne en premier)",
+                sort_ip_asc: "Adresse IP (Croissant)",
+                sort_ip_desc: "Adresse IP (Décroissant)",
+                sort_name_asc: "Nom (A-Z)",
+                sort_name_desc: "Nom (Z-A)",
+                total: "Total:",
+                online: "En ligne:",
+                offline: "Hors ligne:",
+                high_temp: "Temp. élevée:",
+                loading: "Chargement des hôtes",
+                last_update: "Dernière mise à jour:",
+                no_hosts_title: "Aucun hôte trouvé",
+                no_hosts_message: "Ajoutez des hôtes dans l'application pour les voir apparaître ici.",
+                connection_error_title: "Erreur de connexion",
+                connection_error_message: "Impossible de se connecter au serveur. Vérifiez que le serveur web est démarré.",
+                status_online: "En ligne",
+                status_offline: "Hors ligne",
+                no_name: "Sans nom",
+                mac: "MAC",
+                temperature: "Température",
+                bandwidth_in: "Débit IN",
+                bandwidth_out: "Débit OUT"
+            },
+            en: {
+                title: "Network Monitoring - Ping ü",
+                connected: "Connected",
+                disconnected: "Disconnected",
+                scan_running: "Scan running",
+                scan_stopped: "Scan stopped",
+                sort_by: "Sort by:",
+                sort_offline_first: "Status (Offline first)",
+                sort_online_first: "Status (Online first)",
+                sort_ip_asc: "IP Address (Ascending)",
+                sort_ip_desc: "IP Address (Descending)",
+                sort_name_asc: "Name (A-Z)",
+                sort_name_desc: "Name (Z-A)",
+                total: "Total:",
+                online: "Online:",
+                offline: "Offline:",
+                high_temp: "High temp:",
+                loading: "Loading hosts",
+                last_update: "Last update:",
+                no_hosts_title: "No hosts found",
+                no_hosts_message: "Add hosts in the application to see them appear here.",
+                connection_error_title: "Connection error",
+                connection_error_message: "Unable to connect to the server. Check that the web server is running.",
+                status_online: "Online",
+                status_offline: "Offline",
+                no_name: "No name",
+                mac: "MAC",
+                temperature: "Temperature",
+                bandwidth_in: "Bandwidth IN",
+                bandwidth_out: "Bandwidth OUT"
+            }
+        };
+
+        let currentLang = 'fr';
+
+        // Détecter la langue du navigateur
+        function detectBrowserLanguage() {
+            const browserLang = navigator.language || navigator.userLanguage;
+            // Si la langue commence par 'fr', utiliser français, sinon anglais
+            return browserLang.startsWith('fr') ? 'fr' : 'en';
+        }
+
+        // Charger la langue sauvegardée ou détecter automatiquement
+        function loadLanguage() {
+            const savedLang = localStorage.getItem('pingü_lang');
+            if (savedLang && translations[savedLang]) {
+                currentLang = savedLang;
+            } else {
+                currentLang = detectBrowserLanguage();
+            }
+            document.getElementById('lang-select').value = currentLang;
+            applyTranslations();
+        }
+
+        // Changer la langue
+        function changeLanguage(lang) {
+            if (translations[lang]) {
+                currentLang = lang;
+                localStorage.setItem('pingü_lang', lang);
+                applyTranslations();
+                // Re-render les hôtes pour mettre à jour les textes
+                if (hostsData.length > 0) {
+                    renderHosts(hostsData);
+                }
+            }
+        }
+
+        // Appliquer les traductions
+        function applyTranslations() {
+            const t = translations[currentLang];
+            
+            // Mettre à jour les éléments avec data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.textContent = t[key];
+                }
+            });
+
+            // Mettre à jour les options du select
+            const sortSelect = document.getElementById('sort-select');
+            Array.from(sortSelect.options).forEach(option => {
+                const key = option.getAttribute('data-i18n');
+                if (key && t[key]) {
+                    option.textContent = t[key];
+                }
+            });
+
+            // Mettre à jour le titre de la page
+            document.title = t.title;
+            
+            // Mettre à jour l'attribut lang du HTML
+            document.documentElement.lang = currentLang;
+        }
+
+        // Fonction d'aide pour obtenir une traduction
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        // ==================== Socket.IO ====================
         const socket = io({
             transports: ['websocket', 'polling'],
             reconnection: true,
@@ -345,6 +584,7 @@
         let hostsData = [];
         let currentSort = 'status-offline-first';
         let tempSeuil = 70; // Seuil de température par défaut (sera mis à jour depuis les settings)
+        let scanRunning = false;
         
         // Charger le seuil de température depuis les settings
         async function loadTempSeuil() {
@@ -353,6 +593,10 @@
                 const result = await response.json();
                 if (result.alerts && result.alerts.temp_seuil) {
                     tempSeuil = result.alerts.temp_seuil;
+                }
+                // Mettre à jour le statut du scan
+                if (typeof result.monitoring_running !== 'undefined') {
+                    updateScanBadge(result.monitoring_running);
                 }
             } catch (e) {
                 console.log('Utilisation du seuil par défaut:', tempSeuil);
@@ -385,6 +629,10 @@
             renderHosts(hosts);
             updateStats(hosts);
             updateLastUpdateTime();
+        });
+
+        socket.on('monitoring_status', function(data) {
+            updateScanBadge(data.running);
         });
 
         function changeSort() {
@@ -458,22 +706,42 @@
             updateStatusBadge(false);
             document.getElementById('hosts-container').innerHTML = `
                 <div class="no-hosts">
-                    <h2>Erreur de connexion</h2>
-                    <p>Impossible de se connecter au serveur. Vérifiez que le serveur web est démarré.</p>
+                    <h2>${t('connection_error_title')}</h2>
+                    <p>${t('connection_error_message')}</p>
                 </div>
             `;
         });
 
         function updateStatusBadge(connected) {
-            const badge = document.querySelector('.status-badge');
-            const badgeText = badge.querySelector('span:last-child');
+            const badge = document.getElementById('connection-badge');
+            const badgeText = badge.querySelector('span[data-i18n]');
             
             if (connected) {
+                badge.classList.remove('disconnected');
                 badge.style.background = '#10b981';
-                badgeText.textContent = 'Connecté';
+                badgeText.textContent = t('connected');
+                badgeText.setAttribute('data-i18n', 'connected');
             } else {
+                badge.classList.add('disconnected');
                 badge.style.background = '#ef4444';
-                badgeText.textContent = 'Déconnecté';
+                badgeText.textContent = t('disconnected');
+                badgeText.setAttribute('data-i18n', 'disconnected');
+            }
+        }
+
+        function updateScanBadge(running) {
+            scanRunning = running;
+            const badge = document.getElementById('scan-badge');
+            const badgeText = badge.querySelector('span[data-i18n]');
+            
+            if (running) {
+                badge.classList.add('running');
+                badgeText.textContent = t('scan_running');
+                badgeText.setAttribute('data-i18n', 'scan_running');
+            } else {
+                badge.classList.remove('running');
+                badgeText.textContent = t('scan_stopped');
+                badgeText.setAttribute('data-i18n', 'scan_stopped');
             }
         }
 
@@ -483,8 +751,8 @@
             if (!hosts || hosts.length === 0) {
                 container.innerHTML = `
                     <div class="no-hosts">
-                        <h2>Aucun hôte trouvé</h2>
-                        <p>Ajoutez des hôtes dans l'application pour les voir apparaître ici.</p>
+                        <h2>${t('no_hosts_title')}</h2>
+                        <p>${t('no_hosts_message')}</p>
                     </div>
                 `;
                 return;
@@ -547,8 +815,8 @@
             }
             card.className = cardClass;
             
-            const displayName = host.nom || 'Sans nom';
-            const statusText = host.status === 'online' ? 'En ligne' : 'Hors ligne';
+            const displayName = host.nom || t('no_name');
+            const statusText = host.status === 'online' ? t('status_online') : t('status_offline');
             const debitIn = host.debit_in || 'N/A';
             const debitOut = host.debit_out || 'N/A';
             const tempClass = highTemp ? 'detail-value temp-warning' : 'detail-value';
@@ -561,19 +829,19 @@
                 <div class="host-ip">${escapeHtml(host.ip)}</div>
                 <div class="host-details">
                     <div class="detail-item">
-                        <div class="detail-label">MAC</div>
+                        <div class="detail-label">${t('mac')}</div>
                         <div class="detail-value">${escapeHtml(host.mac) || '-'}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">🌡️ Température</div>
+                        <div class="detail-label">🌡️ ${t('temperature')}</div>
                         <div class="${tempClass}">${escapeHtml(temperature)}${highTemp ? ' ⚠️' : ''}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">📥 Débit IN</div>
+                        <div class="detail-label">📥 ${t('bandwidth_in')}</div>
                         <div class="detail-value">${escapeHtml(debitIn)}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">📤 Débit OUT</div>
+                        <div class="detail-label">📤 ${t('bandwidth_out')}</div>
                         <div class="detail-value">${escapeHtml(debitOut)}</div>
                     </div>
                 </div>
@@ -583,8 +851,8 @@
         }
 
         function updateHostCard(card, host) {
-            const displayName = host.nom || 'Sans nom';
-            const statusText = host.status === 'online' ? 'En ligne' : 'Hors ligne';
+            const displayName = host.nom || t('no_name');
+            const statusText = host.status === 'online' ? t('status_online') : t('status_offline');
             const temperature = host.temp || '-';
             const highTemp = isHighTemp(temperature);
             const debitIn = host.debit_in || 'N/A';
@@ -650,7 +918,8 @@
 
         function updateLastUpdateTime() {
             const now = new Date();
-            const timeString = now.toLocaleTimeString('fr-FR');
+            const locale = currentLang === 'fr' ? 'fr-FR' : 'en-US';
+            const timeString = now.toLocaleTimeString(locale);
             document.getElementById('last-update-time').textContent = timeString;
         }
 
@@ -666,9 +935,9 @@
             socket.emit('request_update');
         }, 10000);
 
-        // Demander les données immédiatement au chargement
+        // Charger la langue et demander les données au chargement
+        loadLanguage();
         socket.emit('request_update');
     </script>
 </body>
 </html>
-
