@@ -35,6 +35,16 @@ TEMPERATURE_OIDS = {
     'synology_system': '1.3.6.1.4.1.6574.1.5.0',  # Synology system temp
     'qnap_cpu': '1.3.6.1.4.1.24681.1.2.5.0',  # QNAP CPU temp
     'qnap_system': '1.3.6.1.4.1.24681.1.2.6.0',  # QNAP system temp
+    
+    # Box Internet françaises (si SNMP activé)
+    # Note: Les box grand public n'exposent généralement pas la température via SNMP
+    # Ces OIDs sont basés sur les standards et peuvent fonctionner selon le modèle
+    'freebox_temp': '1.3.6.1.4.1.2021.13.16.2.1.3.1',  # Freebox (Linux-based, lm-sensors)
+    'freebox_cpu': '1.3.6.1.4.1.2021.11.11.0',  # Freebox CPU idle (pour calcul charge)
+    'livebox_temp': '1.3.6.1.4.1.2021.13.16.2.1.3.1',  # Livebox Orange
+    'bbox_temp': '1.3.6.1.4.1.2021.13.16.2.1.3.1',  # Bbox Bouygues
+    'sfrbox_temp': '1.3.6.1.4.1.2021.13.16.2.1.3.1',  # SFR Box
+    
     # Switches standards (ordre de test)
     'cisco_cpu': '1.3.6.1.4.1.9.9.13.1.3.1.3.1',  # Cisco CPU temp
     'cisco_env': '1.3.6.1.4.1.9.9.91.1.1.1.1.4.1',  # Cisco Environmental
@@ -76,6 +86,43 @@ TEMPERATURE_OIDS = {
     'entity_sensor_2': '1.3.6.1.2.1.99.1.1.1.4.2',  # index 2
     'entity_sensor_3': '1.3.6.1.2.1.99.1.1.1.4.3',  # index 3
     'lm78': '1.3.6.1.4.1.2021.13.16.2.1.3.10',  # LM78/LM87
+}
+
+# OIDs pour le débit des Box Internet (ADSL/VDSL/Fibre)
+# Ces OIDs sont standards et peuvent fonctionner sur les box qui supportent SNMP
+BOX_INTERNET_OIDS = {
+    # === Débits Interface (IF-MIB) - Standards sur toutes les box ===
+    # Ces OIDs nécessitent un index d'interface (ex: .1, .2, etc.)
+    'ifInOctets': '1.3.6.1.2.1.2.2.1.10',       # Octets reçus (32 bits)
+    'ifOutOctets': '1.3.6.1.2.1.2.2.1.16',      # Octets envoyés (32 bits)
+    'ifHCInOctets': '1.3.6.1.2.1.31.1.1.1.6',   # Octets reçus (64 bits, High Capacity)
+    'ifHCOutOctets': '1.3.6.1.2.1.31.1.1.1.10', # Octets envoyés (64 bits, High Capacity)
+    'ifSpeed': '1.3.6.1.2.1.2.2.1.5',           # Vitesse interface en bps
+    'ifHighSpeed': '1.3.6.1.2.1.31.1.1.1.15',   # Vitesse interface en Mbps (haute capacité)
+    'ifDescr': '1.3.6.1.2.1.2.2.1.2',           # Description de l'interface
+    'ifOperStatus': '1.3.6.1.2.1.2.2.1.8',      # Statut opérationnel (1=up, 2=down)
+    
+    # === ADSL-LINE-MIB (RFC 2662) - Pour les connexions ADSL ===
+    'adslLineStatus': '1.3.6.1.2.1.10.94.1.1.1.1.1',       # Statut ligne ADSL
+    'adslAtucCurrSnrMgn': '1.3.6.1.2.1.10.94.1.1.2.1.4',   # Marge SNR descendant (dB/10)
+    'adslAturCurrSnrMgn': '1.3.6.1.2.1.10.94.1.1.3.1.4',   # Marge SNR montant (dB/10)
+    'adslAtucCurrAtn': '1.3.6.1.2.1.10.94.1.1.2.1.5',      # Atténuation descendant (dB/10)
+    'adslAturCurrAtn': '1.3.6.1.2.1.10.94.1.1.3.1.5',      # Atténuation montant (dB/10)
+    'adslAtucCurrOutputPwr': '1.3.6.1.2.1.10.94.1.1.2.1.7', # Puissance sortie DSLAM (dBm/10)
+    'adslAturCurrOutputPwr': '1.3.6.1.2.1.10.94.1.1.3.1.7', # Puissance sortie modem (dBm/10)
+    'adslAtucChanCurrTxRate': '1.3.6.1.2.1.10.94.1.1.4.1.2', # Débit descendant (bps)
+    'adslAturChanCurrTxRate': '1.3.6.1.2.1.10.94.1.1.5.1.2', # Débit montant (bps)
+    
+    # === VDSL2-LINE-MIB (RFC 5650) - Pour les connexions VDSL ===
+    'xdsl2LineStatusActAtpDs': '1.3.6.1.2.1.10.251.1.1.1.1.9',  # Puissance descendant
+    'xdsl2LineStatusActAtpUs': '1.3.6.1.2.1.10.251.1.1.1.1.10', # Puissance montant
+    'xdsl2ChStatusActDataRate': '1.3.6.1.2.1.10.251.1.2.1.1.2', # Débit actuel
+    
+    # === Informations système ===
+    'sysDescr': '1.3.6.1.2.1.1.1.0',            # Description système
+    'sysUpTime': '1.3.6.1.2.1.1.3.0',           # Temps de fonctionnement
+    'sysName': '1.3.6.1.2.1.1.5.0',             # Nom du système
+    'sysLocation': '1.3.6.1.2.1.1.6.0',         # Emplacement
 }
 
 class SNMPHelper:
@@ -156,7 +203,17 @@ class SNMPHelper:
                 sys_descr_lower = sys_descr.lower()
                 
                 # Détection par mots-clés dans sysDescr (ordre important!)
-                if 'synology' in sys_descr_lower or 'diskstation' in sys_descr_lower:
+                # Box Internet françaises (priorité haute)
+                if 'freebox' in sys_descr_lower or 'free' in sys_descr_lower:
+                    device_type = 'freebox'
+                elif 'livebox' in sys_descr_lower or 'orange' in sys_descr_lower:
+                    device_type = 'livebox'
+                elif 'bbox' in sys_descr_lower or 'bouygues' in sys_descr_lower:
+                    device_type = 'bbox'
+                elif 'sfr' in sys_descr_lower or 'neufbox' in sys_descr_lower:
+                    device_type = 'sfrbox'
+                # NAS et serveurs
+                elif 'synology' in sys_descr_lower or 'diskstation' in sys_descr_lower:
                     device_type = 'synology'
                 elif 'qnap' in sys_descr_lower:
                     device_type = 'qnap'
@@ -335,7 +392,12 @@ class SNMPHelper:
             'hp': ['hp_icf_sensor', 'hp_rack'],
             'dell': ['dell_thermal'],
             'ubiquiti': ['ubiquiti_temp'],
-            'mikrotik': ['mikrotik_temp']
+            'mikrotik': ['mikrotik_temp'],
+            # Box Internet françaises (basées sur Linux, utilisent lm-sensors)
+            'freebox': ['freebox_temp', 'freebox_cpu', 'lm_sensors_1', 'lm_sensors_2'],
+            'livebox': ['livebox_temp', 'lm_sensors_1', 'lm_sensors_2'],
+            'bbox': ['bbox_temp', 'lm_sensors_1', 'lm_sensors_2'],
+            'sfrbox': ['sfrbox_temp', 'lm_sensors_1', 'lm_sensors_2'],
         }
         
         # Si type détecté, tester d'abord les OIDs spécifiques
@@ -382,6 +444,11 @@ class SNMPHelper:
             'dlink',       # Switchs D-Link
             'tplink',      # Switchs TP-Link
             'zyxel',       # Switchs Zyxel
+            # Box Internet françaises
+            'freebox',     # Free
+            'livebox',     # Orange
+            'bbox',        # Bouygues Telecom
+            'sfrbox',      # SFR
         }
         
         return device_type in network_devices or device_type == 'unknown'
@@ -810,6 +877,106 @@ class SNMPHelper:
             'in_mbps': round(in_mbps, 6),
             'out_mbps': round(out_mbps, 6)
         }
+    
+    async def get_dsl_info(self, ip):
+        """
+        Récupère les informations DSL (ADSL/VDSL) d'une box internet.
+        
+        Args:
+            ip: Adresse IP de la box
+            
+        Returns:
+            dict: {
+                'downstream_rate': float,    # Débit descendant en Mbps
+                'upstream_rate': float,      # Débit montant en Mbps
+                'snr_downstream': float,     # Marge SNR descendant en dB
+                'snr_upstream': float,       # Marge SNR montant en dB
+                'attenuation_downstream': float,  # Atténuation descendant en dB
+                'attenuation_upstream': float,    # Atténuation montant en dB
+            } ou None si échec
+        """
+        if not SNMP_AVAILABLE:
+            return None
+        
+        # Test préalable : SNMP est-il activé ?
+        snmp_enabled = await self.is_snmp_enabled(ip)
+        if not snmp_enabled:
+            return None
+        
+        try:
+            result = {}
+            
+            # Débit descendant ADSL (en bps, convertir en Mbps)
+            downstream = await self._query_oid(ip, f"{BOX_INTERNET_OIDS['adslAtucChanCurrTxRate']}.1", return_type='numeric')
+            if downstream:
+                result['downstream_rate'] = round(downstream / 1_000_000, 2)
+            
+            # Débit montant ADSL (en bps, convertir en Mbps)
+            upstream = await self._query_oid(ip, f"{BOX_INTERNET_OIDS['adslAturChanCurrTxRate']}.1", return_type='numeric')
+            if upstream:
+                result['upstream_rate'] = round(upstream / 1_000_000, 2)
+            
+            # Marge SNR descendant (en dB/10, convertir en dB)
+            snr_down = await self._query_oid(ip, f"{BOX_INTERNET_OIDS['adslAtucCurrSnrMgn']}.1", return_type='numeric')
+            if snr_down:
+                result['snr_downstream'] = round(snr_down / 10, 1)
+            
+            # Marge SNR montant (en dB/10, convertir en dB)
+            snr_up = await self._query_oid(ip, f"{BOX_INTERNET_OIDS['adslAturCurrSnrMgn']}.1", return_type='numeric')
+            if snr_up:
+                result['snr_upstream'] = round(snr_up / 10, 1)
+            
+            # Atténuation descendant (en dB/10, convertir en dB)
+            atn_down = await self._query_oid(ip, f"{BOX_INTERNET_OIDS['adslAtucCurrAtn']}.1", return_type='numeric')
+            if atn_down:
+                result['attenuation_downstream'] = round(atn_down / 10, 1)
+            
+            # Atténuation montant (en dB/10, convertir en dB)
+            atn_up = await self._query_oid(ip, f"{BOX_INTERNET_OIDS['adslAturCurrAtn']}.1", return_type='numeric')
+            if atn_up:
+                result['attenuation_upstream'] = round(atn_up / 10, 1)
+            
+            if result:
+                logger.debug(f"Informations DSL pour {ip}: {result}")
+                return result
+            
+            return None
+            
+        except Exception as e:
+            logger.debug(f"Erreur récupération infos DSL pour {ip}: {e}")
+            return None
+    
+    async def get_box_bandwidth(self, ip, interface_index=None):
+        """
+        Récupère les débits actuels d'une box internet.
+        Utilise automatiquement la bonne interface (WAN/Internet).
+        
+        Args:
+            ip: Adresse IP de la box
+            interface_index: Index de l'interface (auto-détecté si None)
+            
+        Returns:
+            dict: {
+                'in_mbps': float,    # Débit entrant en Mbps
+                'out_mbps': float,   # Débit sortant en Mbps
+                'raw_data': dict     # Données brutes pour le calcul de delta
+            } ou None si échec
+        """
+        # Utiliser la méthode existante calculate_bandwidth
+        # qui gère déjà la détection d'interface et le calcul
+        
+        # Récupérer les données précédentes du cache si disponibles
+        import src.var as var
+        previous_data = var.traffic_cache.get(ip)
+        
+        # Calculer la bande passante
+        result = await self.calculate_bandwidth(ip, interface_index, previous_data)
+        
+        if result and result.get('raw_data'):
+            # Mettre à jour le cache pour la prochaine mesure
+            var.traffic_cache[ip] = result['raw_data']
+        
+        return result
     
     def clear_cache(self, ip=None):
         """

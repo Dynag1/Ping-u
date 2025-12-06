@@ -126,7 +126,13 @@ def save_csv(self, treeModel, filepath=None, return_path=False, silent=False):
                 row_data = []
                 for column in range(model.columnCount()):
                     index = model.index(row, column)
-                    row_data.append(model.data(index))
+                    data = model.data(index)
+                    row_data.append(data if data is not None else '')
+                
+                # Ignorer les lignes vides ou contenant uniquement des champs vides
+                if all(str(field).strip() == '' for field in row_data):
+                    continue
+                    
                 csvwriter.writerow(row_data)
 
         # Si return_path est True, retourner le chemin au lieu d'afficher la boîte de dialogue
@@ -183,6 +189,9 @@ def load_csv(self, treeModel, filepath=None):
             treeModel.removeRows(0, treeModel.rowCount())  # Conserve les en-têtes
 
             for row in csvread:
+                # Ignorer les lignes vides ou contenant uniquement des champs vides
+                if not row or all(field.strip() == '' for field in row):
+                    continue
                 items = [QStandardItem(str(field)) for field in row]
                 treeModel.appendRow(items)
 
