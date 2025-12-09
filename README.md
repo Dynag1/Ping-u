@@ -56,10 +56,11 @@ git clone https://github.com/Dynag1/ping-u.git
 cd ping-u
 pip install -r requirements.txt
 python Pingu.py
+```
 > **Prérequis** :
 > - Python `3.13` ou supérieur
 > - PySide6 `6.8` ou supérieur
-```
+
 ---
 
 ## 🛠️ Technologies
@@ -83,7 +84,7 @@ python Pingu.py
 
 ## 📄 Licence
 
-**MIT** — [Lire la licence](LICENSE.txt)
+[Lire la licence](LICENSE.txt)
 
 ---
 
