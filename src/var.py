@@ -2,6 +2,7 @@
 
 # if __name__ == "__main__":
 #     pass
+import threading
 from src.utils.colors import AppColors
 
 version = "99.02.07"
@@ -16,6 +17,10 @@ u = 0
 tourne = True
 delais = 5
 nbrHs = 3  # Nombre de tentatives échouées avant d'envoyer une alerte (par défaut: 3)
+
+# Événement pour arrêter proprement les threads (mail recap, etc.)
+# Utiliser stop_event.set() pour arrêter et stop_event.clear() pour réinitialiser
+stop_event = threading.Event()
 
 popup = False
 mail = False

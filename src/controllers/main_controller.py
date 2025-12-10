@@ -34,6 +34,9 @@ class MainController:
                     import time
                     time.sleep(0.5)
             
+            # Réinitialiser le stop_event pour permettre aux nouveaux threads de fonctionner
+            var.stop_event.clear()
+            
             # Réinitialiser les listes d'alertes
             var.liste_hs.clear()
             var.liste_mail.clear()
@@ -67,14 +70,18 @@ class MainController:
         """Arrête tous les services de monitoring."""
         try:
             logger.info("Arrêt du monitoring via MainController")
+            
+            # 1. Signaler l'arrêt à tous les threads via stop_event (AVANT de mettre tourne à False)
+            # Cela permet aux threads utilisant stop_event.wait() de s'arrêter immédiatement
+            var.stop_event.set()
             var.tourne = False
             
-            # Arrêter d'abord l'alert manager (plus simple, juste un QTimer)
+            # 2. Arrêter d'abord l'alert manager (qui gère aussi le thread mail recap)
             if self.alert_manager:
                 self.alert_manager.stop()
                 self.alert_manager = None
             
-            # Puis arrêter le ping manager (plus complexe, avec QThread)
+            # 3. Puis arrêter le ping manager (plus complexe, avec QThread)
             if self.ping_manager:
                 self.ping_manager.stop()
                 # Traiter les événements Qt en attente pour laisser le temps au thread de se terminer
@@ -84,6 +91,8 @@ class MainController:
                 except ImportError:
                     pass
                 self.ping_manager = None
+            
+            logger.info("Tous les services de monitoring arrêtés")
                 
             # Mise à jour UI
             # On vérifie si l'UI existe encore (cas de fermeture)

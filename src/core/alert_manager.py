@@ -85,6 +85,9 @@ class AlertManager(QObject):
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_alerts)
         
+        # Référence au thread mail recap pour éviter les doublons
+        self.mail_recap_thread = None
+        
         # Connecter le signal popup local au signal de la fenêtre principale
         self.popup_signal.connect(self.main_window.show_popup)
 
@@ -98,8 +101,18 @@ class AlertManager(QObject):
         self.timer.start(delay_ms)
 
     def stop(self):
-        """Arrête la surveillance."""
+        """Arrête la surveillance et tous les threads associés."""
         self.timer.stop()
+        
+        # Attendre la fin du thread mail recap s'il existe
+        if self.mail_recap_thread and self.mail_recap_thread.is_alive():
+            logger.info("Attente fin du thread mail recap...")
+            # Le thread s'arrêtera grâce à stop_event (signalé par main_controller)
+            self.mail_recap_thread.join(timeout=2)
+            if self.mail_recap_thread.is_alive():
+                logger.warning("Thread mail recap n'a pas pu s'arrêter dans le délai imparti")
+        self.mail_recap_thread = None
+        
         logger.info("Arrêt du gestionnaire d'alertes")
 
     def check_alerts(self):
@@ -127,10 +140,22 @@ class AlertManager(QObject):
             logger.error(f"Erreur vérification alertes: {e}", exc_info=True)
 
     def check_mail_recap(self):
-        """Lance le thread de récapitulatif mail."""
+        """Lance le thread de récapitulatif mail (évite les doublons)."""
         if var.tourne and var.mailRecap:
+            # Vérifier si un thread mail recap est déjà en cours
+            if self.mail_recap_thread and self.mail_recap_thread.is_alive():
+                logger.debug("Thread mail recap déjà en cours, pas de nouveau lancement")
+                return
+            
             try:
-                threading.Thread(target=thread_recap_mail.main, args=(self.main_window, self.model)).start()
+                self.mail_recap_thread = threading.Thread(
+                    target=thread_recap_mail.main, 
+                    args=(self.main_window, self.model),
+                    daemon=True,
+                    name="MailRecapThread"
+                )
+                self.mail_recap_thread.start()
+                logger.info("Thread mail recap lancé")
             except Exception as e:
                 logger.error(f"Erreur lancement recap mail: {e}", exc_info=True)
 
