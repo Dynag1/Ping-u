@@ -80,22 +80,29 @@ def main(self, tree_model):
     
     while True:
         try:
-            if var.tourne == 1:
-                if var.mailRecap == 1:
-                    a = False
-                    j = jour_demande()
-                    d = datetime.now()
-                    jour = str(d.weekday())
-                    heure = d.strftime('%H:%M')
-                    for x in j:
-                        print(x)
-                        if str(x) == jour:
-                            if str(heure) == str(heureDemande):
-                                a = True
-                    if a is True:
-                        prepaMail(self, tree_model)
-                    time.sleep(60)
-                else:
+            # Vérifier l'arrêt demandé via stop_event ou var.tourne
+            if var.stop_event.is_set() or not var.tourne:
+                print("Mail recap: arrêt demandé")
+                break
+                
+            if var.mailRecap:
+                a = False
+                j = jour_demande()
+                d = datetime.now()
+                jour = str(d.weekday())
+                heure = d.strftime('%H:%M')
+                for x in j:
+                    print(x)
+                    if str(x) == jour:
+                        if str(heure) == str(heureDemande):
+                            a = True
+                if a is True:
+                    prepaMail(self, tree_model)
+                
+                # Utiliser stop_event.wait() au lieu de time.sleep()
+                # Cela permet d'interrompre immédiatement quand stop_event.set() est appelé
+                if var.stop_event.wait(timeout=60):
+                    print("Mail recap: arrêt signalé via stop_event")
                     break
             else:
                 break
