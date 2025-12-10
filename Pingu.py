@@ -1095,6 +1095,10 @@ def run_headless_mode():
                     
                     def setText(self, text):
                         logger.info(f"Status: {text}")
+                    
+                    def blockSignals(self, block):
+                        """Méthode factice pour compatibilité Qt"""
+                        pass
                 
                 def __init__(self):
                     self.butStart = self.PseudoButton()
