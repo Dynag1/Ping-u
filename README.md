@@ -64,7 +64,7 @@ python Pingu.py
 ---
 ## Licences
 
-Poour débloquer toutes les fonctionnalités, vous aurez besoin d'une licence, vous pouvez la demander ici : [https://li.dynag.co](https://li.dynag.co)
+- Pour débloquer toutes les fonctionnalités, vous aurez besoin d'une licence, vous pouvez la demander ici : [https://li.dynag.co](https://li.dynag.co)
 ---
 
 ## 🛠️ Technologies
