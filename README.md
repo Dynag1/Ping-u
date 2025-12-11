@@ -62,6 +62,10 @@ python Pingu.py
 > - PySide6 `6.8` ou supérieur
 
 ---
+## Licences
+
+Poour débloquer toutes les fonctionnalités, vous aurez besoin d'une licence, vous pouvez la demander ici : [https://li.dynag.co](https://li.dynag.co)
+---
 
 ## 🛠️ Technologies
 
