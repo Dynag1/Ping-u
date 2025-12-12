@@ -463,13 +463,18 @@ class PingManager(QObject):
 
     def list_ok(self, liste, ip):
         if ip in liste:
-            current_value = liste[ip]
-            logger.debug(f"[PING] list_ok({ip}): valeur actuelle={current_value} (type={type(current_value).__name__})")
-            if int(current_value) == 10:
+            current_value = int(liste[ip])
+            logger.debug(f"[PING] list_ok({ip}): valeur actuelle={current_value}")
+            if current_value == 10:
+                # Alerte HS envoyée, marquer pour notification de retour
                 liste[ip] = 20
                 logger.info(f"[PING] {ip}: hôte revenu en ligne, marqué 20 pour notification de retour")
+            elif current_value == 20:
+                # Notification de retour en attente, ne pas supprimer !
+                logger.debug(f"[PING] {ip}: notification de retour en attente, on garde la valeur 20")
             else:
-                logger.debug(f"[PING] {ip}: supprimé de la liste (valeur était {current_value}, pas 10)")
+                # Compteur en cours (< nbrHs), supprimer car l'hôte répond à nouveau
+                logger.debug(f"[PING] {ip}: supprimé de la liste (compteur était {current_value})")
                 liste.pop(ip, None)
 
     def handle_ups_alert(self, ip, message):
