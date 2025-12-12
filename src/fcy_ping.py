@@ -463,8 +463,9 @@ class PingManager(QObject):
 
     def list_ok(self, liste, ip):
         if ip in liste:
-            if liste[ip] == 10:
+            if int(liste[ip]) == 10:
                 liste[ip] = 20
+                logger.debug(f"[PING] {ip}: hôte revenu en ligne, marqué pour notification de retour")
             else:
                 liste.pop(ip, None)
 
