@@ -41,6 +41,7 @@ class MainController:
             var.liste_hs.clear()
             var.liste_mail.clear()
             var.liste_telegram.clear()
+            var.liste_temp_alert.clear()
             
             # Instanciation des managers
             # Note: PingManager prend le modèle de données + main_window pour broadcast

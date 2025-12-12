@@ -204,7 +204,7 @@ class SNMPHelper:
                 
                 # Détection par mots-clés dans sysDescr (ordre important!)
                 # Box Internet françaises (priorité haute)
-                if 'freebox' in sys_descr_lower or 'free' in sys_descr_lower:
+                if 'freebox' in sys_descr_lower:
                     device_type = 'freebox'
                 elif 'livebox' in sys_descr_lower or 'orange' in sys_descr_lower:
                     device_type = 'livebox'
