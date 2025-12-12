@@ -196,7 +196,13 @@ class AlertManager(QObject):
             hosts_down = []
             hosts_up = []
             
+            # Log de diagnostic pour voir l'état des listes
+            if var.liste_mail:
+                logger.debug(f"[MAIL] État liste_mail: {dict(var.liste_mail)}")
+            
             for key, value in list(var.liste_mail.items()):
+                logger.debug(f"[MAIL] Vérification {key}: valeur={value} (type={type(value).__name__}), nbrHs={var.nbrHs}")
+                
                 if int(value) == int(var.nbrHs):
                     # Hôte qui vient de tomber
                     logger.info(f"Alerte mail: {key} HS")
@@ -223,6 +229,7 @@ class AlertManager(QObject):
                     
                 elif int(value) == 20:
                     # Hôte qui revient en ligne
+                    logger.info(f"[MAIL] Alerte retour détectée: {key} revient en ligne (valeur={value})")
                     nom = db.lireNom(key, self.model) or "Inconnu"
                     
                     # Récupérer les infos de l'hôte
@@ -257,10 +264,14 @@ class AlertManager(QObject):
                 ).start()
             
             for host_up in hosts_up:
+                logger.info(f"[MAIL] Envoi notification retour pour {host_up.get('ip')} ({host_up.get('nom')})")
                 threading.Thread(
                     target=email_sender.send_alert_email,
                     args=(host_up, 'up')
                 ).start()
+            
+            if hosts_up:
+                logger.info(f"[MAIL] {len(hosts_up)} notification(s) de retour lancée(s)")
                 
         except Exception as e:
             logger.error(f"Erreur process mail: {e}", exc_info=True)
