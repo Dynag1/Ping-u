@@ -170,7 +170,7 @@ class AlertManager(QObject):
                 if int(value) == int(var.nbrHs):
                     ip_hs += f"{key}\n "
                     var.liste_hs[key] = 10
-                elif value == 20:
+                elif int(value) == 20:
                     ip_ok += f"{key}\n "
                     erase.append(key)
             
@@ -221,7 +221,7 @@ class AlertManager(QObject):
                     hosts_down.append(host_info)
                     var.liste_mail[key] = 10
                     
-                elif value == 20:
+                elif int(value) == 20:
                     # Hôte qui revient en ligne
                     nom = db.lireNom(key, self.model) or "Inconnu"
                     
@@ -281,7 +281,7 @@ class AlertManager(QObject):
                     nom = db.lireNom(key, self.model) or "Inconnu"
                     ip_hs_text += f"{nom} : {key}\n"
                     var.liste_telegram[key] = 10
-                elif value == 20:
+                elif int(value) == 20:
                     nom = db.lireNom(key, self.model) or "Inconnu"
                     ip_ok_text += f"{nom} : {key}\n"
                     erase.append(key)
