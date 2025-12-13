@@ -1386,7 +1386,7 @@
                     </td>
                     <td>${escapeHtml(host.mac) || '-'}</td>
                     <td>${escapeHtml(host.port) || '-'}</td>
-                    <td>${escapeHtml(host.latence) || '-'}</td>
+                    <td style="background-color: ${host.latency_color || '#baf595'}; font-weight: bold; text-align: center;">${escapeHtml(host.latence) || '-'}</td>
                     <td>${escapeHtml(host.temp) || '-'}</td>
                     <td>
                         <span class="host-status ${host.status}">

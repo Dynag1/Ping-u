@@ -30,15 +30,23 @@ class AppColors:
         """
         Retourne la couleur hexadécimale correspondant à la latence.
         
-        Règles simplifiées:
-        - < 500ms : vert clair (IP OK)
+        Règles:
+        - < 100ms : vert clair
+        - 100ms à 200ms : jaune clair
+        - > 200ms (mais < 500ms) : orange clair
         - >= 500ms (HS) : rouge (IP DOWN)
         """
         if latency_ms >= 500:
             # Hors service (HS) - rouge pour IP DOWN
             return cls.ROUGE_PALE
+        elif latency_ms > 200:
+            # Latence élevée - orange clair
+            return cls.ORANGE_PALE
+        elif latency_ms >= 100:
+            # Latence moyenne - jaune clair
+            return cls.JAUNE_PALE
         else:
-            # Vert clair pour IP OK (latence < 500ms)
+            # Latence faible (< 100ms) - vert clair
             return cls.VERT_PALE
 
 
