@@ -264,6 +264,20 @@
             background: #fee2e2;
             color: #991b1b;
         }
+        
+        /* Couleurs de latence pour le badge "En ligne" */
+        .host-status.latency-green {
+            background: #baf595;
+            color: #1a5d1a;
+        }
+        .host-status.latency-yellow {
+            background: #fffd6a;
+            color: #7a6800;
+        }
+        .host-status.latency-orange {
+            background: #ffb845;
+            color: #7a4000;
+        }
 
         .host-ip {
             font-size: 20px;
@@ -611,6 +625,18 @@
             return !isNaN(temp) && temp >= tempSeuil;
         }
         
+        // Fonction pour obtenir la classe CSS selon la couleur de latence
+        function getLatencyClass(latencyColor) {
+            if (!latencyColor) return '';
+            switch(latencyColor.toLowerCase()) {
+                case '#baf595': return 'latency-green';   // Vert clair < 100ms
+                case '#fffd6a': return 'latency-yellow';  // Jaune 100-200ms
+                case '#ffb845': return 'latency-orange';  // Orange > 200ms
+                case '#f97e7e': return '';                // Rouge = offline (classe déjà gérée)
+                default: return '';
+            }
+        }
+        
         socket.on('connect', function() {
             updateStatusBadge(true);
             socket.emit('request_update');
@@ -815,16 +841,25 @@
             }
             card.className = cardClass;
             
+            // Appliquer la couleur de latence à la bordure gauche (si disponible)
+            if (host.latency_color && host.status === 'online') {
+                card.style.borderLeftColor = host.latency_color;
+            }
+            
             const displayName = host.nom || t('no_name');
             const statusText = host.status === 'online' ? t('status_online') : t('status_offline');
             const debitIn = host.debit_in || 'N/A';
             const debitOut = host.debit_out || 'N/A';
             const tempClass = highTemp ? 'detail-value temp-warning' : 'detail-value';
             
+            // Classe de latence pour le badge (uniquement si online)
+            const latencyClass = host.status === 'online' ? getLatencyClass(host.latency_color) : '';
+            const statusClass = latencyClass ? latencyClass : host.status;
+            
             card.innerHTML = `
                 <div class="host-header">
                     <div class="host-name">${escapeHtml(displayName)}</div>
-                    <div class="host-status ${host.status}">${statusText}</div>
+                    <div class="host-status ${statusClass}">${statusText}</div>
                 </div>
                 <div class="host-ip">${escapeHtml(host.ip)}</div>
                 <div class="host-details">
@@ -865,16 +900,25 @@
             }
             card.className = cardClass;
             
+            // Mettre à jour la couleur de latence (bordure gauche)
+            if (host.latency_color && host.status === 'online') {
+                card.style.borderLeftColor = host.latency_color;
+            } else if (host.status === 'offline') {
+                card.style.borderLeftColor = '#ef4444'; // Rouge pour offline
+            }
+            
             // Mettre à jour le nom
             const nameEl = card.querySelector('.host-name');
             if (nameEl && nameEl.textContent !== displayName) {
                 nameEl.textContent = displayName;
             }
             
-            // Mettre à jour le statut
+            // Mettre à jour le statut avec la couleur de latence
             const statusEl = card.querySelector('.host-status');
             if (statusEl) {
-                statusEl.className = `host-status ${host.status}`;
+                const latencyClass = host.status === 'online' ? getLatencyClass(host.latency_color) : '';
+                const statusClass = latencyClass ? latencyClass : host.status;
+                statusEl.className = `host-status ${statusClass}`;
                 if (statusEl.textContent !== statusText) {
                     statusEl.textContent = statusText;
                 }

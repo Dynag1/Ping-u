@@ -1039,6 +1039,9 @@ Ping ü - Monitoring Réseau
                     
                     latence_text = model.item(row, 5).text() if model.item(row, 5) else 'N/A'
                     
+                    # Calculer la couleur de latence
+                    latency_color = self._get_latency_color(latence_text)
+                    
                     host_data = {
                         'id': model.item(row, 0).text() if model.item(row, 0) else str(row),
                         'ip': ip,
@@ -1046,6 +1049,7 @@ Ping ü - Monitoring Réseau
                         'mac': model.item(row, 3).text() if model.item(row, 3) else '',
                         'port': model.item(row, 4).text() if model.item(row, 4) else '',
                         'latence': latence_text,
+                        'latency_color': latency_color,
                         'temp': model.item(row, 6).text() if model.item(row, 6) else '-',
                         'suivi': model.item(row, 7).text() if model.item(row, 7) else '',
                         'comm': model.item(row, 8).text() if model.item(row, 8) else '',
@@ -1184,6 +1188,39 @@ Ping ü - Monitoring Réseau
             pass
         # Par défaut, considérer comme en ligne
         return 'online'
+    
+    def _get_latency_color(self, latence_text):
+        """
+        Retourne la couleur correspondant à la latence.
+        
+        Règles:
+        - < 100ms : vert clair (#baf595)
+        - 100ms à 200ms : jaune clair (#fffd6a)
+        - > 200ms (mais < 500ms / HS) : orange clair (#ffb845)
+        - HS (offline) : rouge (#f97e7e)
+        """
+        try:
+            if not latence_text or latence_text.strip().upper() == 'HS' or latence_text == 'N/A':
+                return '#f97e7e'  # Rouge - HS
+            
+            # Extraire la valeur numérique de la latence (ex: "45.2 ms" -> 45.2)
+            import re
+            match = re.search(r'([\d.]+)', latence_text)
+            if match:
+                latency_ms = float(match.group(1))
+                
+                if latency_ms >= 500:
+                    return '#f97e7e'  # Rouge - HS
+                elif latency_ms > 200:
+                    return '#ffb845'  # Orange clair - latence élevée
+                elif latency_ms >= 100:
+                    return '#fffd6a'  # Jaune clair - latence moyenne
+                else:
+                    return '#baf595'  # Vert clair - bonne latence
+            
+            return '#baf595'  # Par défaut vert
+        except Exception:
+            return '#baf595'  # Par défaut vert en cas d'erreur
     
     def _get_hosts_count(self):
         """Compte le nombre d'hôtes"""
