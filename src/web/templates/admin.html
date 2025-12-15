@@ -254,6 +254,54 @@
             color: #991b1b;
         }
 
+        .latency-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 70px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .latency-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .latency-badge.excellent {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .latency-badge.good {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .latency-badge.warning {
+            background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+            color: #9a3412;
+            border: 1px solid #fb923c;
+        }
+
+        .latency-badge.critical {
+            background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+
+        .latency-badge.offline {
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            color: #991b1b;
+            border: 1px solid #9ca3af;
+            font-weight: 700;
+        }
+
         .host-actions {
             display: flex;
             gap: 8px;
@@ -1386,7 +1434,9 @@
                     </td>
                     <td>${escapeHtml(host.mac) || '-'}</td>
                     <td>${escapeHtml(host.port) || '-'}</td>
-                    <td style="background-color: ${host.latency_color || '#baf595'}; font-weight: bold; text-align: center;">${escapeHtml(host.latence) || '-'}</td>
+                    <td style="text-align: center;">
+                        <span class="latency-badge ${getLatencyClass(host.latence)}">${escapeHtml(host.latence) || '-'}</span>
+                    </td>
                     <td>${escapeHtml(host.temp) || '-'}</td>
                     <td>
                         <span class="host-status ${host.status}">
@@ -1751,6 +1801,28 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function getLatencyClass(latence) {
+            if (!latence || latence === '-') return 'offline';
+            
+            const latenceStr = String(latence).toLowerCase();
+            
+            // Si c'est HS ou contient "hs"
+            if (latenceStr === 'hs' || latenceStr.includes('hs')) {
+                return 'offline';
+            }
+            
+            // Extraire la valeur numérique
+            const match = latenceStr.match(/[\d.]+/);
+            if (!match) return 'good';
+            
+            const ms = parseFloat(match[0]);
+            
+            if (ms < 20) return 'excellent';      // Vert - Excellent (< 20ms)
+            if (ms < 50) return 'good';           // Jaune clair - Bon (20-50ms)
+            if (ms < 100) return 'warning';       // Orange - Attention (50-100ms)
+            return 'critical';                     // Rouge - Critique (> 100ms)
         }
 
         // ==================== Auto-refresh ====================
