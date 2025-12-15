@@ -256,22 +256,13 @@ class AlertManager(QObject):
             for cle in erase:
                 var.liste_mail.pop(cle, None)
             
-            # Envoyer les alertes avec les nouveaux templates
-            for host_down in hosts_down:
+            # Envoyer UN SEUL mail groupé si des alertes existent
+            if hosts_down or hosts_up:
+                logger.info(f"[MAIL] Envoi d'un mail groupé: {len(hosts_down)} HS, {len(hosts_up)} revenu(s)")
                 threading.Thread(
-                    target=email_sender.send_alert_email,
-                    args=(host_down, 'down')
+                    target=email_sender.send_grouped_alert_email,
+                    args=(hosts_down, hosts_up)
                 ).start()
-            
-            for host_up in hosts_up:
-                logger.info(f"[MAIL] Envoi notification retour pour {host_up.get('ip')} ({host_up.get('nom')})")
-                threading.Thread(
-                    target=email_sender.send_alert_email,
-                    args=(host_up, 'up')
-                ).start()
-            
-            if hosts_up:
-                logger.info(f"[MAIL] {len(hosts_up)} notification(s) de retour lancée(s)")
                 
         except Exception as e:
             logger.error(f"Erreur process mail: {e}", exc_info=True)
