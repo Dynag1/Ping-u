@@ -5,7 +5,7 @@
 import threading
 from src.utils.colors import AppColors
 
-version = "99.02.08"
+version = "99.02.09"
 nom = "Ping ü"
 nom_logiciel = "PingU"
 site = 'http://prog.dynag.co'
