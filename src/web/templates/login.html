@@ -133,6 +133,23 @@
             margin-bottom: 30px;
             font-size: 60px;
         }
+        
+        .default-hint {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .default-hint code {
+            background: #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
 
         /* Language selector */
         .lang-selector {
@@ -181,8 +198,8 @@
     <div class="login-container">
         <div class="logo">🔐</div>
         <div class="login-header">
-            <h1 data-i18n="admin_title">Administration</h1>
-            <p data-i18n="login_subtitle">Connectez-vous pour accéder au panneau d'administration</p>
+            <h1 data-i18n="login_title">Connexion</h1>
+            <p data-i18n="login_subtitle">Connectez-vous pour accéder à Ping ü</p>
         </div>
 
         <div class="error-message" id="error-message" data-i18n="invalid_credentials">
@@ -202,6 +219,11 @@
 
             <button type="submit" class="btn-login" data-i18n="login">Se connecter</button>
         </form>
+        
+        <div class="default-hint">
+            <span data-i18n="default_accounts">Comptes par défaut</span>: 
+            <code>admin/a</code> <span data-i18n="or">ou</span> <code>user/a</code>
+        </div>
     </div>
 
     <script>
@@ -209,23 +231,27 @@
         const translations = {
             fr: {
                 page_title: "Connexion - Ping ü",
-                admin_title: "Administration",
-                login_subtitle: "Connectez-vous pour accéder au panneau d'administration",
+                login_title: "Connexion",
+                login_subtitle: "Connectez-vous pour accéder à Ping ü",
                 username: "Nom d'utilisateur",
                 password: "Mot de passe",
                 login: "Se connecter",
                 invalid_credentials: "Identifiants incorrects",
-                connection_error: "Erreur de connexion au serveur"
+                connection_error: "Erreur de connexion au serveur",
+                default_accounts: "Comptes par défaut",
+                or: "ou"
             },
             en: {
                 page_title: "Login - Ping ü",
-                admin_title: "Administration",
-                login_subtitle: "Log in to access the administration panel",
+                login_title: "Login",
+                login_subtitle: "Log in to access Ping ü",
                 username: "Username",
                 password: "Password",
                 login: "Log in",
                 invalid_credentials: "Invalid credentials",
-                connection_error: "Server connection error"
+                connection_error: "Server connection error",
+                default_accounts: "Default accounts",
+                or: "or"
             }
         };
 
@@ -305,8 +331,12 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    // Redirection vers la page admin
-                    window.location.href = '/admin';
+                    // Redirection selon le rôle
+                    if (result.role === 'admin') {
+                        window.location.href = '/admin';
+                    } else {
+                        window.location.href = '/';
+                    }
                 } else {
                     errorMessage.textContent = t('invalid_credentials');
                     errorMessage.classList.add('show');

@@ -361,8 +361,10 @@ def get_email_template_grouped_alert(hosts_down, hosts_up):
     if hosts_down:
         down_rows = ""
         for host in hosts_down:
+            site_display = f"<span style='background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;'>{host.get('site', '')}</span>" if host.get('site') else ""
             down_rows += f"""
             <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 12px 15px; color: #6c757d; font-size: 12px;">{host.get('site', '-')}</td>
                 <td style="padding: 12px 15px; color: #212529; font-weight: 500;">{host.get('nom', 'Inconnu')}</td>
                 <td style="padding: 12px 15px; color: #495057; font-family: 'Courier New', monospace;">{host.get('ip', 'N/A')}</td>
                 <td style="padding: 12px 15px; color: #6c757d; font-family: 'Courier New', monospace; font-size: 12px;">{host.get('mac', 'N/A')}</td>
@@ -379,6 +381,7 @@ def get_email_template_grouped_alert(hosts_down, hosts_up):
                 <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #fff5f5; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background-color: #e74c3c; color: #ffffff;">
+                            <th style="padding: 10px 15px; text-align: left; font-weight: 600; font-size: 13px;">Site</th>
                             <th style="padding: 10px 15px; text-align: left; font-weight: 600; font-size: 13px;">Nom</th>
                             <th style="padding: 10px 15px; text-align: left; font-weight: 600; font-size: 13px;">IP</th>
                             <th style="padding: 10px 15px; text-align: left; font-weight: 600; font-size: 13px;">MAC</th>
@@ -397,6 +400,7 @@ def get_email_template_grouped_alert(hosts_down, hosts_up):
         for host in hosts_up:
             up_rows += f"""
             <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 12px 15px; color: #6c757d; font-size: 12px;">{host.get('site', '-')}</td>
                 <td style="padding: 12px 15px; color: #212529; font-weight: 500;">{host.get('nom', 'Inconnu')}</td>
                 <td style="padding: 12px 15px; color: #495057; font-family: 'Courier New', monospace;">{host.get('ip', 'N/A')}</td>
                 <td style="padding: 12px 15px; color: #27ae60; font-weight: 500;">{host.get('latence', 'OK')}</td>
@@ -413,6 +417,7 @@ def get_email_template_grouped_alert(hosts_down, hosts_up):
                 <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f0fff4; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background-color: #27ae60; color: #ffffff;">
+                            <th style="padding: 10px 15px; text-align: left; font-weight: 600; font-size: 13px;">Site</th>
                             <th style="padding: 10px 15px; text-align: left; font-weight: 600; font-size: 13px;">Nom</th>
                             <th style="padding: 10px 15px; text-align: left; font-weight: 600; font-size: 13px;">IP</th>
                             <th style="padding: 10px 15px; text-align: left; font-weight: 600; font-size: 13px;">Latence</th>
@@ -566,7 +571,8 @@ def send_grouped_alert_email(hosts_down, hosts_up):
             text_body += f"❌ {len(hosts_down)} HÔTE(S) HORS LIGNE :\n"
             text_body += f"{'='*50}\n"
             for host in hosts_down:
-                text_body += f"  • {host.get('nom', 'N/A')} - {host.get('ip', 'N/A')} (MAC: {host.get('mac', 'N/A')})\n"
+                site_prefix = f"[{host.get('site')}] " if host.get('site') else ""
+                text_body += f"  • {site_prefix}{host.get('nom', 'N/A')} - {host.get('ip', 'N/A')} (MAC: {host.get('mac', 'N/A')})\n"
             text_body += "\n"
         
         if hosts_up:
@@ -574,7 +580,8 @@ def send_grouped_alert_email(hosts_down, hosts_up):
             text_body += f"✅ {len(hosts_up)} HÔTE(S) DE RETOUR :\n"
             text_body += f"{'='*50}\n"
             for host in hosts_up:
-                text_body += f"  • {host.get('nom', 'N/A')} - {host.get('ip', 'N/A')} ({host.get('latence', 'OK')})\n"
+                site_prefix = f"[{host.get('site')}] " if host.get('site') else ""
+                text_body += f"  • {site_prefix}{host.get('nom', 'N/A')} - {host.get('ip', 'N/A')} ({host.get('latence', 'OK')})\n"
         
         text_body += "\nCe message a été envoyé automatiquement par Ping ü."
         

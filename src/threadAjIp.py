@@ -30,7 +30,7 @@ def worker(q, thread_no):
         #design.logs("fct_ping - " + str(e))
 
 
-def threadIp(self, comm, model, ip, tout, i, hote, port):
+def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
     # Vérifie si l'IP existe déjà dans le modèle
     ipexist = False
     for row in range(model.rowCount()):
@@ -47,13 +47,13 @@ def threadIp(self, comm, model, ip, tout, i, hote, port):
         nom = ""
         mac = ""
         port_val = port
-        extra = ""
+        extra = site  # Le site est passé via extra
         is_ok = (result == "OK")
         
         # Normaliser le type de scan (accepter français et anglais de l'API web)
         tout_lower = str(tout).lower()
         is_all = (tout == self.tr("Tout") or tout_lower == "all")
-        is_site = (tout == self.tr("Site") or tout_lower == "site")
+        is_site_mode = (tout == self.tr("Site") or tout_lower == "site")
         
         if is_all:
             # Mode "Tous" : Ajoute TOUS les hôtes (UP et DOWN)
@@ -73,12 +73,12 @@ def threadIp(self, comm, model, ip, tout, i, hote, port):
                 nom = ip
                 port_val = ""
                 mac = ""
-            # Ajoute la ligne via le signal (UP ou DOWN)
-            comm.addRow.emit(i, ip, nom, mac, str(port_val), extra, is_ok)
+            # Ajoute la ligne via le signal (UP ou DOWN) avec le site
+            comm.addRow.emit(i, ip, nom, mac, str(port_val), site, is_ok)
             var.u += 1
-        elif is_site:
-            # Mode "Site" : Ajoute sans ping
-            comm.addRow.emit(i, ip, ip, "", "", "", False)
+        elif is_site_mode:
+            # Mode "Site" : Ajoute sans ping avec le site
+            comm.addRow.emit(i, ip, ip, "", "", site, False)
             var.u += 1
         else:
             # Mode "Alive" : Ajoute UNIQUEMENT les hôtes UP
@@ -92,7 +92,7 @@ def threadIp(self, comm, model, ip, tout, i, hote, port):
                 except Exception:
                     mac = ""
                 port_val = fct_ip.check_port(ip, port)
-                comm.addRow.emit(i, ip, nom, mac, str(port_val), extra, True)
+                comm.addRow.emit(i, ip, nom, mac, str(port_val), site, True)
                 var.u += 1
     var.thread_ferme += 1
     thread_tot = ((var.thread_ouvert - (var.thread_ouvert - var.thread_ferme)) / var.thread_ouvert) *100
@@ -103,7 +103,7 @@ def threadIp(self, comm, model, ip, tout, i, hote, port):
 ###########################################################################################
 #####   Préparation de l'ajout      												  #####
 ###########################################################################################
-def main(self, comm, model,ip, hote, tout, port, mac):
+def main(self, comm, model, ip, hote, tout, port, mac, site=""):
     nbrworker = multiprocessing.cpu_count()
     num_worker_threads = nbrworker
     q = queue.Queue()
@@ -148,14 +148,14 @@ def main(self, comm, model,ip, hote, tout, port, mac):
                 ip2 = ip2 + str(ip4) + "." + str(u)
                 u = u + 1
             t = i
-            q.put(threading.Thread(target=threadIp, args=(self, comm, model,ip2, tout, i, hote, port)).start())
+            q.put(threading.Thread(target=threadIp, args=(self, comm, model, ip2, tout, i, hote, port, site)).start())
         
         # Scan terminé - émettre la notification
         if hasattr(self, 'web_server') and self.web_server:
             self.web_server.emit_scan_complete(hote)
     else:
         ip2=ip
-        q.put(threading.Thread(target=threadIp, args=(self, comm, model,ip2, tout, i, hote, port)).start())
+        q.put(threading.Thread(target=threadIp, args=(self, comm, model, ip2, tout, i, hote, port, site)).start())
         
         # Scan terminé - émettre la notification
         if hasattr(self, 'web_server') and self.web_server:

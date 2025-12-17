@@ -633,17 +633,17 @@ class MainWindow(QMainWindow):
         self.ui.progressBar.show()
         threading.Thread(target=threadAjIp.main, args=(self, self.comm, self.treeIpModel, ip,nbr_hote, alive, port, "")).start()
 
-    def on_add_row(self, i, ip, nom, mac, port, extra, is_ok):
+    def on_add_row(self, i, ip, nom, mac, port, site, is_ok):
         items = [
             QStandardItem(i),         # 0: Id
             QStandardItem(ip),        # 1: IP
             QStandardItem(nom),       # 2: Nom
             QStandardItem(mac),       # 3: Mac
             QStandardItem(str(port)), # 4: Port
-            QStandardItem(extra),     # 5: Latence
+            QStandardItem(""),        # 5: Latence (sera remplie par le ping)
             QStandardItem(""),        # 6: Temp (sera remplie par SNMP)
             QStandardItem(""),        # 7: Suivi
-            QStandardItem(""),        # 8: Comm
+            QStandardItem(site),      # 8: Site
             QStandardItem("")         # 9: Excl
         ]
         # Rendre certaines colonnes non éditables
@@ -989,6 +989,13 @@ def run_headless_mode():
     except Exception as e:
         logger.warning(f"Erreur chargement paramètres: {e}")
     
+    # Charger les sites
+    try:
+        db.load_sites()
+        logger.info(f"[HEADLESS] Sites chargés: {var.sites_list}")
+    except Exception as e:
+        logger.warning(f"Erreur chargement sites: {e}")
+    
     # Créer une application Qt minimale (nécessaire pour QStandardItemModel)
     if GUI_AVAILABLE:
         app = QApplication.instance()
@@ -1122,7 +1129,7 @@ def run_headless_mode():
                 except Exception as e:
                     logger.error(f"Erreur envoi notification web: {e}")
             
-        def on_add_row(self, i, ip, nom, mac, port, extra, is_ok):
+        def on_add_row(self, i, ip, nom, mac, port, site, is_ok):
             """Ajoute une ligne au modèle (appelé par le thread de scan)"""
             if GUI_AVAILABLE:
                 from PySide6.QtGui import QStandardItem
@@ -1153,14 +1160,15 @@ def run_headless_mode():
                 QStandardItem(nom),       # 2: Nom
                 QStandardItem(mac),       # 3: Mac
                 QStandardItem(str(port)), # 4: Port
-                QStandardItem(extra),     # 5: Latence
+                QStandardItem(""),        # 5: Latence (sera remplie par le ping)
                 QStandardItem(""),        # 6: Temp
                 QStandardItem(""),        # 7: Suivi
-                QStandardItem(""),        # 8: Comm
+                QStandardItem(site),      # 8: Site
                 QStandardItem("")         # 9: Excl
             ]
             self.treeIpModel.appendRow(items)
-            logger.info(f"Hôte ajouté: {ip} ({nom})")
+            site_info = f" [Site: {site}]" if site else ""
+            logger.info(f"Hôte ajouté: {ip} ({nom}){site_info}")
             # Diffuser la mise à jour aux clients web
             if self.web_server:
                 self.web_server.broadcast_update()

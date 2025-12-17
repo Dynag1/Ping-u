@@ -211,18 +211,22 @@ class AlertManager(QObject):
                     # Récupérer les infos de l'hôte depuis le modèle
                     mac = ""
                     latence = "HS"
+                    site = ""
                     for row in range(self.model.rowCount()):
                         item_ip = self.model.item(row, 1)
                         if item_ip and item_ip.text() == key:
                             mac_item = self.model.item(row, 3)
+                            site_item = self.model.item(row, 8)
                             mac = mac_item.text() if mac_item else ""
+                            site = site_item.text() if site_item else ""
                             break
                     
                     host_info = {
                         'ip': key,
                         'nom': nom,
                         'mac': mac,
-                        'latence': latence
+                        'latence': latence,
+                        'site': site
                     }
                     hosts_down.append(host_info)
                     var.liste_mail[key] = 10
@@ -235,20 +239,24 @@ class AlertManager(QObject):
                     # Récupérer les infos de l'hôte
                     mac = ""
                     latence = "OK"
+                    site = ""
                     for row in range(self.model.rowCount()):
                         item_ip = self.model.item(row, 1)
                         if item_ip and item_ip.text() == key:
                             mac_item = self.model.item(row, 3)
                             latence_item = self.model.item(row, 5)
+                            site_item = self.model.item(row, 8)
                             mac = mac_item.text() if mac_item else ""
                             latence = latence_item.text() if latence_item else "OK"
+                            site = site_item.text() if site_item else ""
                             break
                     
                     host_info = {
                         'ip': key,
                         'nom': nom,
                         'mac': mac,
-                        'latence': latence
+                        'latence': latence,
+                        'site': site
                     }
                     hosts_up.append(host_info)
                     erase.append(key)
@@ -281,11 +289,29 @@ class AlertManager(QObject):
                 if int(value) == int(var.nbrHs):
                     logger.info(f"Alerte Telegram: {key} HS")
                     nom = db.lireNom(key, self.model) or "Inconnu"
-                    ip_hs_text += f"{nom} : {key}\n"
+                    # Récupérer le site de l'hôte
+                    site = ""
+                    for row in range(self.model.rowCount()):
+                        item_ip = self.model.item(row, 1)
+                        if item_ip and item_ip.text() == key:
+                            site_item = self.model.item(row, 8)
+                            site = site_item.text() if site_item else ""
+                            break
+                    site_prefix = f"[{site}] " if site else ""
+                    ip_hs_text += f"{site_prefix}{nom} : {key}\n"
                     var.liste_telegram[key] = 10
                 elif int(value) == 20:
                     nom = db.lireNom(key, self.model) or "Inconnu"
-                    ip_ok_text += f"{nom} : {key}\n"
+                    # Récupérer le site de l'hôte
+                    site = ""
+                    for row in range(self.model.rowCount()):
+                        item_ip = self.model.item(row, 1)
+                        if item_ip and item_ip.text() == key:
+                            site_item = self.model.item(row, 8)
+                            site = site_item.text() if site_item else ""
+                            break
+                    site_prefix = f"[{site}] " if site else ""
+                    ip_ok_text += f"{site_prefix}{nom} : {key}\n"
                     erase.append(key)
             
             for cle in erase:

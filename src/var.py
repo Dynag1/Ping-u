@@ -54,3 +54,8 @@ bg_frame_haut = AppColors.BG_FRAME_HAUT
 bg_frame_mid = AppColors.BG_FRAME_MID
 bg_frame_droit = AppColors.BG_FRAME_DROIT
 bg_but = AppColors.BG_BUT
+
+# Gestion multi-sites
+sites_list = ["Site 1"]  # Liste des sites disponibles
+sites_actifs = []  # Sites à surveiller (vide = tous)
+site_filter = []  # Sites à afficher (vide = tous)

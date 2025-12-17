@@ -136,9 +136,13 @@ class WebServer(QObject):
         """Configuration des routes Flask"""
         
         @self.app.route('/')
+        @WebAuth.any_login_required
         def index():
             try:
-                return render_template('index.html')
+                # Passer le rôle au template pour afficher le lien admin si nécessaire
+                is_admin = session.get('role') == 'admin'
+                username = session.get('username', '')
+                return render_template('index.html', is_admin=is_admin, username=username)
             except Exception as e:
                 logger.error(f"Erreur lors du rendu du template: {e}", exc_info=True)
                 # Retourner une réponse JSON en cas d'erreur pour éviter write() before start_response
@@ -167,9 +171,12 @@ class WebServer(QObject):
         @self.app.route('/login', methods=['GET'])
         def login():
             try:
-                # Si déjà connecté, rediriger vers admin
+                # Si déjà connecté, rediriger vers la page appropriée
                 if session.get('logged_in'):
-                    return redirect(url_for('admin'))
+                    if session.get('role') == 'admin':
+                        return redirect(url_for('admin'))
+                    else:
+                        return redirect(url_for('index'))
                 return render_template('login.html')
             except Exception as e:
                 logger.error(f"Erreur lors du rendu du template login: {e}", exc_info=True)
@@ -182,11 +189,14 @@ class WebServer(QObject):
                 username = data.get('username')
                 password = data.get('password')
                 
-                if web_auth.verify_credentials(username, password):
+                success, role = web_auth.verify_credentials(username, password)
+                if success:
                     session['logged_in'] = True
                     session['username'] = username
-                    logger.info(f"Connexion réussie: {username}")
-                    return jsonify({'success': True, 'message': 'Connexion réussie'})
+                    session['role'] = role
+                    logger.info(f"Connexion réussie: {username} (role: {role})")
+                    # Indiquer si c'est un admin pour la redirection côté client
+                    return jsonify({'success': True, 'message': 'Connexion réussie', 'role': role})
                 else:
                     return jsonify({'success': False, 'error': 'Identifiants incorrects'}), 401
             except Exception as e:
@@ -203,6 +213,17 @@ class WebServer(QObject):
             except Exception as e:
                 logger.error(f"Erreur logout: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/user_info')
+        @WebAuth.any_login_required
+        def user_info():
+            """Retourne les informations de l'utilisateur connecté"""
+            return jsonify({
+                'success': True,
+                'username': session.get('username', ''),
+                'role': session.get('role', 'user'),
+                'is_admin': session.get('role') == 'admin'
+            })
         
         @self.app.route('/admin')
         @WebAuth.login_required
@@ -246,6 +267,7 @@ class WebServer(QObject):
                 hosts = data.get('hosts', 1)
                 port = data.get('port', '80')
                 scan_type = data.get('scan_type', 'alive')
+                site = data.get('site', '')  # Site à assigner aux hôtes scannés
                 
                 # Lancer le scan dans un thread séparé
                 import threading
@@ -255,11 +277,12 @@ class WebServer(QObject):
                     target=threadAjIp.main,
                     args=(self.main_window, self.main_window.comm, 
                           self.main_window.treeIpModel, ip, hosts, 
-                          scan_type.capitalize(), port, "")
+                          scan_type.capitalize(), port, "", site)
                 )
                 thread.start()
                 
-                logger.info(f"Scan d'hôtes démarré: {ip}, {hosts} hôtes, type: {scan_type}")
+                site_info = f" (site: {site})" if site else ""
+                logger.info(f"Scan d'hôtes démarré: {ip}, {hosts} hôtes, type: {scan_type}{site_info}")
                 return jsonify({'success': True, 'message': f'Scan de {hosts} hôte(s) démarré'})
             except Exception as e:
                 logger.error(f"Erreur ajout hôtes: {e}", exc_info=True)
@@ -1044,6 +1067,193 @@ Ping ü - Monitoring Réseau
             except Exception as e:
                 logger.error(f"Erreur test email recap: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
+        
+        # ==================== Gestion Multi-Sites ====================
+        
+        @self.app.route('/api/get_sites')
+        @WebAuth.login_required
+        def get_sites():
+            """Récupère la liste des sites et leur état"""
+            try:
+                from src import var
+                return jsonify({
+                    'success': True,
+                    'sites': var.sites_list,
+                    'sites_actifs': var.sites_actifs,
+                    'site_filter': var.site_filter
+                })
+            except Exception as e:
+                logger.error(f"Erreur récupération sites: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/add_site', methods=['POST'])
+        @WebAuth.login_required
+        def add_site():
+            """Ajoute un nouveau site"""
+            try:
+                data = request.get_json()
+                site_name = data.get('name', '').strip()
+                
+                if not site_name:
+                    return jsonify({'success': False, 'error': 'Nom de site requis'}), 400
+                
+                from src import var, db
+                if site_name in var.sites_list:
+                    return jsonify({'success': False, 'error': 'Ce site existe déjà'}), 400
+                
+                var.sites_list.append(site_name)
+                db.save_sites()  # Sauvegarder
+                logger.info(f"Site ajouté: {site_name}")
+                return jsonify({'success': True, 'message': f'Site "{site_name}" ajouté', 'sites': var.sites_list})
+            except Exception as e:
+                logger.error(f"Erreur ajout site: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/delete_site', methods=['POST'])
+        @WebAuth.login_required
+        def delete_site():
+            """Supprime un site"""
+            try:
+                data = request.get_json()
+                site_name = data.get('name', '').strip()
+                
+                from src import var, db
+                if site_name not in var.sites_list:
+                    return jsonify({'success': False, 'error': 'Site non trouvé'}), 404
+                
+                var.sites_list.remove(site_name)
+                
+                # Retirer des listes actives aussi
+                if site_name in var.sites_actifs:
+                    var.sites_actifs.remove(site_name)
+                if site_name in var.site_filter:
+                    var.site_filter.remove(site_name)
+                
+                db.save_sites()  # Sauvegarder
+                logger.info(f"Site supprimé: {site_name}")
+                return jsonify({'success': True, 'message': f'Site "{site_name}" supprimé', 'sites': var.sites_list})
+            except Exception as e:
+                logger.error(f"Erreur suppression site: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/set_sites_actifs', methods=['POST'])
+        @WebAuth.login_required
+        def set_sites_actifs():
+            """Définit les sites à surveiller (vide = tous)"""
+            try:
+                data = request.get_json()
+                sites = data.get('sites', [])
+                
+                from src import var, db
+                var.sites_actifs = sites
+                db.save_sites()  # Sauvegarder
+                
+                logger.info(f"Sites actifs définis: {sites if sites else 'Tous'}")
+                return jsonify({'success': True, 'message': 'Sites de surveillance mis à jour', 'sites_actifs': var.sites_actifs})
+            except Exception as e:
+                logger.error(f"Erreur définition sites actifs: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/set_site_filter', methods=['POST'])
+        @WebAuth.login_required
+        def set_site_filter():
+            """Définit les sites à afficher (vide = tous)"""
+            try:
+                data = request.get_json()
+                sites = data.get('sites', [])
+                
+                from src import var, db
+                var.site_filter = sites
+                db.save_sites()  # Sauvegarder
+                
+                logger.info(f"Filtre d'affichage défini: {sites if sites else 'Tous'}")
+                self.broadcast_update()
+                return jsonify({'success': True, 'message': 'Filtre mis à jour', 'site_filter': var.site_filter})
+            except Exception as e:
+                logger.error(f"Erreur définition filtre sites: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/set_host_site', methods=['POST'])
+        @WebAuth.login_required
+        def set_host_site():
+            """Assigne un site à un hôte"""
+            try:
+                data = request.get_json()
+                ip = data.get('ip')
+                site_name = data.get('site', '')
+                
+                # Import QStandardItem selon le mode
+                if GUI_AVAILABLE:
+                    from PySide6.QtGui import QStandardItem
+                else:
+                    class QStandardItem:
+                        def __init__(self, text=""): 
+                            self._text = str(text) if text else ""
+                        def text(self): return self._text
+                        def setText(self, text): self._text = str(text)
+                
+                model = self.main_window.treeIpModel
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)
+                    if item_ip and item_ip.text() == ip:
+                        site_item = model.item(row, 8)  # Colonne Comm = Site
+                        if not site_item:
+                            site_item = QStandardItem(site_name)
+                            model.setItem(row, 8, site_item)
+                        else:
+                            site_item.setText(site_name)
+                        
+                        logger.info(f"Site de l'hôte {ip} défini sur '{site_name}'")
+                        self.broadcast_update()
+                        return jsonify({'success': True, 'message': f'Site de {ip} mis à jour'})
+                
+                return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
+            except Exception as e:
+                logger.error(f"Erreur assignation site hôte: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/set_multiple_hosts_site', methods=['POST'])
+        @WebAuth.login_required
+        def set_multiple_hosts_site():
+            """Assigne un site à plusieurs hôtes"""
+            try:
+                data = request.get_json()
+                ips = data.get('ips', [])
+                site_name = data.get('site', '')
+                
+                if not ips:
+                    return jsonify({'success': False, 'error': 'Aucune IP fournie'}), 400
+                
+                # Import QStandardItem selon le mode
+                if GUI_AVAILABLE:
+                    from PySide6.QtGui import QStandardItem
+                else:
+                    class QStandardItem:
+                        def __init__(self, text=""): 
+                            self._text = str(text) if text else ""
+                        def text(self): return self._text
+                        def setText(self, text): self._text = str(text)
+                
+                model = self.main_window.treeIpModel
+                updated_count = 0
+                
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)
+                    if item_ip and item_ip.text() in ips:
+                        site_item = model.item(row, 8)  # Colonne Comm = Site
+                        if not site_item:
+                            site_item = QStandardItem(site_name)
+                            model.setItem(row, 8, site_item)
+                        else:
+                            site_item.setText(site_name)
+                        updated_count += 1
+                
+                logger.info(f"{updated_count} hôte(s) assigné(s) au site '{site_name}'")
+                self.broadcast_update()
+                return jsonify({'success': True, 'message': f'{updated_count} hôte(s) mis à jour'})
+            except Exception as e:
+                logger.error(f"Erreur assignation multiple sites: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
     
     def _setup_socketio(self):
         """Configuration des événements Socket.IO"""
@@ -1079,10 +1289,11 @@ Ping ü - Monitoring Réseau
             if 'write() before start_response' not in error_str:
                 logger.debug(f"Erreur Socket.IO (ignorée): {error_str}")
     
-    def _get_hosts_data(self):
-        """Extrait les données du treeview"""
+    def _get_hosts_data(self, apply_filter=True):
+        """Extrait les données du treeview avec filtrage optionnel par site"""
         hosts = []
         try:
+            from src import var
             model = self.main_window.treeIpModel
             row_count = model.rowCount()
             
@@ -1100,6 +1311,15 @@ Ping ü - Monitoring Réseau
                     if not ip:
                         continue
                     
+                    # Récupérer le site de l'hôte (colonne Comm = colonne 8)
+                    site = model.item(row, 8).text() if model.item(row, 8) else ''
+                    
+                    # Filtrage par site si activé
+                    if apply_filter and var.site_filter:
+                        # Si un filtre est défini et que l'hôte n'est pas dans les sites filtrés
+                        if site not in var.site_filter:
+                            continue
+                    
                     latence_text = model.item(row, 5).text() if model.item(row, 5) else 'N/A'
                     
                     # Calculer la couleur de latence
@@ -1115,7 +1335,7 @@ Ping ü - Monitoring Réseau
                         'latency_color': latency_color,
                         'temp': model.item(row, 6).text() if model.item(row, 6) else '-',
                         'suivi': model.item(row, 7).text() if model.item(row, 7) else '',
-                        'comm': model.item(row, 8).text() if model.item(row, 8) else '',
+                        'site': site,  # Renommé de 'comm' à 'site'
                         'excl': model.item(row, 9).text() if model.item(row, 9) else '',
                         'status': self._get_row_status(model, row)
                     }

@@ -28,6 +28,9 @@ class SettingsController:
                 if len(variable) > 8:
                     var.tempSeuil = variable[8]
             
+            # Charger les sites
+            db.load_sites()
+            
             db.nom_site()
             self.ui.labSite.setText(var.nom_site)
             self.ui.spinDelais.setValue(int(var.delais))

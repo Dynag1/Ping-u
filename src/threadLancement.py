@@ -94,20 +94,36 @@ def mail(self, model):
         mess = 0
         message = self.tr("""\
                 Bonjour,<br><br>
-                <table border=1><tr><td width='50%' align=center>Nom</td><td width='50%' align=center>IP</td></tr>
+                <table border=1><tr><td width='30%' align=center>Site</td><td width='35%' align=center>Nom</td><td width='35%' align=center>IP</td></tr>
                 """)
         sujet = self.tr("Alerte sur le site ") + var.nom_site
         time.sleep(1)
         for key1, value1 in var.liste_mail.items():
             if int(value1) == int(var.nbrHs):
                 nom = db.lireNom(key1, model)
-                p1 = "<tr><td align=center>" + nom + "</td><td bgcolor=" + var.couleur_noir + " align=center>" + key1 + "</td></tr>"
+                # Récupérer le site de l'hôte
+                site = ""
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)
+                    if item_ip and item_ip.text() == key1:
+                        site_item = model.item(row, 8)
+                        site = site_item.text() if site_item else ""
+                        break
+                p1 = "<tr><td align=center>" + site + "</td><td align=center>" + nom + "</td><td bgcolor=" + var.couleur_noir + " align=center>" + key1 + "</td></tr>"
                 ip_hs1 = ip_hs1 + p1
                 var.liste_mail[key1] = 10
 
             elif value1 == 20:
                 nom = db.lireNom(key1, model)
-                p1 = "<tr><td align=center>" + nom + "</td><td bgcolor=" + var.couleur_vert + " align=center>" + key1 + "</td></tr>"
+                # Récupérer le site de l'hôte
+                site = ""
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)
+                    if item_ip and item_ip.text() == key1:
+                        site_item = model.item(row, 8)
+                        site = site_item.text() if site_item else ""
+                        break
+                p1 = "<tr><td align=center>" + site + "</td><td align=center>" + nom + "</td><td bgcolor=" + var.couleur_vert + " align=center>" + key1 + "</td></tr>"
                 ip_ok1 = ip_ok1 + p1
                 erase = erase + (str(key1),)
         for cle in erase:
@@ -150,13 +166,31 @@ def telegram(self, model):
         for key1, value1 in var.liste_telegram.items():
             if int(value1) == int(var.nbrHs):
                 nom = db.lireNom(key1, model)
-                p1 = "" + nom + " : " + key1 + "\n"
+                # Récupérer le site de l'hôte
+                site = ""
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)
+                    if item_ip and item_ip.text() == key1:
+                        site_item = model.item(row, 8)
+                        site = site_item.text() if site_item else ""
+                        break
+                site_prefix = f"[{site}] " if site else ""
+                p1 = f"{site_prefix}{nom} : {key1}\n"
                 ip_hs1 = ip_hs1 + p1
                 var.liste_telegram[key1] = 10
 
             elif value1 == 20:
                 nom = db.lireNom(key1, model)
-                p1 = "" + nom + " : " + key1 + "\n"
+                # Récupérer le site de l'hôte
+                site = ""
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)
+                    if item_ip and item_ip.text() == key1:
+                        site_item = model.item(row, 8)
+                        site = site_item.text() if site_item else ""
+                        break
+                site_prefix = f"[{site}] " if site else ""
+                p1 = f"{site_prefix}{nom} : {key1}\n"
                 ip_ok1 = ip_ok1 + p1
                 erase = erase + (str(key1),)
         for cle in erase:

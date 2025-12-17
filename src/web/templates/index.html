@@ -148,6 +148,68 @@
         .lang-selector select:focus {
             outline: none;
         }
+        
+        /* User controls */
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-info-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .user-icon {
+            font-size: 18px;
+        }
+        
+        .user-name {
+            color: #1f2937;
+        }
+        
+        .admin-link {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .logout-btn {
+            background: #fee2e2;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .logout-btn:hover {
+            background: #fecaca;
+            transform: scale(1.1);
+        }
 
         .controls-row {
             display: flex;
@@ -392,12 +454,27 @@
                 <h1>
                     🌐 <span data-i18n="title">Monitoring Réseau - Ping ü</span>
                 </h1>
-                <div class="lang-selector">
-                    <label>🌍</label>
-                    <select id="lang-select" onchange="changeLanguage(this.value)">
-                        <option value="fr">Français</option>
-                        <option value="en">English</option>
-                    </select>
+                <div class="user-controls">
+                    <!-- Info utilisateur et boutons -->
+                    <div class="user-info-badge" id="user-info-badge">
+                        <span class="user-icon">👤</span>
+                        <span class="user-name" id="current-username">{{ username or '' }}</span>
+                        {% if is_admin %}
+                        <a href="/admin" class="admin-link" title="Administration">
+                            ⚙️ <span data-i18n="admin">Admin</span>
+                        </a>
+                        {% endif %}
+                        <button class="logout-btn" onclick="logout()" title="Déconnexion">
+                            🚪
+                        </button>
+                    </div>
+                    <div class="lang-selector">
+                        <label>🌍</label>
+                        <select id="lang-select" onchange="changeLanguage(this.value)">
+                            <option value="fr">Français</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="badges-container" style="margin-bottom: 15px;">
@@ -420,6 +497,121 @@
                     <option value="name-asc" data-i18n="sort_name_asc">Nom (A-Z)</option>
                     <option value="name-desc" data-i18n="sort_name_desc">Nom (Z-A)</option>
                 </select>
+                
+                <!-- Filtre par site - Design Premium -->
+                <div class="site-filter-premium">
+                    <div class="site-filter-icon">🏢</div>
+                    <div class="site-filter-content">
+                        <span class="site-filter-label" data-i18n="filter_site">Filtrer par site</span>
+                        <select id="site-filter-select" multiple onchange="applySiteFilterLocal()" class="site-filter-select">
+                        </select>
+                    </div>
+                    <button onclick="clearSiteFilterLocal()" class="site-filter-reset-btn" title="Afficher tous les sites">
+                        <span data-i18n="all_sites">Tous</span>
+                    </button>
+                </div>
+                
+                <style>
+                    .site-filter-premium {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+                        padding: 10px 18px;
+                        border-radius: 30px;
+                        margin-left: 15px;
+                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+                        border: 1px solid rgba(102, 126, 234, 0.15);
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .site-filter-premium:hover {
+                        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+                        border-color: rgba(102, 126, 234, 0.3);
+                    }
+                    
+                    .site-filter-icon {
+                        width: 36px;
+                        height: 36px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 18px;
+                        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.25);
+                        flex-shrink: 0;
+                    }
+                    
+                    .site-filter-content {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    }
+                    
+                    .site-filter-label {
+                        font-size: 11px;
+                        color: #9ca3af;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+                    
+                    .site-filter-select {
+                        min-width: 140px;
+                        max-width: 200px;
+                        padding: 6px 10px;
+                        border-radius: 8px;
+                        border: 1px solid #e5e7eb;
+                        font-size: 13px;
+                        font-weight: 500;
+                        background: white;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .site-filter-select:focus {
+                        outline: none;
+                        border-color: #667eea;
+                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+                    }
+                    
+                    .site-filter-select option:checked {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                    }
+                    
+                    .site-filter-reset-btn {
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        border: none;
+                        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+                        color: white;
+                        font-size: 12px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        white-space: nowrap;
+                    }
+                    
+                    .site-filter-reset-btn:hover {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        transform: scale(1.05);
+                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .site-filter-premium {
+                            margin-left: 0;
+                            margin-top: 10px;
+                            width: 100%;
+                        }
+                        
+                        .site-filter-select {
+                            flex: 1;
+                        }
+                    }
+                </style>
             </div>
             <div class="stats">
                 <div class="stat-card total">
@@ -477,8 +669,13 @@
                 last_update: "Dernière mise à jour:",
                 no_hosts_title: "Aucun hôte trouvé",
                 no_hosts_message: "Ajoutez des hôtes dans l'application pour les voir apparaître ici.",
+                no_hosts_for_site: "Aucun hôte pour ce(s) site(s)",
+                filter_site: "Site",
+                all_sites: "Tous",
                 connection_error_title: "Erreur de connexion",
                 connection_error_message: "Impossible de se connecter au serveur. Vérifiez que le serveur web est démarré.",
+                admin: "Admin",
+                logout: "Déconnexion",
                 status_online: "En ligne",
                 status_offline: "Hors ligne",
                 no_name: "Sans nom",
@@ -508,8 +705,13 @@
                 last_update: "Last update:",
                 no_hosts_title: "No hosts found",
                 no_hosts_message: "Add hosts in the application to see them appear here.",
+                no_hosts_for_site: "No hosts for this site(s)",
+                filter_site: "Site",
+                all_sites: "All",
                 connection_error_title: "Connection error",
                 connection_error_message: "Unable to connect to the server. Check that the web server is running.",
+                admin: "Admin",
+                logout: "Logout",
                 status_online: "Online",
                 status_offline: "Offline",
                 no_name: "No name",
@@ -599,6 +801,54 @@
         let currentSort = 'status-offline-first';
         let tempSeuil = 70; // Seuil de température par défaut (sera mis à jour depuis les settings)
         let scanRunning = false;
+        let sitesList = [];
+        let selectedSitesFilter = []; // Filtre local pour la page monitoring
+        
+        // Charger la liste des sites
+        async function loadSitesList() {
+            try {
+                const response = await fetch('/api/get_sites');
+                const data = await response.json();
+                
+                if (data.success) {
+                    sitesList = data.sites || [];
+                    updateSiteFilterSelect();
+                }
+            } catch (error) {
+                console.error('Erreur chargement sites:', error);
+            }
+        }
+        
+        function updateSiteFilterSelect() {
+            const select = document.getElementById('site-filter-select');
+            if (!select) return;
+            
+            select.innerHTML = sitesList.map(site => 
+                `<option value="${escapeHtml(site)}" ${selectedSitesFilter.includes(site) ? 'selected' : ''}>${escapeHtml(site)}</option>`
+            ).join('');
+        }
+        
+        function applySiteFilterLocal() {
+            const select = document.getElementById('site-filter-select');
+            selectedSitesFilter = Array.from(select.selectedOptions).map(opt => opt.value);
+            renderHosts(hostsData);
+        }
+        
+        function clearSiteFilterLocal() {
+            selectedSitesFilter = [];
+            const select = document.getElementById('site-filter-select');
+            if (select) {
+                Array.from(select.options).forEach(opt => opt.selected = false);
+            }
+            renderHosts(hostsData);
+        }
+        
+        function filterHostsBySite(hosts) {
+            if (selectedSitesFilter.length === 0) {
+                return hosts; // Pas de filtre = tous les hôtes
+            }
+            return hosts.filter(host => selectedSitesFilter.includes(host.site || ''));
+        }
         
         // Charger le seuil de température depuis les settings
         async function loadTempSeuil() {
@@ -640,6 +890,7 @@
         socket.on('connect', function() {
             updateStatusBadge(true);
             socket.emit('request_update');
+            loadSitesList(); // Charger la liste des sites
         });
 
         socket.on('disconnect', function() {
@@ -774,18 +1025,24 @@
         function renderHosts(hosts) {
             const container = document.getElementById('hosts-container');
             
-            if (!hosts || hosts.length === 0) {
+            // Appliquer le filtre par site
+            const filteredHosts = filterHostsBySite(hosts);
+            
+            // Mettre à jour les stats avec les hôtes filtrés
+            updateStats(filteredHosts);
+            
+            if (!filteredHosts || filteredHosts.length === 0) {
                 container.innerHTML = `
                     <div class="no-hosts">
                         <h2>${t('no_hosts_title')}</h2>
-                        <p>${t('no_hosts_message')}</p>
+                        <p>${selectedSitesFilter.length > 0 ? (t('no_hosts_for_site') || 'Aucun hôte pour ce(s) site(s)') : t('no_hosts_message')}</p>
                     </div>
                 `;
                 return;
             }
 
             // Trier les hôtes selon le choix actuel
-            const sortedHosts = sortHostsData(hosts);
+            const sortedHosts = sortHostsData(filteredHosts);
 
             // Récupérer ou créer le conteneur grid
             let grid = container.querySelector('.hosts-grid');
@@ -972,6 +1229,18 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        async function logout() {
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Erreur déconnexion:', error);
+                window.location.href = '/login';
+            }
         }
 
         // Demander une mise à jour toutes les 10 secondes
