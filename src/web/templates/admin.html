@@ -689,11 +689,18 @@
                     <button id="btn-import-csv" class="btn btn-info">
                         📤 <span data-i18n="import_csv">Importer CSV</span>
                     </button>
-                    <button id="btn-save-settings" class="btn btn-primary">
+                    <button id="btn-export-xls" class="btn btn-primary" style="background: #217346;">
+                        📊 <span data-i18n="export_xls">Exporter Excel</span>
+                    </button>
+                    <button id="btn-import-xls" class="btn btn-primary" style="background: #217346;">
+                        📋 <span data-i18n="import_xls">Importer Excel</span>
+                    </button>
+                    <button id="btn-save-settings" class="btn btn-primary" style="grid-column: 1 / -1;">
                         💾 <span data-i18n="save">Sauvegarder</span>
                     </button>
                 </div>
                 <input type="file" id="file-import-csv" accept=".csv" style="display: none;">
+                <input type="file" id="file-import-xls" accept=".xlsx,.xls" style="display: none;">
             </div>
         </div>
 
@@ -994,6 +1001,10 @@
                 remove_duplicates: "Suppr. doublons",
                 export_csv: "Exporter CSV",
                 import_csv: "Importer CSV",
+                export_xls: "Exporter Excel",
+                import_xls: "Importer Excel",
+                export_xls_started: "Export Excel démarré",
+                import_xls_success: "Import Excel réussi",
                 advanced_settings: "Paramètres Avancés",
                 smtp_config: "Configuration Email (SMTP)",
                 smtp_server: "Serveur SMTP",
@@ -1118,6 +1129,10 @@
                 remove_duplicates: "Remove duplicates",
                 export_csv: "Export CSV",
                 import_csv: "Import CSV",
+                export_xls: "Export Excel",
+                import_xls: "Import Excel",
+                export_xls_started: "Excel export started",
+                import_xls_success: "Excel import successful",
                 advanced_settings: "Advanced Settings",
                 smtp_config: "Email Configuration (SMTP)",
                 smtp_server: "SMTP Server",
@@ -1619,6 +1634,48 @@
                 const result = await apiCall('/api/save_settings', 'POST');
                 showNotification(t('settings_saved'), 'success');
             } catch (error) {}
+        });
+
+        // ==================== Export/Import Excel ====================
+        document.getElementById('btn-export-xls').addEventListener('click', async function() {
+            try {
+                window.location.href = '/api/export_xls';
+                showNotification(t('export_xls_started'), 'success');
+            } catch (error) {
+                showNotification('Export error', 'error');
+            }
+        });
+
+        document.getElementById('btn-import-xls').addEventListener('click', function() {
+            document.getElementById('file-import-xls').click();
+        });
+
+        document.getElementById('file-import-xls').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/import_xls', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showNotification(result.message || t('import_xls_success'), 'success');
+                    socket.emit('request_update');
+                } else {
+                    showNotification(result.error || 'Import error', 'error');
+                }
+            } catch (error) {
+                showNotification('Import error', 'error');
+            }
+
+            e.target.value = '';
         });
 
         // ==================== Host Actions ====================

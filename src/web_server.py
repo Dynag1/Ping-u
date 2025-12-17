@@ -580,6 +580,69 @@ class WebServer(QObject):
                 logger.error(f"Erreur import CSV: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
+        @self.app.route('/api/export_xls')
+        @WebAuth.login_required
+        def export_xls():
+            """Export XLS avec colonnes IP, Nom, Mac"""
+            try:
+                import tempfile
+                import os
+                from src import fctXls
+                
+                # Créer un fichier temporaire
+                temp_path = os.path.join(tempfile.gettempdir(), 'export_hosts.xlsx')
+                
+                # Générer le XLS
+                fctXls.export_xls_web(self.main_window.treeIpModel, temp_path)
+                
+                logger.info("Export XLS via API")
+                return send_file(temp_path, as_attachment=True, download_name='hosts.xlsx', 
+                               mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            except Exception as e:
+                logger.error(f"Erreur export XLS: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/import_xls', methods=['POST'])
+        @WebAuth.login_required
+        def import_xls():
+            """Import XLS avec colonnes IP, Nom, Mac"""
+            try:
+                if 'file' not in request.files:
+                    return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+                
+                file = request.files['file']
+                if file.filename == '':
+                    return jsonify({'success': False, 'error': 'Aucun fichier sélectionné'}), 400
+                
+                # Vérifier l'extension
+                if not file.filename.lower().endswith(('.xlsx', '.xls')):
+                    return jsonify({'success': False, 'error': 'Format de fichier non supporté. Utilisez .xlsx'}), 400
+                
+                # Sauvegarder temporairement le fichier
+                import tempfile
+                import os
+                temp_path = os.path.join(tempfile.gettempdir(), 'import.xlsx')
+                file.save(temp_path)
+                
+                # Importer le XLS
+                from src import fctXls
+                result = fctXls.import_xls_web(self.main_window.treeIpModel, temp_path)
+                
+                # Nettoyer
+                os.remove(temp_path)
+                
+                logger.info(f"Import XLS via API: {result['imported']} importé(s), {result['duplicates']} doublon(s)")
+                self.broadcast_update()
+                
+                message = f"{result['imported']} hôte(s) importé(s)"
+                if result['duplicates'] > 0:
+                    message += f" ({result['duplicates']} doublon(s) ignoré(s))"
+                
+                return jsonify({'success': True, 'message': message, 'details': result})
+            except Exception as e:
+                logger.error(f"Erreur import XLS: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
         @self.app.route('/api/save_settings', methods=['POST'])
         def save_settings():
             try:
