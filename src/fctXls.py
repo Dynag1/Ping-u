@@ -181,3 +181,127 @@ def openExcel(self, tree_model):
     except Exception as e:
         msg = self.tr("Erreur lors de la lecture")
         QMessageBox.critical(self, self.tr("Erreur"), f"{msg} : {str(e)}")
+
+
+def export_xls_web(tree_model, filepath):
+    """
+    Export XLS pour l'API web (sans GUI)
+    Format simple: IP, Nom, Mac
+    """
+    if not OPENPYXL_AVAILABLE:
+        raise Exception("Le module openpyxl n'est pas installé")
+    
+    try:
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Hôtes"
+        
+        # En-têtes
+        headers = ["IP", "Nom", "Mac"]
+        sheet.append(headers)
+        
+        # Style pour les en-têtes
+        from openpyxl.styles import Font, PatternFill, Alignment
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="667eea", end_color="667eea", fill_type="solid")
+        
+        for col_num, header in enumerate(headers, 1):
+            cell = sheet.cell(row=1, column=col_num)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+        
+        # Données
+        for row in range(tree_model.rowCount()):
+            ip = tree_model.item(row, 1).text() if tree_model.item(row, 1) else ""
+            nom = tree_model.item(row, 2).text() if tree_model.item(row, 2) else ""
+            mac = tree_model.item(row, 3).text() if tree_model.item(row, 3) else ""
+            
+            sheet.append([ip, nom, mac])
+        
+        # Ajuster la largeur des colonnes
+        sheet.column_dimensions['A'].width = 18  # IP
+        sheet.column_dimensions['B'].width = 30  # Nom
+        sheet.column_dimensions['C'].width = 20  # Mac
+        
+        workbook.save(filepath)
+        return True
+        
+    except Exception as e:
+        raise Exception(f"Erreur export XLS: {str(e)}")
+
+
+def import_xls_web(tree_model, filepath):
+    """
+    Import XLS pour l'API web (sans GUI)
+    Format attendu: IP, Nom, Mac (en-têtes sur la première ligne)
+    """
+    if not OPENPYXL_AVAILABLE:
+        raise Exception("Le module openpyxl n'est pas installé")
+    
+    try:
+        workbook = load_workbook(filename=filepath)
+        sheet = workbook.active
+        
+        # Import QStandardItem selon le mode
+        if GUI_AVAILABLE:
+            from PySide6.QtGui import QStandardItem
+        else:
+            class QStandardItem:
+                def __init__(self, text=""): 
+                    self._text = str(text) if text else ""
+                def text(self): return self._text
+                def setText(self, text): self._text = str(text)
+        
+        imported_count = 0
+        duplicates = 0
+        
+        # Collecter les IPs existantes
+        existing_ips = set()
+        for i in range(tree_model.rowCount()):
+            item = tree_model.item(i, 1)
+            if item:
+                existing_ips.add(item.text())
+        
+        # Parcourir les lignes (ignorer l'en-tête)
+        for row_idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+            if not row or not row[0]:
+                continue
+                
+            ip = str(row[0]).strip() if row[0] else ""
+            nom = str(row[1]).strip() if len(row) > 1 and row[1] else ip
+            mac = str(row[2]).strip() if len(row) > 2 and row[2] else ""
+            
+            if not ip:
+                continue
+            
+            # Vérifier les doublons
+            if ip in existing_ips:
+                duplicates += 1
+                continue
+            
+            # Ajouter au modèle
+            items = [
+                QStandardItem(str(tree_model.rowCount())),  # 0: Id
+                QStandardItem(ip),                          # 1: IP
+                QStandardItem(nom),                         # 2: Nom
+                QStandardItem(mac),                         # 3: Mac
+                QStandardItem(""),                          # 4: Port
+                QStandardItem(""),                          # 5: Latence
+                QStandardItem(""),                          # 6: Temp
+                QStandardItem(""),                          # 7: Suivi
+                QStandardItem(""),                          # 8: Comm
+                QStandardItem("")                           # 9: Excl
+            ]
+            
+            tree_model.appendRow(items)
+            existing_ips.add(ip)
+            imported_count += 1
+        
+        return {
+            'imported': imported_count,
+            'duplicates': duplicates
+        }
+        
+    except Exception as e:
+        raise Exception(f"Erreur import XLS: {str(e)}")
