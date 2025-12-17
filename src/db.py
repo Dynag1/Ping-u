@@ -124,6 +124,37 @@ def save_param_db():
         logger.error(f"Erreur sauvegarde param db: {inst}", exc_info=True)
 
 
+def save_sites():
+    """Sauvegarde les paramètres des sites (liste des sites et sites actifs)."""
+    try:
+        sites_data = {
+            'sites_list': var.sites_list,
+            'sites_actifs': var.sites_actifs,
+            'site_filter': var.site_filter
+        }
+        with open("sites.pkl", "wb") as f:
+            pickle.dump(sites_data, f)
+        logger.info(f"Sites sauvegardés: {var.sites_list}")
+    except Exception as e:
+        logger.error(f"Erreur sauvegarde sites: {e}", exc_info=True)
+
+
+def load_sites():
+    """Charge les paramètres des sites."""
+    try:
+        if os.path.isfile("sites.pkl"):
+            with open("sites.pkl", "rb") as f:
+                sites_data = pickle.load(f)
+            var.sites_list = sites_data.get('sites_list', ["Site 1"])
+            var.sites_actifs = sites_data.get('sites_actifs', [])
+            var.site_filter = sites_data.get('site_filter', [])
+            logger.info(f"Sites chargés: {var.sites_list}")
+        else:
+            logger.info("Pas de fichier sites.pkl, utilisation des valeurs par défaut")
+    except Exception as e:
+        logger.error(f"Erreur chargement sites: {e}", exc_info=True)
+
+
 def load_temp_alert_params(variables):
     """Charge les paramètres d'alerte température depuis les variables lues."""
     try:

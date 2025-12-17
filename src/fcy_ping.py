@@ -364,14 +364,27 @@ class PingManager(QObject):
             QTimer.singleShot(delay_ms, self.schedule_next_run)
 
     def get_all_ips(self):
-        """Récupère toutes les IPs du modèle, y compris les exclues (dédupliquées)."""
+        """Récupère toutes les IPs du modèle, filtrées par sites actifs si définis."""
         ips_set = set()  # Utiliser un set pour éviter les doublons
+        
         for row in range(self.tree_model.rowCount()):
             item = self.tree_model.item(row, 1)
             if item:
                 ip_text = item.text().strip()
-                if ip_text:
-                    ips_set.add(ip_text)
+                if not ip_text:
+                    continue
+                
+                # Filtrage par sites actifs si définis
+                if var.sites_actifs:
+                    site_item = self.tree_model.item(row, 8)  # Colonne Site
+                    host_site = site_item.text().strip() if site_item else ''
+                    
+                    # Ne surveiller que les hôtes des sites actifs
+                    if host_site not in var.sites_actifs:
+                        continue
+                
+                ips_set.add(ip_text)
+        
         return list(ips_set)
 
     def handle_result(self, ip, latency, color, temperature, bandwidth):
