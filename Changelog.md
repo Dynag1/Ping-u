@@ -3,6 +3,11 @@
 
 ---
 
+### v99.03.01 (2025-12)
+- Ajout de la gestion multi site. Possibilité d'assigner chaque IP à un site, de trier par site et de ne lancer le suivi que sur certains sites.
+- Ajout de l'obligation de se connecter pour accéder au dashboard, soit en admin soit avec un compte user
+- Amélioration du design HTML pour plus de clarté
+
 ### v99.02.06 (2025-12)
 - Ajout: Support avancé des températures SNMP pour équipements réseau/nas/serveurs (Synology, QNAP, Dell, HP, Cisco, etc).
 - Amélioration: Optimisation du cache SNMP et détection automatique du type d'équipement via sysDescr.
