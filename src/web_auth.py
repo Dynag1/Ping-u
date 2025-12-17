@@ -153,6 +153,44 @@ class WebAuth:
         
         return False, "Utilisateur admin non trouvé"
     
+    def change_user_credentials(self, target_role, new_username, new_password, current_password=None, current_username=None):
+        """
+        Change les identifiants d'un utilisateur par son rôle.
+        - Si current_password est fourni, on vérifie l'ancien mot de passe (pour l'utilisateur lui-même)
+        - Si appelé par un admin pour un autre utilisateur, current_password n'est pas requis
+        """
+        users = self.load_all_users()
+        
+        for user in users:
+            if user.get('role') == target_role:
+                # Si current_password est fourni, vérifier
+                if current_password:
+                    if user['password'] != self.hash_password(current_password):
+                        return False, "Mot de passe actuel incorrect"
+                
+                # Vérifier que le nouveau username n'existe pas déjà (sauf si c'est le même)
+                if new_username != user['username']:
+                    for other_user in users:
+                        if other_user['username'] == new_username:
+                            return False, "Ce nom d'utilisateur est déjà utilisé"
+                
+                # Modifier les identifiants
+                user['username'] = new_username
+                user['password'] = self.hash_password(new_password)
+                
+                if self.save_all_users({'users': users}):
+                    logger.info(f"Credentials modifiés pour le rôle {target_role}")
+                    return True, "Identifiants modifiés avec succès"
+                else:
+                    return False, "Erreur lors de la sauvegarde"
+        
+        return False, f"Utilisateur avec le rôle {target_role} non trouvé"
+    
+    def get_users_list(self):
+        """Retourne la liste des utilisateurs (sans les mots de passe)"""
+        users = self.load_all_users()
+        return [{'username': u['username'], 'role': u['role']} for u in users]
+    
     @staticmethod
     def login_required(f):
         """Décorateur pour protéger les routes (admin uniquement)"""

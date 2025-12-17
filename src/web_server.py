@@ -258,6 +258,45 @@ class WebServer(QObject):
                 logger.error(f"Erreur changement credentials: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
+        @self.app.route('/api/get_users')
+        @WebAuth.login_required
+        def get_users():
+            """Récupère la liste des utilisateurs (admin only)"""
+            try:
+                users = web_auth.get_users_list()
+                return jsonify({'success': True, 'users': users})
+            except Exception as e:
+                logger.error(f"Erreur récupération utilisateurs: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/change_user_credentials', methods=['POST'])
+        @WebAuth.login_required
+        def change_user_credentials():
+            """Change les identifiants d'un utilisateur (admin only)"""
+            try:
+                data = request.get_json()
+                target_role = data.get('role')
+                new_username = data.get('new_username')
+                new_password = data.get('new_password')
+                
+                if not all([target_role, new_username, new_password]):
+                    return jsonify({'success': False, 'error': 'Tous les champs sont requis'}), 400
+                
+                # Admin peut changer les credentials de n'importe quel utilisateur sans mot de passe
+                success, message = web_auth.change_user_credentials(
+                    target_role, 
+                    new_username, 
+                    new_password
+                )
+                
+                if success:
+                    return jsonify({'success': True, 'message': message})
+                else:
+                    return jsonify({'success': False, 'error': message}), 400
+            except Exception as e:
+                logger.error(f"Erreur changement credentials utilisateur: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
         @self.app.route('/api/add_hosts', methods=['POST'])
         @WebAuth.login_required
         def add_hosts():
@@ -1071,7 +1110,7 @@ Ping ü - Monitoring Réseau
         # ==================== Gestion Multi-Sites ====================
         
         @self.app.route('/api/get_sites')
-        @WebAuth.login_required
+        @WebAuth.any_login_required
         def get_sites():
             """Récupère la liste des sites et leur état"""
             try:
