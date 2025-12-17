@@ -202,6 +202,7 @@
         .collapsible-icon.alerts { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
         .collapsible-icon.actions { background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); }
         .collapsible-icon.sites { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); }
+        .collapsible-icon.advanced { background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%); }
         
         .collapsible-title h2 {
             margin: 0;
@@ -634,28 +635,70 @@
             </div>
         </div>
 
-        <!-- Modal Changement de mot de passe -->
+        <!-- Modal Gestion des Utilisateurs -->
         <div id="modal-change-password" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
-            <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%;">
-                <h2 style="margin-bottom: 20px; color: #333;" data-i18n="change_credentials_title">Changer les identifiants</h2>
-                <form id="form-change-password">
-                    <div class="form-group">
-                        <label data-i18n="current_password">Mot de passe actuel</label>
-                        <input type="password" id="old-password" required>
+            <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+                <h2 style="margin-bottom: 20px; color: #333;" data-i18n="manage_users_title">👥 Gestion des Utilisateurs</h2>
+                
+                <!-- Onglets -->
+                <div class="user-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+                    <button type="button" class="user-tab active" data-tab="admin" onclick="switchUserTab('admin')" style="padding: 10px 20px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        👑 <span data-i18n="admin_user">Administrateur</span>
+                    </button>
+                    <button type="button" class="user-tab" data-tab="user" onclick="switchUserTab('user')" style="padding: 10px 20px; border: 1px solid #e5e7eb; background: white; color: #374151; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        👤 <span data-i18n="standard_user">Utilisateur</span>
+                    </button>
+                </div>
+                
+                <!-- Formulaire Admin -->
+                <div id="tab-admin" class="user-tab-content">
+                    <div style="background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <p style="margin: 0; color: #667eea; font-size: 14px;">
+                            <strong>👑 <span data-i18n="admin_role">Rôle Admin</span></strong> - <span data-i18n="admin_role_desc">Accès complet à l'administration</span>
+                        </p>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="new_username">Nouveau nom d'utilisateur</label>
-                        <input type="text" id="new-username" required>
+                    <form id="form-change-password">
+                        <div class="form-group">
+                            <label data-i18n="current_password">Mot de passe actuel</label>
+                            <input type="password" id="old-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="new_username">Nouveau nom d'utilisateur</label>
+                            <input type="text" id="new-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="new_password">Nouveau mot de passe</label>
+                            <input type="password" id="new-password" required>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">💾 <span data-i18n="save">Enregistrer</span></button>
+                            <button type="button" id="btn-cancel-change" class="btn btn-secondary" style="flex: 1;">❌ <span data-i18n="cancel">Annuler</span></button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Formulaire User -->
+                <div id="tab-user" class="user-tab-content" style="display: none;">
+                    <div style="background: linear-gradient(135deg, #10b98122 0%, #059d6e22 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <p style="margin: 0; color: #059669; font-size: 14px;">
+                            <strong>👤 <span data-i18n="user_role">Rôle Utilisateur</span></strong> - <span data-i18n="user_role_desc">Accès à la vue monitoring uniquement</span>
+                        </p>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="new_password">Nouveau mot de passe</label>
-                        <input type="password" id="new-password" required>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">💾 <span data-i18n="save">Enregistrer</span></button>
-                        <button type="button" id="btn-cancel-change" class="btn btn-secondary" style="flex: 1;">❌ <span data-i18n="cancel">Annuler</span></button>
-                    </div>
-                </form>
+                    <form id="form-change-user-password">
+                        <div class="form-group">
+                            <label data-i18n="new_username">Nom d'utilisateur</label>
+                            <input type="text" id="user-new-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="new_password">Mot de passe</label>
+                            <input type="password" id="user-new-password" required>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-success" style="flex: 1;">💾 <span data-i18n="save">Enregistrer</span></button>
+                            <button type="button" class="btn btn-secondary" onclick="closeUserModal()" style="flex: 1;">❌ <span data-i18n="cancel">Annuler</span></button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -1304,8 +1347,18 @@
         </div>
 
         <!-- Paramètres Avancés -->
-        <div class="card full-width">
-            <h2>⚙️ <span data-i18n="advanced_settings">Paramètres Avancés</span></h2>
+        <div class="collapsible-section" id="section-advanced">
+            <div class="collapsible-header" onclick="toggleSection('section-advanced')">
+                <div class="collapsible-title">
+                    <div class="collapsible-icon advanced">⚙️</div>
+                    <div>
+                        <h2 data-i18n="advanced_settings">Paramètres Avancés</h2>
+                        <p data-i18n="advanced_settings_desc">Configuration SMTP, Telegram et système</p>
+                    </div>
+                </div>
+                <div class="collapsible-toggle">▼</div>
+            </div>
+            <div class="collapsible-content">
             
             <!-- Configuration SMTP -->
             <div class="accordion">
@@ -1522,7 +1575,8 @@
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+        </div><!-- Fin collapsible-section advanced -->
 
         <!-- Liste des hôtes -->
         <div class="card full-width">
@@ -1564,10 +1618,18 @@
                 logout: "Déconnexion",
                 status_running: "En cours",
                 status_stopped: "Arrêté",
+                manage_users_title: "Gestion des Utilisateurs",
+                admin_user: "Administrateur",
+                standard_user: "Utilisateur",
+                admin_role: "Rôle Admin",
+                admin_role_desc: "Accès complet à l'administration",
+                user_role: "Rôle Utilisateur",
+                user_role_desc: "Accès à la vue monitoring uniquement",
                 change_credentials_title: "Changer les identifiants",
                 current_password: "Mot de passe actuel",
                 new_username: "Nouveau nom d'utilisateur",
                 new_password: "Nouveau mot de passe",
+                user_credentials_changed: "Identifiants utilisateur modifiés",
                 save: "Enregistrer",
                 cancel: "Annuler",
                 total_hosts: "Total Hôtes",
@@ -1638,6 +1700,7 @@
                 enter_site_for_hosts: "Entrez le nom du site pour les hôtes sélectionnés:",
                 assign_site: "Assigner site",
                 advanced_settings: "Paramètres Avancés",
+                advanced_settings_desc: "Configuration SMTP, Telegram et système",
                 smtp_config: "Configuration Email (SMTP)",
                 smtp_server: "Serveur SMTP",
                 or: "ou",
@@ -1724,10 +1787,18 @@
                 logout: "Logout",
                 status_running: "Running",
                 status_stopped: "Stopped",
+                manage_users_title: "User Management",
+                admin_user: "Administrator",
+                standard_user: "User",
+                admin_role: "Admin Role",
+                admin_role_desc: "Full access to administration",
+                user_role: "User Role",
+                user_role_desc: "Access to monitoring view only",
                 change_credentials_title: "Change credentials",
                 current_password: "Current password",
                 new_username: "New username",
                 new_password: "New password",
+                user_credentials_changed: "User credentials changed",
                 save: "Save",
                 cancel: "Cancel",
                 total_hosts: "Total Hosts",
@@ -1798,6 +1869,7 @@
                 enter_site_for_hosts: "Enter the site name for selected hosts:",
                 assign_site: "Assign site",
                 advanced_settings: "Advanced Settings",
+                advanced_settings_desc: "SMTP, Telegram and system configuration",
                 smtp_config: "Email Configuration (SMTP)",
                 smtp_server: "SMTP Server",
                 or: "or",
@@ -3097,10 +3169,60 @@
         });
 
         document.getElementById('btn-cancel-change').addEventListener('click', function() {
+            closeUserModal();
+        });
+        
+        function closeUserModal() {
             const modal = document.getElementById('modal-change-password');
             modal.style.display = 'none';
             document.getElementById('form-change-password').reset();
-        });
+            document.getElementById('form-change-user-password').reset();
+        }
+        
+        function switchUserTab(tab) {
+            // Masquer tous les contenus
+            document.querySelectorAll('.user-tab-content').forEach(c => c.style.display = 'none');
+            // Désactiver tous les onglets
+            document.querySelectorAll('.user-tab').forEach(t => {
+                t.style.background = 'white';
+                t.style.color = '#374151';
+                t.style.border = '1px solid #e5e7eb';
+                t.classList.remove('active');
+            });
+            
+            // Activer l'onglet sélectionné
+            const activeTab = document.querySelector(`.user-tab[data-tab="${tab}"]`);
+            if (tab === 'admin') {
+                activeTab.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            } else {
+                activeTab.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            }
+            activeTab.style.color = 'white';
+            activeTab.style.border = 'none';
+            activeTab.classList.add('active');
+            
+            // Afficher le contenu correspondant
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+            
+            // Charger les infos utilisateur si onglet user
+            if (tab === 'user') {
+                loadUserCredentials();
+            }
+        }
+        
+        async function loadUserCredentials() {
+            try {
+                const result = await apiCall('/api/get_users');
+                if (result.users) {
+                    const userAccount = result.users.find(u => u.role === 'user');
+                    if (userAccount) {
+                        document.getElementById('user-new-username').value = userAccount.username;
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur chargement utilisateurs:', error);
+            }
+        }
 
         document.getElementById('form-change-password').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -3117,6 +3239,22 @@
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
+            } catch (error) {}
+        });
+        
+        document.getElementById('form-change-user-password').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const data = {
+                role: 'user',
+                new_username: document.getElementById('user-new-username').value,
+                new_password: document.getElementById('user-new-password').value
+            };
+
+            try {
+                const result = await apiCall('/api/change_user_credentials', 'POST', data);
+                showNotification(t('user_credentials_changed') || 'Identifiants utilisateur modifiés', 'success');
+                closeUserModal();
             } catch (error) {}
         });
 
