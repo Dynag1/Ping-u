@@ -393,9 +393,9 @@ class PingManager(QObject):
         if row == -1:
             return
 
-        # Vérifier si l'hôte est exclu
+        # Vérifier si l'hôte est exclu (colonne 10)
         is_excluded = False
-        item_excl = self.tree_model.item(row, 9)
+        item_excl = self.tree_model.item(row, 10)
         if item_excl and item_excl.text() == "x":
             is_excluded = True
 
@@ -437,7 +437,7 @@ class PingManager(QObject):
         try:
             row = self.find_item_row(ip)
             if row != -1:
-                item_excl = self.tree_model.item(row, 9)
+                item_excl = self.tree_model.item(row, 10)  # Colonne 10 = Excl
                 if item_excl and item_excl.text() == "x":
                     return # Pas d'alerte pour les exclus
 

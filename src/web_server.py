@@ -451,7 +451,7 @@ class WebServer(QObject):
                 if hasattr(model, 'clear'):
                     model.clear()
                     model.setHorizontalHeaderLabels([
-                        "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "site", "Excl"
+                        "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "site", "Commentaire", "Excl"
                     ])
                 else:
                     for i in range(count_before - 1, -1, -1):
