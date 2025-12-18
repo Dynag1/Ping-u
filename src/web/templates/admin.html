@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -145,7 +146,7 @@
             font-size: 22px;
             margin-bottom: 20px;
         }
-        
+
         /* ===== Sections Collapsibles ===== */
         .collapsible-section {
             background: rgba(255, 255, 255, 0.95);
@@ -155,11 +156,11 @@
             transition: all 0.3s ease;
             margin-bottom: 0;
         }
-        
+
         .collapsible-section:hover {
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
         }
-        
+
         .collapsible-header {
             display: flex;
             align-items: center;
@@ -171,21 +172,21 @@
             transition: all 0.3s ease;
             user-select: none;
         }
-        
+
         .collapsible-header:hover {
             background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 100%);
         }
-        
+
         .collapsible-section.open .collapsible-header {
             border-bottom: 1px solid #e5e7eb;
         }
-        
+
         .collapsible-title {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        
+
         .collapsible-icon {
             width: 40px;
             height: 40px;
@@ -196,27 +197,76 @@
             font-size: 20px;
             flex-shrink: 0;
         }
-        
-        .collapsible-icon.add-hosts { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
-        .collapsible-icon.monitoring { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); }
-        .collapsible-icon.alerts { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
-        .collapsible-icon.actions { background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); }
-        .collapsible-icon.sites { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); }
-        .collapsible-icon.advanced { background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%); }
-        
+
+        .editable-title-container {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .editable-title {
+            cursor: pointer;
+            border-bottom: 1px dashed transparent;
+            transition: all 0.2s;
+            margin: 0;
+            display: block;
+        }
+
+        .editable-title:hover {
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+
+        .editable-title-input {
+            font-family: inherit;
+            font-size: 22px;
+            font-weight: bold;
+            color: #1f2937;
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            padding: 2px 8px;
+            background: white;
+            outline: none;
+            width: auto;
+            min-width: 250px;
+        }
+
+        .collapsible-icon.add-hosts {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        }
+
+        .collapsible-icon.monitoring {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+
+        .collapsible-icon.alerts {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        }
+
+        .collapsible-icon.actions {
+            background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+        }
+
+        .collapsible-icon.sites {
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+        }
+
+        .collapsible-icon.advanced {
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+        }
+
         .collapsible-title h2 {
             margin: 0;
             font-size: 17px;
             font-weight: 600;
             color: #1f2937;
         }
-        
+
         .collapsible-title p {
             margin: 2px 0 0;
             font-size: 12px;
             color: #9ca3af;
         }
-        
+
         .collapsible-toggle {
             width: 32px;
             height: 32px;
@@ -228,25 +278,25 @@
             transition: all 0.3s ease;
             font-size: 14px;
         }
-        
+
         .collapsible-section.open .collapsible-toggle {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             transform: rotate(180deg);
         }
-        
+
         .collapsible-content {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.4s ease, padding 0.3s ease;
             padding: 0 22px;
         }
-        
+
         .collapsible-section.open .collapsible-content {
             max-height: 2000px;
             padding: 20px 22px;
         }
-        
+
         .collapsible-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -457,8 +507,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .stats-grid {
@@ -487,10 +544,21 @@
             font-size: 14px;
         }
 
-        .stat-card.total .value { color: #3b82f6; }
-        .stat-card.online .value { color: #10b981; }
-        .stat-card.offline .value { color: #ef4444; }
-        .stat-card.monitoring .value { color: #8b5cf6; }
+        .stat-card.total .value {
+            color: #3b82f6;
+        }
+
+        .stat-card.online .value {
+            color: #10b981;
+        }
+
+        .stat-card.offline .value {
+            color: #ef4444;
+        }
+
+        .stat-card.monitoring .value {
+            color: #8b5cf6;
+        }
 
         .notification {
             position: fixed;
@@ -510,6 +578,7 @@
                 transform: translateX(400px);
                 opacity: 0;
             }
+
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -521,6 +590,7 @@
                 transform: translateX(0);
                 opacity: 1;
             }
+
             to {
                 transform: translateX(400px);
                 opacity: 0;
@@ -612,6 +682,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -629,32 +700,41 @@
                     <span class="status-dot stopped"></span>
                     <span data-i18n="status_stopped">Arrêté</span>
                 </div>
-                <button id="btn-change-password" class="btn btn-info">🔑 <span data-i18n="change_credentials">Changer identifiants</span></button>
+                <button id="btn-change-password" class="btn btn-info">🔑 <span data-i18n="change_credentials">Changer
+                        identifiants</span></button>
                 <a href="/" class="btn btn-secondary">📊 <span data-i18n="monitoring_view">Vue Monitoring</span></a>
                 <button id="btn-logout" class="btn btn-danger">🚪 <span data-i18n="logout">Déconnexion</span></button>
             </div>
         </div>
 
         <!-- Modal Gestion des Utilisateurs -->
-        <div id="modal-change-password" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
-            <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
-                <h2 style="margin-bottom: 20px; color: #333;" data-i18n="manage_users_title">👥 Gestion des Utilisateurs</h2>
-                
+        <div id="modal-change-password"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
+            <div
+                style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+                <h2 style="margin-bottom: 20px; color: #333;" data-i18n="manage_users_title">👥 Gestion des Utilisateurs
+                </h2>
+
                 <!-- Onglets -->
-                <div class="user-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
-                    <button type="button" class="user-tab active" data-tab="admin" onclick="switchUserTab('admin')" style="padding: 10px 20px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <div class="user-tabs"
+                    style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+                    <button type="button" class="user-tab active" data-tab="admin" onclick="switchUserTab('admin')"
+                        style="padding: 10px 20px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
                         👑 <span data-i18n="admin_user">Administrateur</span>
                     </button>
-                    <button type="button" class="user-tab" data-tab="user" onclick="switchUserTab('user')" style="padding: 10px 20px; border: 1px solid #e5e7eb; background: white; color: #374151; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <button type="button" class="user-tab" data-tab="user" onclick="switchUserTab('user')"
+                        style="padding: 10px 20px; border: 1px solid #e5e7eb; background: white; color: #374151; border-radius: 8px; cursor: pointer; font-weight: 600;">
                         👤 <span data-i18n="standard_user">Utilisateur</span>
                     </button>
                 </div>
-                
+
                 <!-- Formulaire Admin -->
                 <div id="tab-admin" class="user-tab-content">
-                    <div style="background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <div
+                        style="background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                         <p style="margin: 0; color: #667eea; font-size: 14px;">
-                            <strong>👑 <span data-i18n="admin_role">Rôle Admin</span></strong> - <span data-i18n="admin_role_desc">Accès complet à l'administration</span>
+                            <strong>👑 <span data-i18n="admin_role">Rôle Admin</span></strong> - <span
+                                data-i18n="admin_role_desc">Accès complet à l'administration</span>
                         </p>
                     </div>
                     <form id="form-change-password">
@@ -671,17 +751,21 @@
                             <input type="password" id="new-password" required>
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
-                            <button type="submit" class="btn btn-primary" style="flex: 1;">💾 <span data-i18n="save">Enregistrer</span></button>
-                            <button type="button" id="btn-cancel-change" class="btn btn-secondary" style="flex: 1;">❌ <span data-i18n="cancel">Annuler</span></button>
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">💾 <span
+                                    data-i18n="save">Enregistrer</span></button>
+                            <button type="button" id="btn-cancel-change" class="btn btn-secondary" style="flex: 1;">❌
+                                <span data-i18n="cancel">Annuler</span></button>
                         </div>
                     </form>
                 </div>
-                
+
                 <!-- Formulaire User -->
                 <div id="tab-user" class="user-tab-content" style="display: none;">
-                    <div style="background: linear-gradient(135deg, #10b98122 0%, #059d6e22 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <div
+                        style="background: linear-gradient(135deg, #10b98122 0%, #059d6e22 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                         <p style="margin: 0; color: #059669; font-size: 14px;">
-                            <strong>👤 <span data-i18n="user_role">Rôle Utilisateur</span></strong> - <span data-i18n="user_role_desc">Accès à la vue monitoring uniquement</span>
+                            <strong>👤 <span data-i18n="user_role">Rôle Utilisateur</span></strong> - <span
+                                data-i18n="user_role_desc">Accès à la vue monitoring uniquement</span>
                         </p>
                     </div>
                     <form id="form-change-user-password">
@@ -694,8 +778,10 @@
                             <input type="password" id="user-new-password" required>
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
-                            <button type="submit" class="btn btn-success" style="flex: 1;">💾 <span data-i18n="save">Enregistrer</span></button>
-                            <button type="button" class="btn btn-secondary" onclick="closeUserModal()" style="flex: 1;">❌ <span data-i18n="cancel">Annuler</span></button>
+                            <button type="submit" class="btn btn-success" style="flex: 1;">💾 <span
+                                    data-i18n="save">Enregistrer</span></button>
+                            <button type="button" class="btn btn-secondary" onclick="closeUserModal()"
+                                style="flex: 1;">❌ <span data-i18n="cancel">Annuler</span></button>
                         </div>
                     </form>
                 </div>
@@ -715,83 +801,334 @@
                 <div class="collapsible-toggle">▼</div>
             </div>
             <div class="collapsible-content sites-content">
-            <!-- Ajout rapide de site -->
-            <div class="add-site-form" style="margin-bottom: 20px;">
-                <input type="text" id="input-new-site" placeholder="Nom du nouveau site..." class="site-input">
-                <button onclick="addSite()" class="add-site-btn">
-                    <span class="btn-icon">✨</span>
-                    <span data-i18n="add_site">Créer</span>
-                </button>
-            </div>
-            
-            <!-- Cartes de contrôle -->
-            <div class="sites-controls-grid">
-                <!-- Carte Filtre d'affichage -->
-                <div class="site-control-card filter-card">
-                    <div class="control-card-header">
-                        <div class="control-icon filter-icon">👁️</div>
-                        <div class="control-info">
-                            <h3 data-i18n="display_filter">Affichage</h3>
-                            <p data-i18n="filter_desc">Sites visibles dans le tableau</p>
+                <!-- Ajout rapide de site -->
+                <div class="add-site-form" style="margin-bottom: 20px;">
+                    <input type="text" id="input-new-site" placeholder="Nom du nouveau site..." class="site-input">
+                    <button onclick="addSite()" class="add-site-btn">
+                        <span class="btn-icon">✨</span>
+                        <span data-i18n="add_site">Créer</span>
+                    </button>
+                </div>
+
+                <!-- Cartes de contrôle -->
+                <div class="sites-controls-grid">
+                    <!-- Carte Filtre d'affichage -->
+                    <div class="site-control-card filter-card">
+                        <div class="control-card-header">
+                            <div class="control-icon filter-icon">👁️</div>
+                            <div class="control-info">
+                                <h3 data-i18n="display_filter">Affichage</h3>
+                                <p data-i18n="filter_desc">Sites visibles dans le tableau</p>
+                            </div>
+                        </div>
+                        <div class="control-card-body">
+                            <select id="select-site-filter" multiple class="site-multiselect">
+                            </select>
+                            <div class="control-actions">
+                                <button onclick="applySiteFilter()" class="control-btn apply-btn">
+                                    <span>✓</span> <span data-i18n="apply">Appliquer</span>
+                                </button>
+                                <button onclick="clearSiteFilter()" class="control-btn reset-btn">
+                                    <span data-i18n="show_all">Tout afficher</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="control-card-body">
-                        <select id="select-site-filter" multiple class="site-multiselect">
-                        </select>
-                        <div class="control-actions">
-                            <button onclick="applySiteFilter()" class="control-btn apply-btn">
-                                <span>✓</span> <span data-i18n="apply">Appliquer</span>
-                            </button>
-                            <button onclick="clearSiteFilter()" class="control-btn reset-btn">
-                                <span data-i18n="show_all">Tout afficher</span>
-                            </button>
+
+                    <!-- Carte Sites à surveiller -->
+                    <div class="site-control-card monitor-card">
+                        <div class="control-card-header">
+                            <div class="control-icon monitor-icon">📡</div>
+                            <div class="control-info">
+                                <h3 data-i18n="monitor_sites">Surveillance</h3>
+                                <p data-i18n="monitor_desc">Sites à pinger activement</p>
+                            </div>
+                        </div>
+                        <div class="control-card-body">
+                            <select id="select-sites-actifs" multiple class="site-multiselect">
+                            </select>
+                            <div class="control-actions">
+                                <button onclick="applySitesActifs()" class="control-btn apply-btn">
+                                    <span>✓</span> <span data-i18n="apply">Appliquer</span>
+                                </button>
+                                <button onclick="clearSitesActifs()" class="control-btn reset-btn">
+                                    <span data-i18n="monitor_all">Tout surveiller</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Carte Sites à surveiller -->
-                <div class="site-control-card monitor-card">
-                    <div class="control-card-header">
-                        <div class="control-icon monitor-icon">📡</div>
-                        <div class="control-info">
-                            <h3 data-i18n="monitor_sites">Surveillance</h3>
-                            <p data-i18n="monitor_desc">Sites à pinger activement</p>
-                        </div>
+
+                <!-- Liste des sites créés -->
+                <div class="sites-list-section">
+                    <div class="sites-list-header">
+                        <span class="sites-count-badge" id="sites-count-badge">0 sites</span>
                     </div>
-                    <div class="control-card-body">
-                        <select id="select-sites-actifs" multiple class="site-multiselect">
-                        </select>
-                        <div class="control-actions">
-                            <button onclick="applySitesActifs()" class="control-btn apply-btn">
-                                <span>✓</span> <span data-i18n="apply">Appliquer</span>
-                            </button>
-                            <button onclick="clearSitesActifs()" class="control-btn reset-btn">
-                                <span data-i18n="monitor_all">Tout surveiller</span>
-                            </button>
-                        </div>
+                    <div id="sites-list" class="sites-tags-container">
+                        <!-- Sites générés dynamiquement -->
                     </div>
                 </div>
-            </div>
-            
-            <!-- Liste des sites créés -->
-            <div class="sites-list-section">
-                <div class="sites-list-header">
-                    <span class="sites-count-badge" id="sites-count-badge">0 sites</span>
-                </div>
-                <div id="sites-list" class="sites-tags-container">
-                    <!-- Sites générés dynamiquement -->
-                </div>
-            </div>
             </div><!-- Fin collapsible-content -->
         </div><!-- Fin collapsible-section sites -->
-        
+
+        <!-- Paramètres Avancés -->
+        <div class="collapsible-section" id="section-advanced" style="margin-bottom: 25px;">
+            <div class="collapsible-header" onclick="toggleSection('section-advanced')">
+                <div class="collapsible-title">
+                    <div class="collapsible-icon advanced">⚙️</div>
+                    <div>
+                        <div class="editable-title-container" onclick="event.stopPropagation()">
+                            <h2 id="advanced-settings-title" class="editable-title"
+                                onclick="editSectionTitle('advanced-settings-title')" data-i18n="advanced_settings">
+                                Paramètres Avancés</h2>
+                            <input type="text" id="advanced-settings-title-input" class="editable-title-input"
+                                style="display: none;" onblur="saveSectionTitle('advanced-settings-title')"
+                                onkeydown="if(event.key==='Enter') saveSectionTitle('advanced-settings-title')">
+                        </div>
+                        <p data-i18n="advanced_settings_desc">Configuration SMTP, Telegram et système</p>
+                    </div>
+                </div>
+                <div class="collapsible-toggle">▼</div>
+            </div>
+            <div class="collapsible-content">
+
+                <!-- Configuration SMTP -->
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('smtp')">
+                        <span>📧 <span data-i18n="smtp_config">Configuration Email (SMTP)</span></span>
+                        <span class="accordion-icon" id="icon-smtp">▼</span>
+                    </div>
+                    <div class="accordion-content" id="content-smtp">
+                        <form id="form-smtp">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="smtp-server" data-i18n="smtp_server">Serveur SMTP</label>
+                                    <input type="text" id="smtp-server" placeholder="smtp.gmail.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="smtp-port">Port</label>
+                                    <input type="number" id="smtp-port" placeholder="587" value="587">
+                                    <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                                        💡 Port 587 (STARTTLS) <span data-i18n="or">ou</span> 465 (SSL/TLS)
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="smtp-email" data-i18n="sender_email">Email expéditeur</label>
+                                <input type="email" id="smtp-email" placeholder="votre-email@gmail.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="smtp-password" data-i18n="password">Mot de passe</label>
+                                <input type="password" id="smtp-password" data-placeholder-i18n="password_placeholder"
+                                    placeholder="Mot de passe ou app password">
+                            </div>
+                            <div class="form-group">
+                                <label for="smtp-recipients" data-i18n="recipients">Destinataires (séparés par des
+                                    virgules)</label>
+                                <input type="text" id="smtp-recipients"
+                                    placeholder="email1@exemple.com, email2@exemple.com">
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                    💾 <span data-i18n="save">Sauvegarder</span>
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="testSMTP()" style="flex: 1;">
+                                    ✉️ <span data-i18n="test">Tester</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Configuration Telegram -->
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('telegram')">
+                        <span>📱 <span data-i18n="telegram_config">Configuration Telegram</span></span>
+                        <span class="accordion-icon" id="icon-telegram">▼</span>
+                    </div>
+                    <div class="accordion-content" id="content-telegram">
+                        <form id="form-telegram">
+                            <div class="form-group">
+                                <label for="telegram-token" data-i18n="bot_token">Token du Bot</label>
+                                <input type="text" id="telegram-token"
+                                    placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+                            </div>
+                            <div class="form-group">
+                                <label for="telegram-chatid">Chat ID</label>
+                                <input type="text" id="telegram-chatid" placeholder="123456789">
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                    💾 <span data-i18n="save">Sauvegarder</span>
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="testTelegram()" style="flex: 1;">
+                                    📲 <span data-i18n="test">Tester</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Configuration Email Récapitulatif -->
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('mailrecap')">
+                        <span>📊 <span data-i18n="recap_email_config">Email Récapitulatif Périodique</span></span>
+                        <span class="accordion-icon" id="icon-mailrecap">▼</span>
+                    </div>
+                    <div class="accordion-content" id="content-mailrecap">
+                        <form id="form-mail-recap">
+                            <div class="form-group">
+                                <label for="recap-heure" data-i18n="send_time">Heure d'envoi</label>
+                                <input type="time" id="recap-heure" value="08:00">
+                            </div>
+                            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #374151;"
+                                    data-i18n="send_days">Jours d'envoi</label>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                                    <div class="checkbox-group" style="margin: 0;">
+                                        <input type="checkbox" id="recap-lundi">
+                                        <label for="recap-lundi" data-i18n="monday">Lundi</label>
+                                    </div>
+                                    <div class="checkbox-group" style="margin: 0;">
+                                        <input type="checkbox" id="recap-mardi">
+                                        <label for="recap-mardi" data-i18n="tuesday">Mardi</label>
+                                    </div>
+                                    <div class="checkbox-group" style="margin: 0;">
+                                        <input type="checkbox" id="recap-mercredi">
+                                        <label for="recap-mercredi" data-i18n="wednesday">Mercredi</label>
+                                    </div>
+                                    <div class="checkbox-group" style="margin: 0;">
+                                        <input type="checkbox" id="recap-jeudi">
+                                        <label for="recap-jeudi" data-i18n="thursday">Jeudi</label>
+                                    </div>
+                                    <div class="checkbox-group" style="margin: 0;">
+                                        <input type="checkbox" id="recap-vendredi">
+                                        <label for="recap-vendredi" data-i18n="friday">Vendredi</label>
+                                    </div>
+                                    <div class="checkbox-group" style="margin: 0;">
+                                        <input type="checkbox" id="recap-samedi">
+                                        <label for="recap-samedi" data-i18n="saturday">Samedi</label>
+                                    </div>
+                                    <div class="checkbox-group" style="margin: 0; grid-column: 1 / -1;">
+                                        <input type="checkbox" id="recap-dimanche">
+                                        <label for="recap-dimanche" data-i18n="sunday">Dimanche</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                    💾 <span data-i18n="save">Sauvegarder</span>
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="sendTestRecap()" style="flex: 1;">
+                                    📨 <span data-i18n="send_test">Envoyer un test</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Paramètres Généraux -->
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('general')">
+                        <span>🌐 <span data-i18n="general_settings">Paramètres Généraux</span></span>
+                        <span class="accordion-icon" id="icon-general">▼</span>
+                    </div>
+                    <div class="accordion-content" id="content-general">
+                        <form id="form-general">
+                            <div class="form-group">
+                                <label for="general-site" data-i18n="site_name">Nom du Site</label>
+                                <input type="text" id="general-site" placeholder="Site">
+                            </div>
+                            <div class="form-group">
+                                <label for="general-theme" data-i18n="theme">Thème</label>
+                                <select id="general-theme">
+                                    <option value="nord">Nord</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="light">Light</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                💾 <span data-i18n="save">Sauvegarder</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Licence -->
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('license')">
+                        <span>🔑 <span data-i18n="license_management">Gestion de Licence</span></span>
+                        <span class="accordion-icon" id="icon-license">▼</span>
+                    </div>
+                    <div class="accordion-content" id="content-license">
+                        <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <span style="font-size: 24px;" id="license-icon">❌</span>
+                                <div>
+                                    <div style="font-weight: 600; color: #374151;" id="license-status"
+                                        data-i18n="no_license">Pas de licence active</div>
+                                    <div style="font-size: 13px; color: #6b7280;" id="license-days"></div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 5px;"
+                                    data-i18n="activation_code_label">Code d'activation (Hardware ID) à envoyer :</div>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" id="activation-code" readonly
+                                        style="background: #e5e7eb; color: #374151; font-family: monospace; font-size: 14px;"
+                                        onclick="this.select()">
+                                    <button class="btn btn-secondary btn-small"
+                                        onclick="navigator.clipboard.writeText(document.getElementById('activation-code').value); showNotification(t('copied'), 'success')">📋</button>
+                                </div>
+                            </div>
+                        </div>
+                        <form id="form-license">
+                            <div class="form-group">
+                                <label for="license-key" data-i18n="license_key">Clé de licence</label>
+                                <input type="text" id="license-key" data-placeholder-i18n="enter_license"
+                                    placeholder="Entrez votre clé de licence">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                🔓 <span data-i18n="activate_license">Activer la licence</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Informations Système -->
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('system')">
+                        <span>ℹ️ <span data-i18n="system_info">Informations Système</span></span>
+                        <span class="accordion-icon" id="icon-system">▼</span>
+                    </div>
+                    <div class="accordion-content" id="content-system">
+                        <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
+                            <div style="margin-bottom: 10px;">
+                                <strong>Version:</strong> <span id="system-version">-</span>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Mode:</strong> <span data-i18n="web_server">Serveur Web</span>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Port:</strong> <span>9090</span>
+                            </div>
+                            <div>
+                                <strong data-i18n="connected_user">Utilisateur connecté:</strong> <span
+                                    id="system-user">admin</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- Fin collapsible-section advanced -->
+
         <style>
             /* ===== Sites Management Premium Styles ===== */
             .sites-collapsible {
                 margin-bottom: 25px;
                 border: 1px solid rgba(102, 126, 234, 0.15);
             }
-            
+
             .sites-collapsible::before {
                 content: '';
                 position: absolute;
@@ -803,22 +1140,29 @@
                 background-size: 300% 100%;
                 animation: gradientShift 8s ease infinite;
             }
-            
+
             @keyframes gradientShift {
-                0%, 100% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
+
+                0%,
+                100% {
+                    background-position: 0% 50%;
+                }
+
+                50% {
+                    background-position: 100% 50%;
+                }
             }
-            
+
             .sites-content {
                 background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
             }
-            
+
             .add-site-form {
                 display: flex;
                 gap: 10px;
                 align-items: center;
             }
-            
+
             .site-input {
                 padding: 12px 18px;
                 border-radius: 25px;
@@ -828,13 +1172,13 @@
                 transition: all 0.3s ease;
                 background: white;
             }
-            
+
             .site-input:focus {
                 outline: none;
                 border-color: #667eea;
                 box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
             }
-            
+
             .add-site-btn {
                 display: flex;
                 align-items: center;
@@ -850,16 +1194,16 @@
                 transition: all 0.3s ease;
                 box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
             }
-            
+
             .add-site-btn:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
             }
-            
+
             .btn-icon {
                 font-size: 16px;
             }
-            
+
             /* Grille des cartes de contrôle */
             .sites-controls-grid {
                 display: grid;
@@ -867,7 +1211,7 @@
                 gap: 20px;
                 margin-bottom: 25px;
             }
-            
+
             .site-control-card {
                 background: white;
                 border-radius: 16px;
@@ -875,27 +1219,27 @@
                 border: 1px solid #e5e7eb;
                 transition: all 0.3s ease;
             }
-            
+
             .site-control-card:hover {
-                box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
                 transform: translateY(-2px);
             }
-            
+
             .filter-card {
                 border-left: 4px solid #3b82f6;
             }
-            
+
             .monitor-card {
                 border-left: 4px solid #10b981;
             }
-            
+
             .control-card-header {
                 display: flex;
                 align-items: center;
                 gap: 12px;
                 margin-bottom: 15px;
             }
-            
+
             .control-icon {
                 width: 42px;
                 height: 42px;
@@ -905,34 +1249,34 @@
                 justify-content: center;
                 font-size: 20px;
             }
-            
+
             .filter-icon {
                 background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
             }
-            
+
             .monitor-icon {
                 background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
             }
-            
+
             .control-info h3 {
                 margin: 0;
                 font-size: 16px;
                 font-weight: 600;
                 color: #1f2937;
             }
-            
+
             .control-info p {
                 margin: 2px 0 0;
                 font-size: 12px;
                 color: #9ca3af;
             }
-            
+
             .control-card-body {
                 display: flex;
                 flex-direction: column;
                 gap: 12px;
             }
-            
+
             .site-multiselect {
                 width: 100%;
                 min-height: 80px;
@@ -943,29 +1287,29 @@
                 background: #f9fafb;
                 transition: all 0.3s ease;
             }
-            
+
             .site-multiselect:focus {
                 outline: none;
                 border-color: #667eea;
                 background: white;
             }
-            
+
             .site-multiselect option {
                 padding: 8px 12px;
                 border-radius: 6px;
                 margin: 2px 0;
             }
-            
+
             .site-multiselect option:checked {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
             }
-            
+
             .control-actions {
                 display: flex;
                 gap: 10px;
             }
-            
+
             .control-btn {
                 flex: 1;
                 padding: 10px 15px;
@@ -979,40 +1323,40 @@
                 justify-content: center;
                 gap: 6px;
             }
-            
+
             .apply-btn {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
                 border: none;
             }
-            
+
             .apply-btn:hover {
                 transform: scale(1.02);
                 box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
             }
-            
+
             .reset-btn {
                 background: white;
                 color: #6b7280;
                 border: 2px solid #e5e7eb;
             }
-            
+
             .reset-btn:hover {
                 background: #f3f4f6;
                 border-color: #d1d5db;
             }
-            
+
             /* Section liste des sites */
             .sites-list-section {
                 background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                 border-radius: 16px;
                 padding: 20px;
             }
-            
+
             .sites-list-header {
                 margin-bottom: 15px;
             }
-            
+
             .sites-count-badge {
                 display: inline-flex;
                 align-items: center;
@@ -1023,14 +1367,14 @@
                 font-size: 12px;
                 font-weight: 600;
             }
-            
+
             .sites-tags-container {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 12px;
                 min-height: 50px;
             }
-            
+
             .site-tag-premium {
                 display: inline-flex;
                 align-items: center;
@@ -1041,29 +1385,30 @@
                 font-size: 14px;
                 font-weight: 600;
                 color: #1f2937;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
                 border: 1px solid #e5e7eb;
                 transition: all 0.3s ease;
                 animation: fadeInUp 0.4s ease;
             }
-            
+
             @keyframes fadeInUp {
                 from {
                     opacity: 0;
                     transform: translateY(10px);
                 }
+
                 to {
                     opacity: 1;
                     transform: translateY(0);
                 }
             }
-            
+
             .site-tag-premium:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
                 border-color: #667eea;
             }
-            
+
             .site-tag-icon {
                 width: 28px;
                 height: 28px;
@@ -1074,11 +1419,11 @@
                 justify-content: center;
                 font-size: 14px;
             }
-            
+
             .site-tag-name {
                 color: #374151;
             }
-            
+
             .site-tag-delete {
                 width: 24px;
                 height: 24px;
@@ -1093,12 +1438,12 @@
                 transition: all 0.2s ease;
                 margin-left: 5px;
             }
-            
+
             .site-tag-delete:hover {
                 background: #fecaca;
                 transform: scale(1.1);
             }
-            
+
             .no-sites-message {
                 display: flex;
                 flex-direction: column;
@@ -1108,33 +1453,33 @@
                 color: #9ca3af;
                 text-align: center;
             }
-            
+
             .no-sites-message .empty-icon {
                 font-size: 40px;
                 margin-bottom: 10px;
                 opacity: 0.5;
             }
-            
+
             .no-sites-message p {
                 margin: 0;
                 font-size: 14px;
             }
-            
+
             /* Responsive */
             @media (max-width: 768px) {
                 .sites-header {
                     flex-direction: column;
                     align-items: stretch;
                 }
-                
+
                 .add-site-form {
                     width: 100%;
                 }
-                
+
                 .site-input {
                     flex: 1;
                 }
-                
+
                 .sites-controls-grid {
                     grid-template-columns: 1fr;
                 }
@@ -1262,7 +1607,8 @@
                 <div class="collapsible-content">
                     <div class="checkbox-group">
                         <input type="checkbox" id="check-popup">
-                        <label for="check-popup">💬 <span data-i18n="alert_popup">Popup (notification visuelle)</span></label>
+                        <label for="check-popup">💬 <span data-i18n="alert_popup">Popup (notification
+                                visuelle)</span></label>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="check-mail">
@@ -1274,27 +1620,31 @@
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="check-mail-recap">
-                        <label for="check-mail-recap">📊 <span data-i18n="alert_recap">Email récapitulatif</span></label>
+                        <label for="check-mail-recap">📊 <span data-i18n="alert_recap">Email
+                                récapitulatif</span></label>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="check-db-externe">
-                        <label for="check-db-externe">💾 <span data-i18n="alert_db">Base de données externe</span></label>
+                        <label for="check-db-externe">💾 <span data-i18n="alert_db">Base de données
+                                externe</span></label>
                     </div>
-                    
+
                     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
                         <div class="checkbox-group">
                             <input type="checkbox" id="check-temp-alert">
-                            <label for="check-temp-alert">🌡️ <span data-i18n="alert_temp">Alerte température élevée</span></label>
+                            <label for="check-temp-alert">🌡️ <span data-i18n="alert_temp">Alerte température
+                                    élevée</span></label>
                         </div>
                         <div class="form-group" style="margin-top: 10px;">
                             <label for="input-temp-seuil" data-i18n="temp_threshold">Seuil de température (°C)</label>
-                            <input type="number" id="input-temp-seuil" value="70" min="30" max="120" style="width: 100px;">
+                            <input type="number" id="input-temp-seuil" value="70" min="30" max="120"
+                                style="width: 100px;">
                             <small style="color: #666; font-size: 12px; margin-left: 10px;" data-i18n="alert_if_temp">
                                 Alerte si température ≥ seuil
                             </small>
                         </div>
                     </div>
-                    
+
                     <button id="btn-save-alerts" class="btn btn-info" style="width: 100%; margin-top: 15px;">
                         💾 <span data-i18n="save_alerts">Sauvegarder les alertes</span>
                     </button>
@@ -1333,7 +1683,8 @@
                         <button id="btn-import-xls" class="btn btn-primary" style="background: #217346;">
                             📋 <span data-i18n="import_xls">Importer Excel</span>
                         </button>
-                        <button onclick="setSelectedHostsSite()" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); grid-column: span 2;">
+                        <button onclick="setSelectedHostsSite()" class="btn btn-primary"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); grid-column: span 2;">
                             🏢 <span data-i18n="assign_site">Assigner site aux sélectionnés</span>
                         </button>
                         <button id="btn-save-settings" class="btn btn-primary" style="grid-column: 1 / -1;">
@@ -1346,237 +1697,7 @@
             </div>
         </div>
 
-        <!-- Paramètres Avancés -->
-        <div class="collapsible-section" id="section-advanced">
-            <div class="collapsible-header" onclick="toggleSection('section-advanced')">
-                <div class="collapsible-title">
-                    <div class="collapsible-icon advanced">⚙️</div>
-                    <div>
-                        <h2 data-i18n="advanced_settings">Paramètres Avancés</h2>
-                        <p data-i18n="advanced_settings_desc">Configuration SMTP, Telegram et système</p>
-                    </div>
-                </div>
-                <div class="collapsible-toggle">▼</div>
-            </div>
-            <div class="collapsible-content">
-            
-            <!-- Configuration SMTP -->
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion('smtp')">
-                    <span>📧 <span data-i18n="smtp_config">Configuration Email (SMTP)</span></span>
-                    <span class="accordion-icon" id="icon-smtp">▼</span>
-                </div>
-                <div class="accordion-content" id="content-smtp">
-                    <form id="form-smtp">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="smtp-server" data-i18n="smtp_server">Serveur SMTP</label>
-                                <input type="text" id="smtp-server" placeholder="smtp.gmail.com">
-                            </div>
-                            <div class="form-group">
-                                <label for="smtp-port">Port</label>
-                                <input type="number" id="smtp-port" placeholder="587" value="587">
-                                <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
-                                    💡 Port 587 (STARTTLS) <span data-i18n="or">ou</span> 465 (SSL/TLS)
-                                </small>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="smtp-email" data-i18n="sender_email">Email expéditeur</label>
-                            <input type="email" id="smtp-email" placeholder="votre-email@gmail.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="smtp-password" data-i18n="password">Mot de passe</label>
-                            <input type="password" id="smtp-password" data-placeholder-i18n="password_placeholder" placeholder="Mot de passe ou app password">
-                        </div>
-                        <div class="form-group">
-                            <label for="smtp-recipients" data-i18n="recipients">Destinataires (séparés par des virgules)</label>
-                            <input type="text" id="smtp-recipients" placeholder="email1@exemple.com, email2@exemple.com">
-                        </div>
-                        <div style="display: flex; gap: 10px;">
-                            <button type="submit" class="btn btn-primary" style="flex: 1;">
-                                💾 <span data-i18n="save">Sauvegarder</span>
-                            </button>
-                            <button type="button" class="btn btn-info" onclick="testSMTP()" style="flex: 1;">
-                                ✉️ <span data-i18n="test">Tester</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
 
-            <!-- Configuration Telegram -->
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion('telegram')">
-                    <span>📱 <span data-i18n="telegram_config">Configuration Telegram</span></span>
-                    <span class="accordion-icon" id="icon-telegram">▼</span>
-                </div>
-                <div class="accordion-content" id="content-telegram">
-                    <form id="form-telegram">
-                        <div class="form-group">
-                            <label for="telegram-token" data-i18n="bot_token">Token du Bot</label>
-                            <input type="text" id="telegram-token" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
-                        </div>
-                        <div class="form-group">
-                            <label for="telegram-chatid">Chat ID</label>
-                            <input type="text" id="telegram-chatid" placeholder="123456789">
-                        </div>
-                        <div style="display: flex; gap: 10px;">
-                            <button type="submit" class="btn btn-primary" style="flex: 1;">
-                                💾 <span data-i18n="save">Sauvegarder</span>
-                            </button>
-                            <button type="button" class="btn btn-info" onclick="testTelegram()" style="flex: 1;">
-                                📲 <span data-i18n="test">Tester</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Configuration Email Récapitulatif -->
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion('mailrecap')">
-                    <span>📊 <span data-i18n="recap_email_config">Email Récapitulatif Périodique</span></span>
-                    <span class="accordion-icon" id="icon-mailrecap">▼</span>
-                </div>
-                <div class="accordion-content" id="content-mailrecap">
-                    <form id="form-mail-recap">
-                        <div class="form-group">
-                            <label for="recap-heure" data-i18n="send_time">Heure d'envoi</label>
-                            <input type="time" id="recap-heure" value="08:00">
-                        </div>
-                        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #374151;" data-i18n="send_days">Jours d'envoi</label>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                                <div class="checkbox-group" style="margin: 0;">
-                                    <input type="checkbox" id="recap-lundi">
-                                    <label for="recap-lundi" data-i18n="monday">Lundi</label>
-                                </div>
-                                <div class="checkbox-group" style="margin: 0;">
-                                    <input type="checkbox" id="recap-mardi">
-                                    <label for="recap-mardi" data-i18n="tuesday">Mardi</label>
-                                </div>
-                                <div class="checkbox-group" style="margin: 0;">
-                                    <input type="checkbox" id="recap-mercredi">
-                                    <label for="recap-mercredi" data-i18n="wednesday">Mercredi</label>
-                                </div>
-                                <div class="checkbox-group" style="margin: 0;">
-                                    <input type="checkbox" id="recap-jeudi">
-                                    <label for="recap-jeudi" data-i18n="thursday">Jeudi</label>
-                                </div>
-                                <div class="checkbox-group" style="margin: 0;">
-                                    <input type="checkbox" id="recap-vendredi">
-                                    <label for="recap-vendredi" data-i18n="friday">Vendredi</label>
-                                </div>
-                                <div class="checkbox-group" style="margin: 0;">
-                                    <input type="checkbox" id="recap-samedi">
-                                    <label for="recap-samedi" data-i18n="saturday">Samedi</label>
-                                </div>
-                                <div class="checkbox-group" style="margin: 0; grid-column: 1 / -1;">
-                                    <input type="checkbox" id="recap-dimanche">
-                                    <label for="recap-dimanche" data-i18n="sunday">Dimanche</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 10px;">
-                            <button type="submit" class="btn btn-primary" style="flex: 1;">
-                                💾 <span data-i18n="save">Sauvegarder</span>
-                            </button>
-                            <button type="button" class="btn btn-info" onclick="sendTestRecap()" style="flex: 1;">
-                                📨 <span data-i18n="send_test">Envoyer un test</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Paramètres Généraux -->
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion('general')">
-                    <span>🌐 <span data-i18n="general_settings">Paramètres Généraux</span></span>
-                    <span class="accordion-icon" id="icon-general">▼</span>
-                </div>
-                <div class="accordion-content" id="content-general">
-                    <form id="form-general">
-                        <div class="form-group">
-                            <label for="general-site" data-i18n="site_name">Nom du Site</label>
-                            <input type="text" id="general-site" placeholder="Site">
-                        </div>
-                        <div class="form-group">
-                            <label for="general-theme" data-i18n="theme">Thème</label>
-                            <select id="general-theme">
-                                <option value="nord">Nord</option>
-                                <option value="dark">Dark</option>
-                                <option value="light">Light</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            💾 <span data-i18n="save">Sauvegarder</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Licence -->
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion('license')">
-                    <span>🔑 <span data-i18n="license_management">Gestion de Licence</span></span>
-                    <span class="accordion-icon" id="icon-license">▼</span>
-                </div>
-                <div class="accordion-content" id="content-license">
-                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                            <span style="font-size: 24px;" id="license-icon">❌</span>
-                            <div>
-                                <div style="font-weight: 600; color: #374151;" id="license-status" data-i18n="no_license">Pas de licence active</div>
-                                <div style="font-size: 13px; color: #6b7280;" id="license-days"></div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
-                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 5px;" data-i18n="activation_code_label">Code d'activation (Hardware ID) à envoyer :</div>
-                            <div style="display: flex; gap: 10px;">
-                                <input type="text" id="activation-code" readonly style="background: #e5e7eb; color: #374151; font-family: monospace; font-size: 14px;" onclick="this.select()">
-                                <button class="btn btn-secondary btn-small" onclick="navigator.clipboard.writeText(document.getElementById('activation-code').value); showNotification(t('copied'), 'success')">📋</button>
-                            </div>
-                        </div>
-                    </div>
-                    <form id="form-license">
-                        <div class="form-group">
-                            <label for="license-key" data-i18n="license_key">Clé de licence</label>
-                            <input type="text" id="license-key" data-placeholder-i18n="enter_license" placeholder="Entrez votre clé de licence">
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            🔓 <span data-i18n="activate_license">Activer la licence</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Informations Système -->
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion('system')">
-                    <span>ℹ️ <span data-i18n="system_info">Informations Système</span></span>
-                    <span class="accordion-icon" id="icon-system">▼</span>
-                </div>
-                <div class="accordion-content" id="content-system">
-                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
-                        <div style="margin-bottom: 10px;">
-                            <strong>Version:</strong> <span id="system-version">-</span>
-                        </div>
-                        <div style="margin-bottom: 10px;">
-                            <strong>Mode:</strong> <span data-i18n="web_server">Serveur Web</span>
-                        </div>
-                        <div style="margin-bottom: 10px;">
-                            <strong>Port:</strong> <span>9090</span>
-                        </div>
-                        <div>
-                            <strong data-i18n="connected_user">Utilisateur connecté:</strong> <span id="system-user">admin</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </div>
-        </div><!-- Fin collapsible-section advanced -->
 
         <!-- Liste des hôtes -->
         <div class="card full-width">
@@ -1585,20 +1706,33 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="cursor: pointer;" onclick="sortHosts('ip')">IP <span id="sort-ip" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('nom')" data-i18n="name">Nom <span id="sort-nom" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('mac')">MAC <span id="sort-mac" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('port')">Port <span id="sort-port" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('latence')" data-i18n="latency">Latence <span id="sort-latence" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('temp')" data-i18n="temperature">Température <span id="sort-temp" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('status')" data-i18n="status">Statut <span id="sort-status" class="sort-icon">↕️</span></th>
-                            <th style="cursor: pointer;" onclick="sortHosts('site')" data-i18n="site">Site <span id="sort-site" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('ip')">IP <span id="sort-ip"
+                                    class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('nom')" data-i18n="name">Nom <span
+                                    id="sort-nom" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('mac')">MAC <span id="sort-mac"
+                                    class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('port')">Port <span id="sort-port"
+                                    class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('latence')" data-i18n="latency">Latence
+                                <span id="sort-latence" class="sort-icon">↕️</span>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortHosts('temp')" data-i18n="temperature">Température
+                                <span id="sort-temp" class="sort-icon">↕️</span>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortHosts('status')" data-i18n="status">Statut <span
+                                    id="sort-status" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('site')" data-i18n="site">Site <span
+                                    id="sort-site" class="sort-icon">↕️</span></th>
+                            <th style="cursor: pointer;" onclick="sortHosts('commentaire')" data-i18n="comment">
+                                Commentaire <span id="sort-commentaire" class="sort-icon">↕️</span></th>
                             <th style="width: 150px;" data-i18n="actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="hosts-table-body">
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 40px; color: #9ca3af;" data-i18n="no_hosts_configured">
+                            <td colspan="10" style="text-align: center; padding: 40px; color: #9ca3af;"
+                                data-i18n="no_hosts_configured">
                                 Aucun hôte configuré. Ajoutez des hôtes pour commencer le monitoring.
                             </td>
                         </tr>
@@ -1763,6 +1897,7 @@
                 host_excluded: "Hôte exclu",
                 host_included: "Hôte réinclus",
                 name_modified: "Nom modifié pour",
+                comment_modified: "Commentaire modifié pour",
                 smtp_saved: "Configuration SMTP sauvegardée",
                 test_email_sent: "Email de test envoyé",
                 telegram_saved: "Configuration Telegram sauvegardée",
@@ -1776,6 +1911,8 @@
                 hosts_scanned: "hôte(s) scanné(s)",
                 requires_license: "Nécessite une licence active",
                 edit_name: "Modifier le nom",
+                edit_comment: "Modifier le commentaire",
+                comment: "Commentaire",
                 delete: "Supprimer",
                 include_excluded: "Inclure (Actuellement exclu)",
                 exclude: "Exclure"
@@ -1932,6 +2069,7 @@
                 host_excluded: "Host excluded",
                 host_included: "Host re-included",
                 name_modified: "Name modified for",
+                comment_modified: "Comment modified for",
                 smtp_saved: "SMTP configuration saved",
                 test_email_sent: "Test email sent",
                 telegram_saved: "Telegram configuration saved",
@@ -1945,6 +2083,8 @@
                 hosts_scanned: "host(s) scanned",
                 requires_license: "Requires active license",
                 edit_name: "Edit name",
+                edit_comment: "Edit comment",
+                comment: "Commentaire",
                 delete: "Delete",
                 include_excluded: "Include (Currently excluded)",
                 exclude: "Exclude"
@@ -1987,7 +2127,7 @@
         // Appliquer les traductions
         function applyTranslations() {
             const trans = translations[currentLang];
-            
+
             // Mettre à jour les éléments avec data-i18n
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -2014,7 +2154,7 @@
 
             // Mettre à jour le titre de la page
             document.title = trans.admin_title;
-            
+
             // Mettre à jour l'attribut lang du HTML
             document.documentElement.lang = currentLang;
 
@@ -2042,7 +2182,7 @@
         let siteFilter = [];
 
         // ==================== Sections Collapsibles ====================
-        
+
         function toggleSection(sectionId) {
             const section = document.getElementById(sectionId);
             if (section) {
@@ -2051,7 +2191,7 @@
                 saveSectionsState();
             }
         }
-        
+
         function saveSectionsState() {
             const sections = document.querySelectorAll('.collapsible-section');
             const state = {};
@@ -2060,7 +2200,7 @@
             });
             localStorage.setItem('adminSectionsState', JSON.stringify(state));
         }
-        
+
         function loadSectionsState() {
             try {
                 const saved = localStorage.getItem('adminSectionsState');
@@ -2081,38 +2221,38 @@
                 console.log('Erreur chargement état sections:', e);
             }
         }
-        
+
         // Charger l'état des sections au démarrage
         document.addEventListener('DOMContentLoaded', loadSectionsState);
 
         // ==================== Gestion des Sites ====================
-        
+
         async function loadSites() {
             try {
                 const response = await fetch('/api/get_sites');
                 const data = await response.json();
-                
+
                 if (data.success) {
                     sitesList = data.sites || [];
                     sitesActifs = data.sites_actifs || [];
                     siteFilter = data.site_filter || [];
-                    
+
                     updateSitesUI();
                 }
             } catch (error) {
                 console.error('Erreur chargement sites:', error);
             }
         }
-        
+
         function updateSitesUI() {
             // Mettre à jour la liste des sites
             const sitesList_container = document.getElementById('sites-list');
             const countBadge = document.getElementById('sites-count-badge');
-            
+
             if (countBadge) {
                 countBadge.textContent = `${sitesList.length} site${sitesList.length > 1 ? 's' : ''}`;
             }
-            
+
             if (sitesList_container) {
                 if (sitesList.length === 0) {
                     sitesList_container.innerHTML = `
@@ -2132,58 +2272,58 @@
                     `).join('');
                 }
             }
-            
+
             // Mettre à jour les selects de filtrage
             updateSiteSelect('select-site-filter', siteFilter);
             updateSiteSelect('select-sites-actifs', sitesActifs);
-            
+
             // Mettre à jour le sélecteur de site dans le formulaire de scan
             updateScanSiteSelect();
         }
-        
+
         function updateScanSiteSelect() {
             const select = document.getElementById('select-scan-site');
             if (!select) return;
-            
+
             // Garder la valeur sélectionnée
             const currentValue = select.value;
-            
-            select.innerHTML = `<option value="">${t('no_site') || '- Aucun -'}</option>` + 
+
+            select.innerHTML = `<option value="">${t('no_site') || '- Aucun -'}</option>` +
                 sitesList.map(site => `<option value="${escapeHtml(site)}">${escapeHtml(site)}</option>`).join('');
-            
+
             // Restaurer la valeur si elle existe encore
             if (currentValue && sitesList.includes(currentValue)) {
                 select.value = currentValue;
             }
         }
-        
+
         function updateSiteSelect(selectId, selectedValues) {
             const select = document.getElementById(selectId);
             if (!select) return;
-            
+
             select.innerHTML = sitesList.map(site => `
                 <option value="${escapeHtml(site)}" ${selectedValues.includes(site) ? 'selected' : ''}>${escapeHtml(site)}</option>
             `).join('');
         }
-        
+
         async function addSite() {
             const input = document.getElementById('input-new-site');
             const siteName = input.value.trim();
-            
+
             if (!siteName) {
                 showNotification(t('enter_site_name') || 'Entrez un nom de site', 'warning');
                 return;
             }
-            
+
             try {
                 const response = await fetch('/api/add_site', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: siteName })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     sitesList = data.sites;
                     input.value = '';
@@ -2197,19 +2337,19 @@
                 showNotification('Erreur ajout site', 'error');
             }
         }
-        
+
         async function deleteSite(siteName) {
             if (!confirm(`${t('confirm_delete_site') || 'Supprimer le site'} "${siteName}" ?`)) return;
-            
+
             try {
                 const response = await fetch('/api/delete_site', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: siteName })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     sitesList = data.sites;
                     sitesActifs = sitesActifs.filter(s => s !== siteName);
@@ -2224,20 +2364,20 @@
                 showNotification('Erreur suppression site', 'error');
             }
         }
-        
+
         async function applySiteFilter() {
             const select = document.getElementById('select-site-filter');
             const selectedSites = Array.from(select.selectedOptions).map(opt => opt.value);
-            
+
             try {
                 const response = await fetch('/api/set_site_filter', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sites: selectedSites })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     siteFilter = data.site_filter;
                     showNotification(t('filter_applied') || 'Filtre appliqué', 'success');
@@ -2248,7 +2388,7 @@
                 showNotification('Erreur application filtre', 'error');
             }
         }
-        
+
         async function clearSiteFilter() {
             try {
                 const response = await fetch('/api/set_site_filter', {
@@ -2256,9 +2396,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sites: [] })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     siteFilter = [];
                     updateSiteSelect('select-site-filter', []);
@@ -2268,20 +2408,20 @@
                 showNotification('Erreur', 'error');
             }
         }
-        
+
         async function applySitesActifs() {
             const select = document.getElementById('select-sites-actifs');
             const selectedSites = Array.from(select.selectedOptions).map(opt => opt.value);
-            
+
             try {
                 const response = await fetch('/api/set_sites_actifs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sites: selectedSites })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     sitesActifs = data.sites_actifs;
                     showNotification(t('monitoring_sites_updated') || 'Sites de surveillance mis à jour', 'success');
@@ -2292,7 +2432,7 @@
                 showNotification('Erreur', 'error');
             }
         }
-        
+
         async function clearSitesActifs() {
             try {
                 const response = await fetch('/api/set_sites_actifs', {
@@ -2300,9 +2440,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sites: [] })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     sitesActifs = [];
                     updateSiteSelect('select-sites-actifs', []);
@@ -2312,7 +2452,7 @@
                 showNotification('Erreur', 'error');
             }
         }
-        
+
         async function setHostSite(ip, site) {
             try {
                 const response = await fetch('/api/set_host_site', {
@@ -2320,9 +2460,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ip: ip, site: site })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showNotification(t('site_updated') || 'Site mis à jour', 'success');
                 } else {
@@ -2332,27 +2472,27 @@
                 showNotification('Erreur assignation site', 'error');
             }
         }
-        
+
         async function setSelectedHostsSite() {
             const selectedIps = getSelectedHosts();
-            
+
             if (selectedIps.length === 0) {
                 showNotification(t('select_hosts_first') || 'Sélectionnez au moins un hôte', 'warning');
                 return;
             }
-            
+
             const siteName = prompt(t('enter_site_for_hosts') || 'Entrez le nom du site pour les hôtes sélectionnés:');
             if (siteName === null) return;
-            
+
             try {
                 const response = await fetch('/api/set_multiple_hosts_site', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ips: selectedIps, site: siteName.trim() })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showNotification(data.message, 'success');
                 } else {
@@ -2364,18 +2504,18 @@
         }
 
         // ==================== Socket Events ====================
-        socket.on('connect', function() {
+        socket.on('connect', function () {
             console.log('✅ Connected to server');
             loadSites();
             loadSettings();
             socket.emit('request_update');
         });
 
-        socket.on('disconnect', function() {
+        socket.on('disconnect', function () {
             console.log('❌ Disconnected from server');
         });
 
-        socket.on('hosts_update', function(hosts) {
+        socket.on('hosts_update', function (hosts) {
             if (!Array.isArray(hosts)) {
                 hosts = [];
             }
@@ -2391,16 +2531,16 @@
             updateStats(hosts);
         });
 
-        socket.on('monitoring_status', function(data) {
+        socket.on('monitoring_status', function (data) {
             monitoringRunning = data.running;
             updateMonitoringStatus(data.running);
         });
 
-        socket.on('notification', function(data) {
+        socket.on('notification', function (data) {
             showNotification(data.message, data.type || 'info');
         });
 
-        socket.on('scan_complete', function(data) {
+        socket.on('scan_complete', function (data) {
             console.log('📡 Scan complete:', data.count, 'host(s)');
             showNotification(`${t('scan_complete')} ${data.count} ${t('hosts_scanned')}`, 'success');
             showBrowserNotification(t('scan_complete'), `${data.count} ${t('hosts_scanned')}`);
@@ -2412,13 +2552,13 @@
 
         function naturalSort(a, b) {
             const ax = [], bx = [];
-            a.replace(/(\d+)|(\D+)/g, function(_, $1, $2) { ax.push([$1 || Infinity, $2 || ""]) });
-            b.replace(/(\d+)|(\D+)/g, function(_, $1, $2) { bx.push([$1 || Infinity, $2 || ""]) });
-            while(ax.length && bx.length) {
+            a.replace(/(\d+)|(\D+)/g, function (_, $1, $2) { ax.push([$1 || Infinity, $2 || ""]) });
+            b.replace(/(\d+)|(\D+)/g, function (_, $1, $2) { bx.push([$1 || Infinity, $2 || ""]) });
+            while (ax.length && bx.length) {
                 const an = ax.shift();
                 const bn = bx.shift();
                 const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
-                if(nn) return nn;
+                if (nn) return nn;
             }
             return ax.length - bx.length;
         }
@@ -2450,6 +2590,11 @@
                         }
                     }
                     return 0;
+                }
+
+                if (column === 'commentaire') {
+                    valA = a.commentaire || '';
+                    valB = b.commentaire || '';
                 }
 
                 const comparison = naturalSort(String(valA), String(valB));
@@ -2489,7 +2634,7 @@
 
         function updateHostsTable(hosts) {
             const tbody = document.getElementById('hosts-table-body');
-            
+
             if (hosts.length === 0) {
                 tbody.innerHTML = `
                     <tr>
@@ -2505,9 +2650,17 @@
                 <tr>
                     <td><strong>${escapeHtml(host.ip)}</strong></td>
                     <td>
-                        <span class="host-name-display" id="name-display-${escapeHtml(host.ip).replace(/\./g, '-')}">${escapeHtml(host.nom) || '-'}</span>
+                        <span class="host-name-display" id="name-display-${escapeHtml(host.ip).replace(/\./g, '-')}" 
+                              onclick="editHostName('${host.ip}')" 
+                              style="cursor: pointer; display: inline-block; min-width: 50px; border-bottom: 1px dashed #667eea55;"
+                              title="${t('edit_name')}">
+                            ${escapeHtml(host.nom) || '-'}
+                        </span>
                         <input type="text" class="host-name-input" id="name-input-${escapeHtml(host.ip).replace(/\./g, '-')}" 
-                               value="${escapeHtml(host.nom)}" style="display: none; width: 100%; padding: 5px; border: 2px solid #667eea; border-radius: 4px;">
+                               value="${escapeHtml(host.nom)}" 
+                               onblur="saveHostName('${host.ip}')"
+                               onkeydown="if(event.key === 'Enter') this.blur()"
+                               style="display: none; width: 100%; padding: 5px; border: 2px solid #10b981; border-radius: 6px; font-weight: 600;">
                     </td>
                     <td>${escapeHtml(host.mac) || '-'}</td>
                     <td>${escapeHtml(host.port) || '-'}</td>
@@ -2527,13 +2680,20 @@
                             ${sitesList.map(site => `<option value="${escapeHtml(site)}" ${host.site === site ? 'selected' : ''}>${escapeHtml(site)}</option>`).join('')}
                         </select>
                     </td>
+                    <td>
+                        <span class="host-comment-display" id="comment-display-${escapeHtml(host.ip).replace(/\./g, '-')}" 
+                              onclick="editHostComment('${host.ip}')" 
+                              style="cursor: pointer; display: inline-block; min-width: 80px; border-bottom: 1px dashed #667eea55;"
+                              title="${t('edit_comment')}">
+                            ${escapeHtml(host.commentaire) || '-'}
+                        </span>
+                        <input type="text" class="host-comment-input" id="comment-input-${escapeHtml(host.ip).replace(/\./g, '-')}" 
+                               value="${escapeHtml(host.commentaire)}" 
+                               onblur="saveHostComment('${host.ip}')"
+                               onkeydown="if(event.key === 'Enter') this.blur()"
+                               style="display: none; width: 100%; padding: 5px; border: 2px solid #10b981; border-radius: 6px;">
+                    </td>
                     <td class="host-actions">
-                        <button class="btn btn-info btn-small" onclick="editHostName('${host.ip}')" id="edit-btn-${escapeHtml(host.ip).replace(/\./g, '-')}" title="${t('edit_name')}">
-                            ✏️
-                        </button>
-                        <button class="btn btn-primary btn-small" onclick="saveHostName('${host.ip}')" id="save-btn-${escapeHtml(host.ip).replace(/\./g, '-')}" style="display: none;" title="${t('save')}">
-                            💾
-                        </button>
                         <button class="btn btn-danger btn-small" onclick="deleteHost('${host.ip}')" title="${t('delete')}">
                             🗑️
                         </button>
@@ -2578,9 +2738,9 @@
         }
 
         // ==================== Event Handlers ====================
-        document.getElementById('form-add-hosts').addEventListener('submit', async function(e) {
+        document.getElementById('form-add-hosts').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const data = {
                 ip: document.getElementById('input-ip').value,
                 hosts: parseInt(document.getElementById('input-hosts').value),
@@ -2593,10 +2753,10 @@
                 const result = await apiCall('/api/add_hosts', 'POST', data);
                 showNotification(result.message || t('scan_hosts'), 'success');
                 setTimeout(() => socket.emit('request_update'), 2000);
-            } catch (error) {}
+            } catch (error) { }
         });
 
-        document.getElementById('btn-start-monitoring').addEventListener('click', async function() {
+        document.getElementById('btn-start-monitoring').addEventListener('click', async function () {
             const delai = parseInt(document.getElementById('input-delai').value);
             const nbHs = parseInt(document.getElementById('input-nb-hs').value);
 
@@ -2605,19 +2765,19 @@
                 showNotification(t('monitoring_started'), 'success');
                 monitoringRunning = true;
                 updateMonitoringStatus(true);
-            } catch (error) {}
+            } catch (error) { }
         });
 
-        document.getElementById('btn-stop-monitoring').addEventListener('click', async function() {
+        document.getElementById('btn-stop-monitoring').addEventListener('click', async function () {
             try {
                 const result = await apiCall('/api/stop_monitoring', 'POST');
                 showNotification(t('monitoring_stopped'), 'info');
                 monitoringRunning = false;
                 updateMonitoringStatus(false);
-            } catch (error) {}
+            } catch (error) { }
         });
 
-        document.getElementById('btn-save-alerts').addEventListener('click', async function() {
+        document.getElementById('btn-save-alerts').addEventListener('click', async function () {
             const alerts = {
                 popup: document.getElementById('check-popup').checked,
                 mail: document.getElementById('check-mail').checked,
@@ -2631,10 +2791,10 @@
             try {
                 const result = await apiCall('/api/save_alerts', 'POST', alerts);
                 showNotification(t('alerts_saved'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         });
 
-        document.getElementById('btn-clear-all').addEventListener('click', async function() {
+        document.getElementById('btn-clear-all').addEventListener('click', async function () {
             if (!confirm(t('confirm_delete_all'))) {
                 return;
             }
@@ -2643,10 +2803,10 @@
                 const result = await apiCall('/api/clear_all', 'POST');
                 showNotification(t('all_hosts_deleted'), 'info');
                 socket.emit('request_update');
-            } catch (error) {}
+            } catch (error) { }
         });
 
-        document.getElementById('btn-remove-duplicates').addEventListener('click', async function() {
+        document.getElementById('btn-remove-duplicates').addEventListener('click', async function () {
             try {
                 const result = await apiCall('/api/remove_duplicates', 'POST');
                 if (result.duplicates_removed > 0) {
@@ -2655,10 +2815,10 @@
                     showNotification(t('no_duplicates'), 'info');
                 }
                 socket.emit('request_update');
-            } catch (error) {}
+            } catch (error) { }
         });
 
-        document.getElementById('btn-export-csv').addEventListener('click', async function() {
+        document.getElementById('btn-export-csv').addEventListener('click', async function () {
             try {
                 window.location.href = '/api/export_csv';
                 showNotification(t('export_started'), 'success');
@@ -2667,11 +2827,11 @@
             }
         });
 
-        document.getElementById('btn-import-csv').addEventListener('click', function() {
+        document.getElementById('btn-import-csv').addEventListener('click', function () {
             document.getElementById('file-import-csv').click();
         });
 
-        document.getElementById('file-import-csv').addEventListener('change', async function(e) {
+        document.getElementById('file-import-csv').addEventListener('change', async function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -2685,7 +2845,7 @@
                 });
 
                 const result = await response.json();
-                
+
                 if (response.ok) {
                     showNotification(result.message || t('import_success'), 'success');
                     socket.emit('request_update');
@@ -2699,15 +2859,15 @@
             e.target.value = '';
         });
 
-        document.getElementById('btn-save-settings').addEventListener('click', async function() {
+        document.getElementById('btn-save-settings').addEventListener('click', async function () {
             try {
                 const result = await apiCall('/api/save_settings', 'POST');
                 showNotification(t('settings_saved'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         });
 
         // ==================== Export/Import Excel ====================
-        document.getElementById('btn-export-xls').addEventListener('click', async function() {
+        document.getElementById('btn-export-xls').addEventListener('click', async function () {
             try {
                 window.location.href = '/api/export_xls';
                 showNotification(t('export_xls_started'), 'success');
@@ -2716,11 +2876,11 @@
             }
         });
 
-        document.getElementById('btn-import-xls').addEventListener('click', function() {
+        document.getElementById('btn-import-xls').addEventListener('click', function () {
             document.getElementById('file-import-xls').click();
         });
 
-        document.getElementById('file-import-xls').addEventListener('change', async function(e) {
+        document.getElementById('file-import-xls').addEventListener('change', async function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -2734,7 +2894,7 @@
                 });
 
                 const result = await response.json();
-                
+
                 if (response.ok) {
                     showNotification(result.message || t('import_xls_success'), 'success');
                     socket.emit('request_update');
@@ -2758,7 +2918,7 @@
                 const result = await apiCall('/api/delete_host', 'POST', { ip });
                 showNotification(`${t('host_deleted')}: ${ip}`, 'info');
                 socket.emit('request_update');
-            } catch (error) {}
+            } catch (error) { }
         }
 
         async function excludeHost(ip, isExcluded) {
@@ -2766,25 +2926,21 @@
                 const endpoint = isExcluded ? '/api/include_host' : '/api/exclude_host';
                 const message = isExcluded ? `${t('host_included')}: ${ip}` : `${t('host_excluded')}: ${ip}`;
                 const type = isExcluded ? 'success' : 'info';
-                
+
                 const result = await apiCall(endpoint, 'POST', { ip });
                 showNotification(message, type);
                 socket.emit('request_update');
-            } catch (error) {}
+            } catch (error) { }
         }
 
         function editHostName(ip) {
             const ipClean = ip.replace(/\./g, '-');
             const displayEl = document.getElementById(`name-display-${ipClean}`);
             const inputEl = document.getElementById(`name-input-${ipClean}`);
-            const editBtn = document.getElementById(`edit-btn-${ipClean}`);
-            const saveBtn = document.getElementById(`save-btn-${ipClean}`);
-            
-            if (displayEl && inputEl && editBtn && saveBtn) {
+
+            if (displayEl && inputEl) {
                 displayEl.style.display = 'none';
                 inputEl.style.display = 'block';
-                editBtn.style.display = 'none';
-                saveBtn.style.display = 'inline-flex';
                 inputEl.focus();
                 inputEl.select();
             }
@@ -2794,41 +2950,82 @@
             const ipClean = ip.replace(/\./g, '-');
             const displayEl = document.getElementById(`name-display-${ipClean}`);
             const inputEl = document.getElementById(`name-input-${ipClean}`);
-            const editBtn = document.getElementById(`edit-btn-${ipClean}`);
-            const saveBtn = document.getElementById(`save-btn-${ipClean}`);
-            
-            const newName = inputEl ? inputEl.value.trim() : '';
-            
+
+            if (!inputEl || inputEl.style.display === 'none') return;
+
+            const newName = inputEl.value.trim();
+
             try {
-                const result = await apiCall('/api/update_host_name', 'POST', { 
-                    ip: ip, 
-                    name: newName 
+                const result = await apiCall('/api/update_host_name', 'POST', {
+                    ip: ip,
+                    name: newName
                 });
-                
+
                 if (displayEl) {
                     displayEl.textContent = newName || '-';
-                    displayEl.style.display = 'inline';
+                    displayEl.style.display = 'inline-block';
                 }
                 if (inputEl) {
                     inputEl.style.display = 'none';
                 }
-                if (editBtn) {
-                    editBtn.style.display = 'inline-flex';
-                }
-                if (saveBtn) {
-                    saveBtn.style.display = 'none';
-                }
-                
+
                 showNotification(`${t('name_modified')} ${ip}`, 'success');
                 socket.emit('request_update');
-            } catch (error) {}
+            } catch (error) {
+                if (displayEl) displayEl.style.display = 'inline-block';
+                if (inputEl) inputEl.style.display = 'none';
+            }
+        }
+
+        function editHostComment(ip) {
+            const ipClean = ip.replace(/\./g, '-');
+            const displayEl = document.getElementById(`comment-display-${ipClean}`);
+            const inputEl = document.getElementById(`comment-input-${ipClean}`);
+
+            if (displayEl && inputEl) {
+                displayEl.style.display = 'none';
+                inputEl.style.display = 'block';
+                inputEl.focus();
+                inputEl.select();
+            }
+        }
+
+        async function saveHostComment(ip) {
+            const ipClean = ip.replace(/\./g, '-');
+            const displayEl = document.getElementById(`comment-display-${ipClean}`);
+            const inputEl = document.getElementById(`comment-input-${ipClean}`);
+
+            if (!inputEl || inputEl.style.display === 'none') return;
+
+            const newComment = inputEl.value.trim();
+
+            try {
+                const result = await apiCall('/api/update_comment', 'POST', {
+                    ip: ip,
+                    comment: newComment
+                });
+
+                if (displayEl) {
+                    displayEl.textContent = newComment || '-';
+                    displayEl.style.display = 'inline-block';
+                }
+                if (inputEl) {
+                    inputEl.style.display = 'none';
+                }
+
+                showNotification(`${t('comment_modified') || 'Commentaire modifié'} ${ip}`, 'success');
+                socket.emit('request_update');
+            } catch (error) {
+                if (displayEl) displayEl.style.display = 'inline-block';
+                if (inputEl) inputEl.style.display = 'none';
+            }
         }
 
         // ==================== Settings ====================
         async function loadSettings() {
             try {
                 const result = await apiCall('/api/get_settings');
-                
+
                 if (result.delai) {
                     document.getElementById('input-delai').value = result.delai;
                     document.getElementById('stat-delai').textContent = result.delai;
@@ -2836,7 +3033,7 @@
                 if (result.nb_hs) {
                     document.getElementById('input-nb-hs').value = result.nb_hs;
                 }
-                
+
                 if (result.alerts) {
                     document.getElementById('check-popup').checked = result.alerts.popup || false;
                     document.getElementById('check-mail').checked = result.alerts.mail || false;
@@ -2846,34 +3043,88 @@
                     document.getElementById('check-temp-alert').checked = result.alerts.temp_alert || false;
                     document.getElementById('input-temp-seuil').value = result.alerts.temp_seuil || 70;
                 }
-                
+
                 if (typeof result.monitoring_running !== 'undefined') {
                     monitoringRunning = result.monitoring_running;
                     updateMonitoringStatus(result.monitoring_running);
                 }
-                
+
                 if (result.smtp) {
                     document.getElementById('smtp-server').value = result.smtp.server || '';
                     document.getElementById('smtp-port').value = result.smtp.port || '587';
                     document.getElementById('smtp-email').value = result.smtp.email || '';
                     document.getElementById('smtp-recipients').value = result.smtp.recipients || '';
                 }
-                
+
                 if (result.telegram) {
                     document.getElementById('telegram-token').value = result.telegram.token || '';
                     document.getElementById('telegram-chatid').value = result.telegram.chatid || '';
                 }
-                
+
                 if (result.general) {
                     document.getElementById('general-site').value = result.general.site || '';
                     document.getElementById('general-theme').value = result.general.theme || 'nord';
+
+                    if (result.general.advanced_title) {
+                        const titleEl = document.getElementById('advanced-settings-title');
+                        const inputEl = document.getElementById('advanced-settings-title-input');
+                        if (titleEl) titleEl.textContent = result.general.advanced_title;
+                        if (inputEl) inputEl.textContent = result.general.advanced_title;
+                    }
                 }
-                
+
                 if (result.version) {
                     document.getElementById('system-version').textContent = result.version;
                 }
             } catch (error) {
                 console.error('Settings load error:', error);
+            }
+        }
+
+        function editSectionTitle(id) {
+            const displayEl = document.getElementById(id);
+            const inputEl = document.getElementById(id + '-input');
+
+            if (displayEl && inputEl) {
+                displayEl.style.display = 'none';
+                inputEl.style.display = 'block';
+                inputEl.value = displayEl.textContent;
+                inputEl.focus();
+                inputEl.select();
+            }
+        }
+
+        async function saveSectionTitle(id) {
+            const displayEl = document.getElementById(id);
+            const inputEl = document.getElementById(id + '-input');
+
+            if (!inputEl || inputEl.style.display === 'none') return;
+
+            const newTitle = inputEl.value.trim();
+            if (!newTitle) {
+                displayEl.style.display = 'block';
+                inputEl.style.display = 'none';
+                return;
+            }
+
+            try {
+                // Pour l'instant on gère seulement advanced-settings-title
+                const result = await apiCall('/api/update_general_setting', 'POST', {
+                    advanced_title: newTitle
+                });
+
+                if (displayEl) {
+                    displayEl.textContent = newTitle;
+                    displayEl.style.display = 'block';
+                }
+                if (inputEl) {
+                    inputEl.style.display = 'none';
+                }
+
+                showNotification(t('settings_saved') || 'Titre mis à jour', 'success');
+            } catch (error) {
+                if (displayEl) displayEl.style.display = 'block';
+                if (inputEl) inputEl.style.display = 'none';
             }
         }
 
@@ -2904,7 +3155,7 @@
                     requireInteraction: false
                 });
             } else if (Notification.permission !== "denied") {
-                Notification.requestPermission().then(function(permission) {
+                Notification.requestPermission().then(function (permission) {
                     if (permission === "granted") {
                         new Notification(title, {
                             body: body,
@@ -2932,20 +3183,20 @@
 
         function getLatencyClass(latence) {
             if (!latence || latence === '-') return 'offline';
-            
+
             const latenceStr = String(latence).toLowerCase();
-            
+
             // Si c'est HS ou contient "hs"
             if (latenceStr === 'hs' || latenceStr.includes('hs')) {
                 return 'offline';
             }
-            
+
             // Extraire la valeur numérique
             const match = latenceStr.match(/[\d.]+/);
             if (!match) return 'good';
-            
+
             const ms = parseFloat(match[0]);
-            
+
             if (ms < 20) return 'excellent';      // Vert - Excellent (< 20ms)
             if (ms < 50) return 'good';           // Jaune clair - Bon (20-50ms)
             if (ms < 100) return 'warning';       // Orange - Attention (50-100ms)
@@ -2962,7 +3213,7 @@
             const content = document.getElementById('content-' + id);
             const icon = document.getElementById('icon-' + id);
             const header = icon.parentElement;
-            
+
             if (content.classList.contains('active')) {
                 content.classList.remove('active');
                 icon.classList.remove('active');
@@ -2975,7 +3226,7 @@
         }
 
         // ==================== Configuration SMTP ====================
-        document.getElementById('form-smtp').addEventListener('submit', async function(e) {
+        document.getElementById('form-smtp').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const data = {
@@ -2989,18 +3240,18 @@
             try {
                 const result = await apiCall('/api/save_smtp', 'POST', data);
                 showNotification(t('smtp_saved'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         });
 
         async function testSMTP() {
             try {
                 const result = await apiCall('/api/test_smtp', 'POST', {});
                 showNotification(result.message || t('test_email_sent'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         }
 
         // ==================== Configuration Telegram ====================
-        document.getElementById('form-telegram').addEventListener('submit', async function(e) {
+        document.getElementById('form-telegram').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const data = {
@@ -3011,18 +3262,18 @@
             try {
                 const result = await apiCall('/api/save_telegram', 'POST', data);
                 showNotification(t('telegram_saved'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         });
 
         async function testTelegram() {
             try {
                 const result = await apiCall('/api/test_telegram', 'POST', {});
                 showNotification(result.message || t('telegram_test_sent'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         }
 
         // ==================== Email Récapitulatif ====================
-        document.getElementById('form-mail-recap').addEventListener('submit', async function(e) {
+        document.getElementById('form-mail-recap').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const data = {
@@ -3039,24 +3290,24 @@
             try {
                 const result = await apiCall('/api/save_mail_recap', 'POST', data);
                 showNotification(t('recap_saved'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         });
 
         async function sendTestRecap() {
             try {
                 const result = await apiCall('/api/send_test_recap', 'POST', {});
                 showNotification(result.message || t('recap_test_sent'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         }
 
         async function loadMailRecapSettings() {
             try {
                 const result = await apiCall('/api/get_mail_recap_settings');
-                
+
                 if (result.heure) {
                     document.getElementById('recap-heure').value = result.heure;
                 }
-                
+
                 document.getElementById('recap-lundi').checked = result.lundi || false;
                 document.getElementById('recap-mardi').checked = result.mardi || false;
                 document.getElementById('recap-mercredi').checked = result.mercredi || false;
@@ -3070,7 +3321,7 @@
         }
 
         // ==================== Paramètres Généraux ====================
-        document.getElementById('form-general').addEventListener('submit', async function(e) {
+        document.getElementById('form-general').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const data = {
@@ -3082,15 +3333,15 @@
             try {
                 const result = await apiCall('/api/save_general', 'POST', data);
                 showNotification(t('general_saved'), 'success');
-            } catch (error) {}
+            } catch (error) { }
         });
 
         // ==================== Licence ====================
-        document.getElementById('form-license').addEventListener('submit', async function(e) {
+        document.getElementById('form-license').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const licenseKey = document.getElementById('license-key').value;
-            
+
             const data = {
                 site: document.getElementById('general-site').value,
                 license: licenseKey,
@@ -3101,24 +3352,24 @@
                 const result = await apiCall('/api/save_general', 'POST', data);
                 showNotification(t('license_saved'), 'success');
                 loadLicenseInfo();
-            } catch (error) {}
+            } catch (error) { }
         });
 
         async function loadLicenseInfo() {
             try {
                 const result = await apiCall('/api/get_license_info');
-                
+
                 const icon = document.getElementById('license-icon');
                 const status = document.getElementById('license-status');
                 const days = document.getElementById('license-days');
                 const codeInput = document.getElementById('activation-code');
-                
+
                 if (result.activation_code) {
                     codeInput.value = result.activation_code;
                 }
-                
+
                 const isLicenseActive = result.active;
-                
+
                 const paidAlerts = ['check-mail', 'check-telegram', 'check-mail-recap', 'check-db-externe'];
                 paidAlerts.forEach(id => {
                     const el = document.getElementById(id);
@@ -3152,7 +3403,7 @@
         }
 
         // ==================== Authentification ====================
-        document.getElementById('btn-logout').addEventListener('click', async function() {
+        document.getElementById('btn-logout').addEventListener('click', async function () {
             if (!confirm(t('confirm_logout'))) {
                 return;
             }
@@ -3160,25 +3411,25 @@
             try {
                 const result = await apiCall('/api/logout', 'POST');
                 window.location.href = '/login';
-            } catch (error) {}
+            } catch (error) { }
         });
 
-        document.getElementById('btn-change-password').addEventListener('click', function() {
+        document.getElementById('btn-change-password').addEventListener('click', function () {
             const modal = document.getElementById('modal-change-password');
             modal.style.display = 'flex';
         });
 
-        document.getElementById('btn-cancel-change').addEventListener('click', function() {
+        document.getElementById('btn-cancel-change').addEventListener('click', function () {
             closeUserModal();
         });
-        
+
         function closeUserModal() {
             const modal = document.getElementById('modal-change-password');
             modal.style.display = 'none';
             document.getElementById('form-change-password').reset();
             document.getElementById('form-change-user-password').reset();
         }
-        
+
         function switchUserTab(tab) {
             // Masquer tous les contenus
             document.querySelectorAll('.user-tab-content').forEach(c => c.style.display = 'none');
@@ -3189,7 +3440,7 @@
                 t.style.border = '1px solid #e5e7eb';
                 t.classList.remove('active');
             });
-            
+
             // Activer l'onglet sélectionné
             const activeTab = document.querySelector(`.user-tab[data-tab="${tab}"]`);
             if (tab === 'admin') {
@@ -3200,16 +3451,16 @@
             activeTab.style.color = 'white';
             activeTab.style.border = 'none';
             activeTab.classList.add('active');
-            
+
             // Afficher le contenu correspondant
             document.getElementById(`tab-${tab}`).style.display = 'block';
-            
+
             // Charger les infos utilisateur si onglet user
             if (tab === 'user') {
                 loadUserCredentials();
             }
         }
-        
+
         async function loadUserCredentials() {
             try {
                 const result = await apiCall('/api/get_users');
@@ -3224,7 +3475,7 @@
             }
         }
 
-        document.getElementById('form-change-password').addEventListener('submit', async function(e) {
+        document.getElementById('form-change-password').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const data = {
@@ -3239,10 +3490,10 @@
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
-            } catch (error) {}
+            } catch (error) { }
         });
-        
-        document.getElementById('form-change-user-password').addEventListener('submit', async function(e) {
+
+        document.getElementById('form-change-user-password').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const data = {
@@ -3255,7 +3506,7 @@
                 const result = await apiCall('/api/change_user_credentials', 'POST', data);
                 showNotification(t('user_credentials_changed') || 'Identifiants utilisateur modifiés', 'success');
                 closeUserModal();
-            } catch (error) {}
+            } catch (error) { }
         });
 
         // ==================== User Info ====================
@@ -3278,4 +3529,5 @@
         loadMailRecapSettings();
     </script>
 </body>
+
 </html>

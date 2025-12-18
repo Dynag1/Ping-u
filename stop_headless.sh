@@ -48,7 +48,23 @@ if [ -f "pingu_headless.pid" ]; then
     rm -f pingu_headless.pid
 fi
 
-# Méthode 2: Tuer tous les processus Pingu.py
+# Méthode 3: Via le port 9090
+PORT=9090
+echo "🔍 Vérification du port $PORT..."
+if command -v lsof >/dev/null 2>&1; then
+    PORT_PIDS=$(lsof -t -i :$PORT 2>/dev/null)
+    if [ -n "$PORT_PIDS" ]; then
+        echo "🔄 Arrêt des processus utilisant le port $PORT: $PORT_PIDS"
+        kill $PORT_PIDS 2>/dev/null
+        sleep 2
+        kill -9 $PORT_PIDS 2>/dev/null
+    fi
+elif command -v fuser >/dev/null 2>&1; then
+    echo "🔄 Arrêt des processus utilisant le port $PORT via fuser"
+    fuser -k $PORT/tcp 2>/dev/null
+fi
+
+# Méthode 4: Tuer tous les processus Pingu.py
 PIDS=$(pgrep -f "Pingu.py" 2>/dev/null)
 if [ -n "$PIDS" ]; then
     echo "🔄 Arrêt des processus restants: $PIDS"

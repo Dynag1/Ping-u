@@ -88,8 +88,8 @@ def saveExcel(self, tree_model):
         # Créer le classeur Excel
         workbook = Workbook()
         sheet = workbook.active
-        # Entêtes avec Site
-        headers = [self.tr("IP"), self.tr("Nom"), self.tr("Mac"), self.tr("Port"), self.tr("Latence"), self.tr("Site")]
+        # Entêtes avec site et commentaire
+        headers = [self.tr("IP"), self.tr("Nom"), self.tr("Mac"), self.tr("Port"), self.tr("Latence"), self.tr("site"), self.tr("Commentaire")]
         sheet.append(headers)
         # Parcourir le modèle
         for row in range(tree_model.rowCount()):
@@ -99,7 +99,8 @@ def saveExcel(self, tree_model):
             mac_index = tree_model.index(row, 3)
             port_index = tree_model.index(row, 4)
             latence_index = tree_model.index(row, 5)
-            site_index = tree_model.index(row, 8)  # Colonne Site (était Comm)
+            site_index = tree_model.index(row, 8)  # Colonne site
+            comment_index = tree_model.index(row, 9)  # Colonne Commentaire
             # Récupérer les données
             ip = ip_index.data()
             nom = nom_index.data()
@@ -107,6 +108,7 @@ def saveExcel(self, tree_model):
             port = port_index.data()
             latence = latence_index.data()
             site = site_index.data()
+            comment = comment_index.data()
 
             # Écrire dans Excel
             sheet.append([
@@ -115,7 +117,8 @@ def saveExcel(self, tree_model):
                 str(mac) if mac else "",
                 str(port) if port else "",
                 str(latence) if latence else "",
-                str(site) if site else ""
+                str(site) if site else "",
+                str(comment) if comment else ""
             ])
 
         workbook.save(filename=f"{name}")
@@ -153,7 +156,8 @@ def openExcel(self, tree_model):
             mac = str(row[2]) if len(row) > 2 and row[2] else ""
             port = str(row[3]) if len(row) > 3 and row[3] else ""
             latence = ""
-            site = str(row[5]) if len(row) > 5 and row[5] else ""  # Colonne Site
+            site = str(row[5]) if len(row) > 5 and row[5] else ""  # Colonne site
+            comment = str(row[6]) if len(row) > 6 and row[6] else ""  # Colonne commentaire
 
             # Vérifier si l'IP existe déjà
             ip_exists = False
@@ -176,7 +180,8 @@ def openExcel(self, tree_model):
                 tree_model.setData(tree_model.index(new_row, 3, parent), mac)
                 tree_model.setData(tree_model.index(new_row, 4, parent), port)
                 tree_model.setData(tree_model.index(new_row, 5, parent), latence)
-                tree_model.setData(tree_model.index(new_row, 8, parent), site)  # Colonne Site
+                tree_model.setData(tree_model.index(new_row, 8, parent), site)  # Colonne site
+                tree_model.setData(tree_model.index(new_row, 9, parent), comment)  # Colonne commentaire
         QMessageBox.information(
             self,
             self.tr("Succès"),
@@ -191,7 +196,7 @@ def openExcel(self, tree_model):
 def export_xls_web(tree_model, filepath):
     """
     Export XLS pour l'API web (sans GUI)
-    Format: IP, Nom, Mac, Site
+    Format: IP, Nom, Mac, site
     """
     if not OPENPYXL_AVAILABLE:
         raise Exception("Le module openpyxl n'est pas installé")
@@ -202,7 +207,7 @@ def export_xls_web(tree_model, filepath):
         sheet.title = "Hôtes"
         
         # En-têtes
-        headers = ["IP", "Nom", "Mac", "Site"]
+        headers = ["IP", "Nom", "Mac", "site", "Commentaire"]
         sheet.append(headers)
         
         # Style pour les en-têtes
@@ -221,15 +226,16 @@ def export_xls_web(tree_model, filepath):
             ip = tree_model.item(row, 1).text() if tree_model.item(row, 1) else ""
             nom = tree_model.item(row, 2).text() if tree_model.item(row, 2) else ""
             mac = tree_model.item(row, 3).text() if tree_model.item(row, 3) else ""
-            site = tree_model.item(row, 8).text() if tree_model.item(row, 8) else ""  # Colonne Site
+            site = tree_model.item(row, 8).text() if tree_model.item(row, 8) else ""  # Colonne site
+            comment = tree_model.item(row, 9).text() if tree_model.item(row, 9) else ""
             
-            sheet.append([ip, nom, mac, site])
+            sheet.append([ip, nom, mac, site, comment])
         
         # Ajuster la largeur des colonnes
         sheet.column_dimensions['A'].width = 18  # IP
         sheet.column_dimensions['B'].width = 30  # Nom
         sheet.column_dimensions['C'].width = 20  # Mac
-        sheet.column_dimensions['D'].width = 20  # Site
+        sheet.column_dimensions['D'].width = 20  # site
         
         workbook.save(filepath)
         return True
@@ -241,7 +247,7 @@ def export_xls_web(tree_model, filepath):
 def import_xls_web(tree_model, filepath):
     """
     Import XLS pour l'API web (sans GUI)
-    Format attendu: IP, Nom, Mac, Site (en-têtes sur la première ligne)
+    Format attendu: IP, Nom, Mac, site (en-têtes sur la première ligne)
     """
     if not OPENPYXL_AVAILABLE:
         raise Exception("Le module openpyxl n'est pas installé")
@@ -278,7 +284,8 @@ def import_xls_web(tree_model, filepath):
             ip = str(row[0]).strip() if row[0] else ""
             nom = str(row[1]).strip() if len(row) > 1 and row[1] else ip
             mac = str(row[2]).strip() if len(row) > 2 and row[2] else ""
-            site = str(row[3]).strip() if len(row) > 3 and row[3] else ""  # Colonne Site
+            site = str(row[3]).strip() if len(row) > 3 and row[3] else ""  # Colonne site
+            comment = str(row[4]).strip() if len(row) > 4 and row[4] else ""  # Colonne commentaire
             
             if not ip:
                 continue
@@ -298,8 +305,9 @@ def import_xls_web(tree_model, filepath):
                 QStandardItem(""),                          # 5: Latence
                 QStandardItem(""),                          # 6: Temp
                 QStandardItem(""),                          # 7: Suivi
-                QStandardItem(site),                        # 8: Site
-                QStandardItem("")                           # 9: Excl
+                QStandardItem(site),                        # 8: site
+                QStandardItem(comment),                     # 9: Commentaire
+                QStandardItem("")                           # 10: Excl
             ]
             
             tree_model.appendRow(items)

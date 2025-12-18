@@ -213,6 +213,33 @@ class WebServer(QObject):
             except Exception as e:
                 logger.error(f"Erreur logout: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/update_comment', methods=['POST'])
+        @WebAuth.any_login_required
+        def update_comment():
+            try:
+                data = request.get_json()
+                ip = data.get('ip')
+                comment = data.get('comment')
+                
+                if not ip:
+                    return jsonify({'success': False, 'error': 'IP requise'}), 400
+                
+                # Mettre à jour dans le modèle
+                model = self.main_window.treeIpModel
+                for row in range(model.rowCount()):
+                    item_ip = model.item(row, 1)
+                    if item_ip and item_ip.text() == ip:
+                        comment_item = QStandardItem(comment)
+                        model.setItem(row, 9, comment_item)
+                        # Notifier d'une mise à jour (diffusion socket.io)
+                        self.socketio.emit('hosts_update', self._get_hosts_data())
+                        return jsonify({'success': True})
+                
+                return jsonify({'success': False, 'error': 'IP non trouvée'}), 404
+            except Exception as e:
+                logger.error(f"Erreur update_comment: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
         
         @self.app.route('/api/user_info')
         @WebAuth.any_login_required
@@ -421,7 +448,7 @@ class WebServer(QObject):
                 if hasattr(model, 'clear'):
                     model.clear()
                     model.setHorizontalHeaderLabels([
-                        "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "Comm", "Excl"
+                        "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "site", "Excl"
                     ])
                 else:
                     for i in range(count_before - 1, -1, -1):
@@ -511,7 +538,7 @@ class WebServer(QObject):
                     item_ip = model.item(row, 1)  # Colonne IP
                     if item_ip and item_ip.text() == ip:
                         excl_item = QStandardItem("x")
-                        model.setItem(row, 9, excl_item)  # Colonne Excl
+                        model.setItem(row, 10, excl_item)  # Colonne Excl
                         
                         # Réinitialiser le statut visuel
                         latence_item = model.item(row, 5)
@@ -549,7 +576,7 @@ class WebServer(QObject):
                     item_ip = model.item(row, 1)  # Colonne IP
                     if item_ip and item_ip.text() == ip:
                         excl_item = QStandardItem("")
-                        model.setItem(row, 9, excl_item)  # Colonne Excl (vide pour inclure)
+                        model.setItem(row, 10, excl_item)  # Colonne Excl (vide pour inclure)
                         logger.info(f"Hôte {ip} réinclus via API")
                         self.broadcast_update()
                         return jsonify({'success': True, 'message': f'Hôte {ip} réinclus'})
@@ -774,7 +801,8 @@ class WebServer(QObject):
                     'general': {
                         'site': general_params[0],
                         'license': general_params[1] if len(general_params) > 1 else '',
-                        'theme': general_params[2]
+                        'theme': general_params[2],
+                        'advanced_title': general_params[3] if len(general_params) > 3 else 'Paramètres Avancés'
                     },
                     'license': {
                         'active': license_active,
@@ -784,6 +812,32 @@ class WebServer(QObject):
                 })
             except Exception as e:
                 logger.error(f"Erreur récupération paramètres: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/update_general_setting', methods=['POST'])
+        @WebAuth.login_required
+        def update_general_setting():
+            try:
+                data = request.get_json()
+                from src import db
+                
+                # Récupérer les paramètres actuels
+                current = db.lire_param_gene()
+                if not current:
+                    current = ['', '', 'nord', 'Paramètres Avancés']
+                
+                # Mettre à jour seulement ce qui est passé
+                site = data.get('site', current[0])
+                license_key = data.get('license', current[1])
+                theme = data.get('theme', current[2])
+                advanced_title = data.get('advanced_title', current[3] if len(current) > 3 else 'Paramètres Avancés')
+                
+                db.save_param_gene(site, license_key, theme, advanced_title)
+                
+                logger.info(f"Paramètre général mis à jour: {data}")
+                return jsonify({'success': True, 'message': 'Paramètre mis à jour'})
+            except Exception as e:
+                logger.error(f"Erreur mise à jour paramètre général: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
         @self.app.route('/api/save_smtp', methods=['POST'])
@@ -1235,7 +1289,7 @@ Ping ü - Monitoring Réseau
                 for row in range(model.rowCount()):
                     item_ip = model.item(row, 1)
                     if item_ip and item_ip.text() == ip:
-                        site_item = model.item(row, 8)  # Colonne Comm = Site
+                        site_item = model.item(row, 8)  # Colonne site
                         if not site_item:
                             site_item = QStandardItem(site_name)
                             model.setItem(row, 8, site_item)
@@ -1279,7 +1333,7 @@ Ping ü - Monitoring Réseau
                 for row in range(model.rowCount()):
                     item_ip = model.item(row, 1)
                     if item_ip and item_ip.text() in ips:
-                        site_item = model.item(row, 8)  # Colonne Comm = Site
+                        site_item = model.item(row, 8)  # Colonne site
                         if not site_item:
                             site_item = QStandardItem(site_name)
                             model.setItem(row, 8, site_item)
@@ -1350,7 +1404,7 @@ Ping ü - Monitoring Réseau
                     if not ip:
                         continue
                     
-                    # Récupérer le site de l'hôte (colonne Comm = colonne 8)
+                    # Récupérer le site de l'hôte (colonne site = colonne 8)
                     site = model.item(row, 8).text() if model.item(row, 8) else ''
                     
                     # Filtrage par site si activé
@@ -1375,7 +1429,8 @@ Ping ü - Monitoring Réseau
                         'temp': model.item(row, 6).text() if model.item(row, 6) else '-',
                         'suivi': model.item(row, 7).text() if model.item(row, 7) else '',
                         'site': site,  # Renommé de 'comm' à 'site'
-                        'excl': model.item(row, 9).text() if model.item(row, 9) else '',
+                        'commentaire': model.item(row, 9).text() if model.item(row, 9) else '',
+                        'excl': model.item(row, 10).text() if model.item(row, 10) else '',
                         'status': self._get_row_status(model, row)
                     }
                     
@@ -1626,6 +1681,12 @@ Ping ü - Monitoring Réseau
         try:
             self.running = False
             logger.info("Arrêt du serveur web demandé")
+            if hasattr(self, 'socketio') and self.socketio:
+                # Tentative d'arrêt propre du serveur SocketIO
+                try:
+                    self.socketio.stop()
+                except:
+                    pass
         except Exception as e:
             logger.error(f"Erreur arrêt serveur web: {e}", exc_info=True)
     

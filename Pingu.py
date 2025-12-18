@@ -131,9 +131,6 @@ from src.utils.colors import AppColors
 setup_logging()
 logger = get_logger(__name__)
 
-# Suppression de la redirection stdout/stderr obsolète
-# sys.stdout = open('logs/stdout.log', 'w')
-# sys.stderr = open('logs/stderr.log', 'w')
 
 class IPSortProxyModel(QSortFilterProxyModel):
     """Proxy model pour trier les IP numériquement"""
@@ -305,8 +302,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.error(f"Erreur chargement automatique liste: {e}", exc_info=True)
         
-        # Chargement des paramètres UI
-        # Chargement des paramètres UI
+
         self.settings_controller.load_ui_settings()
         
         # Initialisation de la couleur du bouton Start
@@ -567,14 +563,14 @@ class MainWindow(QMainWindow):
         self.treeIpModel.setHorizontalHeaderLabels([
             self.tr("Id"), self.tr("IP"), self.tr("Nom"), self.tr("Mac"), 
             self.tr("Port"), self.tr("Latence"), self.tr("Temp"), self.tr("Suivi"), 
-            self.tr("Comm"), self.tr("Excl")
+            self.tr("site"), self.tr("Commentaire"), self.tr("Excl")
         ])
         
         self.tree_view.setSortingEnabled(True)
         header = self.tree_view.header()
         header.setStretchLastSection(False)
         for i in range(self.treeIpModel.columnCount()):
-            if i in [0, 5, 6, 7, 9]:  # Colonnes figées (Id, Latence, Temp, Suivi, Excl)
+            if i in [0, 5, 6, 7, 10]:  # Colonnes figées (Id, Latence, Temp, Suivi, Excl)
                 header.setSectionResizeMode(i, QHeaderView.Fixed)
             else:  # Colonnes étirables
                 header.setSectionResizeMode(i, QHeaderView.Stretch)
@@ -582,7 +578,7 @@ class MainWindow(QMainWindow):
         self.tree_view.setColumnWidth(5, 50)  # Latence
         self.tree_view.setColumnWidth(6, 50)  # Temp
         self.tree_view.setColumnWidth(7, 50)  # Suivi
-        self.tree_view.setColumnWidth(9, 50)  # Excl
+        self.tree_view.setColumnWidth(10, 50) # Excl
         self.tree_view.setStyleSheet("QTreeView, QTreeView::item { color: black; }")
         self.tree_view.setSelectionMode(QAbstractItemView.NoSelection)
 
@@ -613,16 +609,19 @@ class MainWindow(QMainWindow):
         menu.exec(self.tree_view.viewport().mapToGlobal(pos))
 
     def handle_web_action(self, index: QModelIndex):
-        ip_item = self.treeIpModel.item(index.row(), 1)
+        source_index = self.proxyModel.mapToSource(index)
+        ip_item = self.treeIpModel.item(source_index.row(), 1)
         webbrowser.open('http://' + ip_item.text())
         logger.info(f"Ouverture navigateur pour {ip_item.text()}")
 
     def find_and_remove(self, index: QModelIndex):
-        self.treeIpModel.removeRow(index.row())
+        source_index = self.proxyModel.mapToSource(index)
+        self.treeIpModel.removeRow(source_index.row())
 
     def ipExcl(self, index: QModelIndex):
+        source_index = self.proxyModel.mapToSource(index)
         x_item = QStandardItem("x")
-        self.treeIpModel.setItem(index.row(), 8, x_item)
+        self.treeIpModel.setItem(source_index.row(), 10, x_item)
 
 
     def butIpClic(self):
@@ -644,10 +643,11 @@ class MainWindow(QMainWindow):
             QStandardItem(""),        # 6: Temp (sera remplie par SNMP)
             QStandardItem(""),        # 7: Suivi
             QStandardItem(site),      # 8: Site
-            QStandardItem("")         # 9: Excl
+            QStandardItem(""),        # 9: Commentaire
+            QStandardItem("")         # 10: Excl
         ]
         # Rendre certaines colonnes non éditables
-        for col in [0, 1, 3, 5, 6, 7, 9]:  # Id, IP, Mac, Latence, Temp, Suivi, Excl
+        for col in [0, 1, 3, 5, 6, 7, 10]:  # Id, IP, Mac, Latence, Temp, Suivi, Excl
             items[col].setFlags(items[col].flags() & ~Qt.ItemIsEditable)
 
         # Coloration selon is_ok : vert clair pour IP OK, rouge pour IP DOWN
@@ -1074,7 +1074,7 @@ def run_headless_mode():
 
     treeIpModel = QStandardItemModel()
     treeIpModel.setHorizontalHeaderLabels([
-        "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "Comm", "Excl"
+        "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "site", "Commentaire", "Excl"
     ])
     
     # Créer une fenêtre "virtuelle" pour le serveur web
@@ -1164,7 +1164,8 @@ def run_headless_mode():
                 QStandardItem(""),        # 6: Temp
                 QStandardItem(""),        # 7: Suivi
                 QStandardItem(site),      # 8: Site
-                QStandardItem("")         # 9: Excl
+                QStandardItem(""),        # 9: Commentaire
+                QStandardItem("")         # 10: Excl
             ]
             self.treeIpModel.appendRow(items)
             site_info = f" [Site: {site}]" if site else ""

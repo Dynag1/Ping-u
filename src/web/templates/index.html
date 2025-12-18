@@ -445,6 +445,35 @@
         .icon {
             font-size: 20px;
         }
+
+        .comment-item {
+            grid-column: span 2;
+            margin-top: 8px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 8px;
+        }
+
+        .comment-input {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 50px;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: #ffffff;
+            color: #374151;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), inset 0 1px 2px rgba(0,0,0,0.05);
+            background: #fff;
+        }
     </style>
 </head>
 <body>
@@ -682,7 +711,8 @@
                 mac: "MAC",
                 temperature: "Température",
                 bandwidth_in: "Débit IN",
-                bandwidth_out: "Débit OUT"
+                bandwidth_out: "Débit OUT",
+                comment: "Commentaire"
             },
             en: {
                 title: "Network Monitoring - Ping ü",
@@ -718,7 +748,8 @@
                 mac: "MAC",
                 temperature: "Temperature",
                 bandwidth_in: "Bandwidth IN",
-                bandwidth_out: "Bandwidth OUT"
+                bandwidth_out: "Bandwidth OUT",
+                comment: "Comment"
             }
         };
 
@@ -1136,6 +1167,10 @@
                         <div class="detail-label">📤 ${t('bandwidth_out')}</div>
                         <div class="detail-value">${escapeHtml(debitOut)}</div>
                     </div>
+                    <div class="detail-item comment-item">
+                        <div class="detail-label">💬 ${t('comment')}</div>
+                        <textarea class="comment-input" onblur="updateComment('${host.ip}', this.value)" placeholder="${t('comment')}...">${escapeHtml(host.commentaire || '')}</textarea>
+                    </div>
                 </div>
             `;
             
@@ -1202,6 +1237,14 @@
                 if (details[3].textContent !== debitOut) {
                     details[3].textContent = debitOut;
                 }
+                
+                // Commentaire (index 4) - seulement si pas focalisé
+                const commentInput = card.querySelector('.comment-input');
+                if (commentInput && document.activeElement !== commentInput) {
+                    if (commentInput.value !== (host.commentaire || '')) {
+                        commentInput.value = host.commentaire || '';
+                    }
+                }
             }
         }
 
@@ -1229,6 +1272,24 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        async function updateComment(ip, comment) {
+            try {
+                const response = await fetch('/api/update_comment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ip, comment }),
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    console.error('Erreur lors de la mise à jour du commentaire:', data.error);
+                }
+            } catch (error) {
+                console.error('Erreur réseau updateComment:', error);
+            }
         }
         
         async function logout() {
