@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -90,8 +91,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
         }
 
         .status-dot {
@@ -115,8 +123,15 @@
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
         }
 
         /* Language selector */
@@ -148,14 +163,14 @@
         .lang-selector select:focus {
             outline: none;
         }
-        
+
         /* User controls */
         .user-controls {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
+
         .user-info-badge {
             display: flex;
             align-items: center;
@@ -166,17 +181,17 @@
             font-size: 14px;
             font-weight: 600;
             color: #374151;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
-        
+
         .user-icon {
             font-size: 18px;
         }
-        
+
         .user-name {
             color: #1f2937;
         }
-        
+
         .admin-link {
             display: flex;
             align-items: center;
@@ -190,12 +205,12 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
-        
+
         .admin-link:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
-        
+
         .logout-btn {
             background: #fee2e2;
             border: none;
@@ -205,7 +220,7 @@
             font-size: 14px;
             transition: all 0.2s ease;
         }
-        
+
         .logout-btn:hover {
             background: #fecaca;
             transform: scale(1.1);
@@ -245,10 +260,25 @@
             font-weight: bold;
         }
 
-        .stat-card.total .value { color: #3b82f6; }
-        .stat-card.online .value { color: #10b981; }
-        .stat-card.offline .value { color: #ef4444; }
-        .stat-card.high-temp .value { color: #f59e0b; }
+        .stat-card.total .value {
+            color: #3b82f6;
+        }
+
+        .stat-card.online .value {
+            color: #10b981;
+        }
+
+        .stat-card.offline .value {
+            color: #ef4444;
+        }
+
+        .stat-card.high-temp .value {
+            color: #ef4444;
+        }
+
+        .stat-card.warning-temp .value {
+            color: #f59e0b;
+        }
 
         .hosts-grid {
             display: grid;
@@ -258,8 +288,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .host-card {
@@ -281,13 +318,23 @@
             opacity: 0.85;
         }
 
-        .host-card.high-temp {
+        .host-card.warning-temp {
             border-left-color: #f59e0b;
             background: rgba(255, 251, 235, 0.98);
         }
 
-        .host-card.high-temp .detail-value.temp-warning {
+        .host-card.high-temp {
+            border-left-color: #ef4444;
+            background: rgba(254, 242, 242, 0.98);
+        }
+
+        .detail-value.temp-warning {
             color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .detail-value.temp-critical {
+            color: #ef4444;
             font-weight: bold;
         }
 
@@ -326,16 +373,18 @@
             background: #fee2e2;
             color: #991b1b;
         }
-        
+
         /* Couleurs de latence pour le badge "En ligne" */
         .host-status.latency-green {
             background: #baf595;
             color: #1a5d1a;
         }
+
         .host-status.latency-yellow {
             background: #fffd6a;
             color: #7a6800;
         }
+
         .host-status.latency-orange {
             background: #ffb845;
             color: #7a4000;
@@ -411,9 +460,20 @@
         }
 
         @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60%,
+            100% {
+                content: '...';
+            }
         }
 
         .last-update {
@@ -465,17 +525,18 @@
             transition: all 0.2s;
             background: #ffffff;
             color: #374151;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .comment-input:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), inset 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.05);
             background: #fff;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -518,28 +579,32 @@
             </div>
             <div class="controls-row">
                 <label style="color: #6b7280; font-weight: 600;" data-i18n="sort_by">Trier par :</label>
-                <select id="sort-select" onchange="changeSort()" style="padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <select id="sort-select" onchange="changeSort()"
+                    style="padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb;">
                     <option value="status-offline-first" data-i18n="sort_offline_first">Statut (HS en premier)</option>
-                    <option value="status-online-first" data-i18n="sort_online_first">Statut (En ligne en premier)</option>
+                    <option value="status-online-first" data-i18n="sort_online_first">Statut (En ligne en premier)
+                    </option>
                     <option value="ip-asc" data-i18n="sort_ip_asc">Adresse IP (Croissant)</option>
                     <option value="ip-desc" data-i18n="sort_ip_desc">Adresse IP (Décroissant)</option>
                     <option value="name-asc" data-i18n="sort_name_asc">Nom (A-Z)</option>
                     <option value="name-desc" data-i18n="sort_name_desc">Nom (Z-A)</option>
                 </select>
-                
+
                 <!-- Filtre par site - Design Premium -->
                 <div class="site-filter-premium">
                     <div class="site-filter-icon">🏢</div>
                     <div class="site-filter-content">
                         <span class="site-filter-label" data-i18n="filter_site">Filtrer par site</span>
-                        <select id="site-filter-select" multiple onchange="applySiteFilterLocal()" class="site-filter-select">
+                        <select id="site-filter-select" multiple onchange="applySiteFilterLocal()"
+                            class="site-filter-select">
                         </select>
                     </div>
-                    <button onclick="clearSiteFilterLocal()" class="site-filter-reset-btn" title="Afficher tous les sites">
+                    <button onclick="clearSiteFilterLocal()" class="site-filter-reset-btn"
+                        title="Afficher tous les sites">
                         <span data-i18n="all_sites">Tous</span>
                     </button>
                 </div>
-                
+
                 <style>
                     .site-filter-premium {
                         display: flex;
@@ -549,16 +614,16 @@
                         padding: 10px 18px;
                         border-radius: 30px;
                         margin-left: 15px;
-                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
                         border: 1px solid rgba(102, 126, 234, 0.15);
                         transition: all 0.3s ease;
                     }
-                    
+
                     .site-filter-premium:hover {
                         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
                         border-color: rgba(102, 126, 234, 0.3);
                     }
-                    
+
                     .site-filter-icon {
                         width: 36px;
                         height: 36px;
@@ -571,13 +636,13 @@
                         box-shadow: 0 4px 10px rgba(102, 126, 234, 0.25);
                         flex-shrink: 0;
                     }
-                    
+
                     .site-filter-content {
                         display: flex;
                         flex-direction: column;
                         gap: 4px;
                     }
-                    
+
                     .site-filter-label {
                         font-size: 11px;
                         color: #9ca3af;
@@ -585,7 +650,7 @@
                         text-transform: uppercase;
                         letter-spacing: 0.5px;
                     }
-                    
+
                     .site-filter-select {
                         min-width: 140px;
                         max-width: 200px;
@@ -598,18 +663,18 @@
                         cursor: pointer;
                         transition: all 0.2s ease;
                     }
-                    
+
                     .site-filter-select:focus {
                         outline: none;
                         border-color: #667eea;
                         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
                     }
-                    
+
                     .site-filter-select option:checked {
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         color: white;
                     }
-                    
+
                     .site-filter-reset-btn {
                         padding: 8px 16px;
                         border-radius: 20px;
@@ -622,20 +687,20 @@
                         transition: all 0.3s ease;
                         white-space: nowrap;
                     }
-                    
+
                     .site-filter-reset-btn:hover {
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         transform: scale(1.05);
                         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
                     }
-                    
+
                     @media (max-width: 768px) {
                         .site-filter-premium {
                             margin-left: 0;
                             margin-top: 10px;
                             width: 100%;
                         }
-                        
+
                         .site-filter-select {
                             flex: 1;
                         }
@@ -657,9 +722,14 @@
                     <span class="label" data-i18n="offline">Hors ligne:</span>
                     <span class="value" id="offline-hosts">0</span>
                 </div>
-                <div class="stat-card high-temp">
+                <div class="stat-card warning-temp">
                     <span class="icon">🌡️</span>
-                    <span class="label" data-i18n="high_temp">Temp. élevée:</span>
+                    <span class="label" data-i18n="warning_temp">Warning Temp:</span>
+                    <span class="value" id="warning-temp-hosts">0</span>
+                </div>
+                <div class="stat-card high-temp">
+                    <span class="icon">🔥</span>
+                    <span class="label" data-i18n="high_temp">Temp. Critique:</span>
                     <span class="value" id="high-temp-hosts">0</span>
                 </div>
             </div>
@@ -693,7 +763,8 @@
                 total: "Total:",
                 online: "En ligne:",
                 offline: "Hors ligne:",
-                high_temp: "Temp. élevée:",
+                high_temp: "Temp. Critique",
+                warning_temp: "Temp. Warning",
                 loading: "Chargement des hôtes",
                 last_update: "Dernière mise à jour:",
                 no_hosts_title: "Aucun hôte trouvé",
@@ -730,7 +801,8 @@
                 total: "Total:",
                 online: "Online:",
                 offline: "Offline:",
-                high_temp: "High temp:",
+                high_temp: "Critical Temp",
+                warning_temp: "Warning Temp",
                 loading: "Loading hosts",
                 last_update: "Last update:",
                 no_hosts_title: "No hosts found",
@@ -790,7 +862,7 @@
         // Appliquer les traductions
         function applyTranslations() {
             const t = translations[currentLang];
-            
+
             // Mettre à jour les éléments avec data-i18n
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -810,7 +882,7 @@
 
             // Mettre à jour le titre de la page
             document.title = t.title;
-            
+
             // Mettre à jour l'attribut lang du HTML
             document.documentElement.lang = currentLang;
         }
@@ -827,20 +899,21 @@
             reconnectionDelay: 1000,
             reconnectionAttempts: 10
         });
-        
+
         let hostsData = [];
         let currentSort = 'status-offline-first';
-        let tempSeuil = 70; // Seuil de température par défaut (sera mis à jour depuis les settings)
+        let tempSeuil = 70; // Seuil critique
+        let tempSeuilWarning = 60; // Seuil de warning
         let scanRunning = false;
         let sitesList = [];
         let selectedSitesFilter = []; // Filtre local pour la page monitoring
-        
+
         // Charger la liste des sites
         async function loadSitesList() {
             try {
                 const response = await fetch('/api/get_sites');
                 const data = await response.json();
-                
+
                 if (data.success) {
                     sitesList = data.sites || [];
                     updateSiteFilterSelect();
@@ -849,22 +922,22 @@
                 console.error('Erreur chargement sites:', error);
             }
         }
-        
+
         function updateSiteFilterSelect() {
             const select = document.getElementById('site-filter-select');
             if (!select) return;
-            
-            select.innerHTML = sitesList.map(site => 
+
+            select.innerHTML = sitesList.map(site =>
                 `<option value="${escapeHtml(site)}" ${selectedSitesFilter.includes(site) ? 'selected' : ''}>${escapeHtml(site)}</option>`
             ).join('');
         }
-        
+
         function applySiteFilterLocal() {
             const select = document.getElementById('site-filter-select');
             selectedSitesFilter = Array.from(select.selectedOptions).map(opt => opt.value);
             renderHosts(hostsData);
         }
-        
+
         function clearSiteFilterLocal() {
             selectedSitesFilter = [];
             const select = document.getElementById('site-filter-select');
@@ -873,21 +946,26 @@
             }
             renderHosts(hostsData);
         }
-        
+
         function filterHostsBySite(hosts) {
             if (selectedSitesFilter.length === 0) {
                 return hosts; // Pas de filtre = tous les hôtes
             }
             return hosts.filter(host => selectedSitesFilter.includes(host.site || ''));
         }
-        
+
         // Charger le seuil de température depuis les settings
         async function loadTempSeuil() {
             try {
                 const response = await fetch('/api/get_settings');
                 const result = await response.json();
-                if (result.alerts && result.alerts.temp_seuil) {
-                    tempSeuil = result.alerts.temp_seuil;
+                if (result.alerts) {
+                    if (result.alerts.temp_seuil) {
+                        tempSeuil = result.alerts.temp_seuil;
+                    }
+                    if (result.alerts.temp_seuil_warning) {
+                        tempSeuilWarning = result.alerts.temp_seuil_warning;
+                    }
                 }
                 // Mettre à jour le statut du scan
                 if (typeof result.monitoring_running !== 'undefined') {
@@ -898,18 +976,21 @@
             }
         }
         loadTempSeuil();
-        
+
         // Fonction pour vérifier si la température est élevée
-        function isHighTemp(tempValue) {
-            if (!tempValue || tempValue === '-') return false;
+        function getTempAlertLevel(tempValue) {
+            if (!tempValue || tempValue === '-') return 'none';
             const temp = parseFloat(tempValue.replace('°C', '').replace('°', '').trim());
-            return !isNaN(temp) && temp >= tempSeuil;
+            if (isNaN(temp)) return 'none';
+            if (temp >= tempSeuil) return 'critical';
+            if (temp >= tempSeuilWarning) return 'warning';
+            return 'none';
         }
-        
+
         // Fonction pour obtenir la classe CSS selon la couleur de latence
         function getLatencyClass(latencyColor) {
             if (!latencyColor) return '';
-            switch(latencyColor.toLowerCase()) {
+            switch (latencyColor.toLowerCase()) {
                 case '#baf595': return 'latency-green';   // Vert clair < 100ms
                 case '#fffd6a': return 'latency-yellow';  // Jaune 100-200ms
                 case '#ffb845': return 'latency-orange';  // Orange > 200ms
@@ -917,29 +998,29 @@
                 default: return '';
             }
         }
-        
-        socket.on('connect', function() {
+
+        socket.on('connect', function () {
             updateStatusBadge(true);
             socket.emit('request_update');
             loadSitesList(); // Charger la liste des sites
         });
 
-        socket.on('disconnect', function() {
+        socket.on('disconnect', function () {
             updateStatusBadge(false);
         });
 
-        socket.on('hosts_update', function(hosts) {
+        socket.on('hosts_update', function (hosts) {
             if (!Array.isArray(hosts)) {
                 hosts = [];
             }
-            
+
             hostsData = hosts;
             renderHosts(hosts);
             updateStats(hosts);
             updateLastUpdateTime();
         });
 
-        socket.on('monitoring_status', function(data) {
+        socket.on('monitoring_status', function (data) {
             updateScanBadge(data.running);
         });
 
@@ -951,47 +1032,47 @@
         function naturalSort(a, b) {
             // Fonction pour le tri naturel (gère les nombres dans les chaînes)
             const ax = [], bx = [];
-            
-            String(a).replace(/(\d+)|(\D+)/g, function(_, $1, $2) { ax.push([$1 || Infinity, $2 || ""]) });
-            String(b).replace(/(\d+)|(\D+)/g, function(_, $1, $2) { bx.push([$1 || Infinity, $2 || ""]) });
-            
-            while(ax.length && bx.length) {
+
+            String(a).replace(/(\d+)|(\D+)/g, function (_, $1, $2) { ax.push([$1 || Infinity, $2 || ""]) });
+            String(b).replace(/(\d+)|(\D+)/g, function (_, $1, $2) { bx.push([$1 || Infinity, $2 || ""]) });
+
+            while (ax.length && bx.length) {
                 const an = ax.shift();
                 const bn = bx.shift();
                 const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
-                if(nn) return nn;
+                if (nn) return nn;
             }
-            
+
             return ax.length - bx.length;
         }
 
         function sortHostsData(hosts) {
             return [...hosts].sort((a, b) => {
-                switch(currentSort) {
+                switch (currentSort) {
                     case 'status-offline-first':
                         if (a.status === 'offline' && b.status === 'online') return -1;
                         if (a.status === 'online' && b.status === 'offline') return 1;
                         // Si même statut, trier par IP
                         return compareIPs(a.ip, b.ip);
-                    
+
                     case 'status-online-first':
                         if (a.status === 'online' && b.status === 'offline') return -1;
                         if (a.status === 'offline' && b.status === 'online') return 1;
                         // Si même statut, trier par IP
                         return compareIPs(a.ip, b.ip);
-                    
+
                     case 'ip-asc':
                         return compareIPs(a.ip, b.ip);
-                    
+
                     case 'ip-desc':
                         return compareIPs(b.ip, a.ip);
-                    
+
                     case 'name-asc':
                         return naturalSort(a.nom || a.ip, b.nom || b.ip);
-                    
+
                     case 'name-desc':
                         return naturalSort(b.nom || b.ip, a.nom || a.ip);
-                    
+
                     default:
                         return 0;
                 }
@@ -1001,7 +1082,7 @@
         function compareIPs(ipA, ipB) {
             const partsA = ipA.split('.').map(Number);
             const partsB = ipB.split('.').map(Number);
-            
+
             for (let i = 0; i < 4; i++) {
                 if (partsA[i] !== partsB[i]) {
                     return partsA[i] - partsB[i];
@@ -1009,8 +1090,8 @@
             }
             return 0;
         }
-        
-        socket.on('connect_error', function(error) {
+
+        socket.on('connect_error', function (error) {
             updateStatusBadge(false);
             document.getElementById('hosts-container').innerHTML = `
                 <div class="no-hosts">
@@ -1023,7 +1104,7 @@
         function updateStatusBadge(connected) {
             const badge = document.getElementById('connection-badge');
             const badgeText = badge.querySelector('span[data-i18n]');
-            
+
             if (connected) {
                 badge.classList.remove('disconnected');
                 badge.style.background = '#10b981';
@@ -1041,7 +1122,7 @@
             scanRunning = running;
             const badge = document.getElementById('scan-badge');
             const badgeText = badge.querySelector('span[data-i18n]');
-            
+
             if (running) {
                 badge.classList.add('running');
                 badgeText.textContent = t('scan_running');
@@ -1055,13 +1136,13 @@
 
         function renderHosts(hosts) {
             const container = document.getElementById('hosts-container');
-            
+
             // Appliquer le filtre par site
             const filteredHosts = filterHostsBySite(hosts);
-            
+
             // Mettre à jour les stats avec les hôtes filtrés
             updateStats(filteredHosts);
-            
+
             if (!filteredHosts || filteredHosts.length === 0) {
                 container.innerHTML = `
                     <div class="no-hosts">
@@ -1088,7 +1169,7 @@
             sortedHosts.forEach((host, index) => {
                 const cardId = `host-card-${host.ip.replace(/\./g, '-')}`;
                 let card = document.getElementById(cardId);
-                
+
                 if (!card) {
                     // Créer une nouvelle carte
                     card = createHostCardElement(host, cardId);
@@ -1097,7 +1178,7 @@
                     // Mettre à jour la carte existante sans recréer
                     updateHostCard(card, host);
                 }
-                
+
                 // Réordonner visuellement en changeant l'ordre dans le DOM si nécessaire
                 if (grid.children[index] !== card) {
                     grid.insertBefore(card, grid.children[index]);
@@ -1118,32 +1199,44 @@
         function createHostCardElement(host, cardId) {
             const card = document.createElement('div');
             card.id = cardId;
-            
+
             const temperature = host.temp || '-';
-            const highTemp = isHighTemp(temperature);
-            
-            // Classe de la carte: offline prioritaire, puis high-temp, puis online
+            const tempLevel = getTempAlertLevel(temperature);
+
+            // Classe de la carte: offline prioritaire, puis high-temp/warning-temp, puis online
             let cardClass = `host-card ${host.status}`;
-            if (highTemp && host.status === 'online') {
-                cardClass += ' high-temp';
+            if (host.status === 'online') {
+                if (tempLevel === 'critical') {
+                    cardClass += ' high-temp';
+                } else if (tempLevel === 'warning') {
+                    cardClass += ' warning-temp';
+                }
             }
             card.className = cardClass;
-            
+
             // Appliquer la couleur de latence à la bordure gauche (si disponible)
             if (host.latency_color && host.status === 'online') {
                 card.style.borderLeftColor = host.latency_color;
             }
-            
+
             const displayName = host.nom || t('no_name');
             const statusText = host.status === 'online' ? t('status_online') : t('status_offline');
             const debitIn = host.debit_in || 'N/A';
             const debitOut = host.debit_out || 'N/A';
-            const tempClass = highTemp ? 'detail-value temp-warning' : 'detail-value';
-            
+
+            let tempClass = 'detail-value';
+            let tempDisplay = temperature;
+            if (tempLevel === 'critical') {
+                tempClass = 'detail-value temp-critical';
+                tempDisplay += ' ⚠️';
+            } else if (tempLevel === 'warning') {
+                tempClass = 'detail-value temp-warning';
+            }
+
             // Classe de latence pour le badge (uniquement si online)
             const latencyClass = host.status === 'online' ? getLatencyClass(host.latency_color) : '';
             const statusClass = latencyClass ? latencyClass : host.status;
-            
+
             card.innerHTML = `
                 <div class="host-header">
                     <div class="host-name">${escapeHtml(displayName)}</div>
@@ -1157,7 +1250,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">🌡️ ${t('temperature')}</div>
-                        <div class="${tempClass}">${escapeHtml(temperature)}${highTemp ? ' ⚠️' : ''}</div>
+                        <div class="${tempClass}">${escapeHtml(tempDisplay)}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">📥 ${t('bandwidth_in')}</div>
@@ -1173,7 +1266,7 @@
                     </div>
                 </div>
             `;
-            
+
             return card;
         }
 
@@ -1181,30 +1274,34 @@
             const displayName = host.nom || t('no_name');
             const statusText = host.status === 'online' ? t('status_online') : t('status_offline');
             const temperature = host.temp || '-';
-            const highTemp = isHighTemp(temperature);
+            const tempLevel = getTempAlertLevel(temperature);
             const debitIn = host.debit_in || 'N/A';
             const debitOut = host.debit_out || 'N/A';
-            
+
             // Mettre à jour la classe de statut (avec high-temp si applicable)
             let cardClass = `host-card ${host.status}`;
-            if (highTemp && host.status === 'online') {
-                cardClass += ' high-temp';
+            if (host.status === 'online') {
+                if (tempLevel === 'critical') {
+                    cardClass += ' high-temp';
+                } else if (tempLevel === 'warning') {
+                    cardClass += ' warning-temp';
+                }
             }
             card.className = cardClass;
-            
+
             // Mettre à jour la couleur de latence (bordure gauche)
             if (host.latency_color && host.status === 'online') {
                 card.style.borderLeftColor = host.latency_color;
             } else if (host.status === 'offline') {
                 card.style.borderLeftColor = '#ef4444'; // Rouge pour offline
             }
-            
+
             // Mettre à jour le nom
             const nameEl = card.querySelector('.host-name');
             if (nameEl && nameEl.textContent !== displayName) {
                 nameEl.textContent = displayName;
             }
-            
+
             // Mettre à jour le statut avec la couleur de latence
             const statusEl = card.querySelector('.host-status');
             if (statusEl) {
@@ -1215,7 +1312,7 @@
                     statusEl.textContent = statusText;
                 }
             }
-            
+
             // Mettre à jour les valeurs détaillées
             const details = card.querySelectorAll('.detail-value');
             if (details.length >= 4) {
@@ -1224,8 +1321,17 @@
                     details[0].textContent = host.mac || '-';
                 }
                 // Température (index 1) - avec indicateur d'alerte
-                const tempDisplay = temperature + (highTemp ? ' ⚠️' : '');
-                details[1].className = highTemp ? 'detail-value temp-warning' : 'detail-value';
+                let tempDisplay = temperature;
+                let tempClass = 'detail-value';
+
+                if (tempLevel === 'critical') {
+                    tempDisplay += ' ⚠️';
+                    tempClass = 'detail-value temp-critical';
+                } else if (tempLevel === 'warning') {
+                    tempClass = 'detail-value temp-warning';
+                }
+
+                details[1].className = tempClass;
                 if (details[1].textContent !== tempDisplay) {
                     details[1].textContent = tempDisplay;
                 }
@@ -1237,7 +1343,7 @@
                 if (details[3].textContent !== debitOut) {
                     details[3].textContent = debitOut;
                 }
-                
+
                 // Commentaire (index 4) - seulement si pas focalisé
                 const commentInput = card.querySelector('.comment-input');
                 if (commentInput && document.activeElement !== commentInput) {
@@ -1252,12 +1358,15 @@
             const total = hosts.length;
             const online = hosts.filter(h => h.status === 'online').length;
             const offline = total - online;
-            const highTempCount = hosts.filter(h => h.status === 'online' && isHighTemp(h.temp)).length;
+            const highTempCount = hosts.filter(h => h.status === 'online' && getTempAlertLevel(h.temp) === 'critical').length;
+            const warningTempCount = hosts.filter(h => h.status === 'online' && getTempAlertLevel(h.temp) === 'warning').length;
 
             document.getElementById('total-hosts').textContent = total;
             document.getElementById('online-hosts').textContent = online;
             document.getElementById('offline-hosts').textContent = offline;
             document.getElementById('high-temp-hosts').textContent = highTempCount;
+            const warningEl = document.getElementById('warning-temp-hosts');
+            if (warningEl) warningEl.textContent = warningTempCount;
         }
 
         function updateLastUpdateTime() {
@@ -1291,7 +1400,7 @@
                 console.error('Erreur réseau updateComment:', error);
             }
         }
-        
+
         async function logout() {
             try {
                 const response = await fetch('/api/logout', { method: 'POST' });
@@ -1314,4 +1423,5 @@
         socket.emit('request_update');
     </script>
 </body>
+
 </html>

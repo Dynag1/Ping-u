@@ -1635,13 +1635,22 @@
                             <label for="check-temp-alert">🌡️ <span data-i18n="alert_temp">Alerte température
                                     élevée</span></label>
                         </div>
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label for="input-temp-seuil" data-i18n="temp_threshold">Seuil de température (°C)</label>
-                            <input type="number" id="input-temp-seuil" value="70" min="30" max="120"
-                                style="width: 100px;">
-                            <small style="color: #666; font-size: 12px; margin-left: 10px;" data-i18n="alert_if_temp">
-                                Alerte si température ≥ seuil
-                            </small>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <div class="form-group">
+                                <label for="input-temp-seuil-warning" data-i18n="temp_threshold_warning">Seuil de
+                                    warning (°C)</label>
+                                <input type="number" id="input-temp-seuil-warning" value="60" min="30" max="120">
+                                <small style="color: #666; font-size: 12px;" data-i18n="alert_if_temp_warning">
+                                    Visuel uniquement si température ≥ seuil
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-temp-seuil" data-i18n="temp_threshold">Seuil critique (°C)</label>
+                                <input type="number" id="input-temp-seuil" value="70" min="30" max="120">
+                                <small style="color: #666; font-size: 12px;" data-i18n="alert_if_temp">
+                                    Alerte + Visuel si température ≥ seuil
+                                </small>
+                            </div>
                         </div>
                     </div>
 
@@ -1794,8 +1803,10 @@
                 alert_recap: "Email récapitulatif",
                 alert_db: "Base de données externe",
                 alert_temp: "Alerte température élevée",
-                temp_threshold: "Seuil de température (°C)",
-                alert_if_temp: "Alerte si température ≥ seuil",
+                temp_threshold: "Seuil critique (°C)",
+                temp_threshold_warning: "Seuil de warning (°C)",
+                alert_if_temp: "Alerte + Visuel si température ≥ seuil critique",
+                alert_if_temp_warning: "Visuel uniquement si température ≥ seuil de warning",
                 save_alerts: "Sauvegarder les alertes",
                 quick_actions: "Actions Rapides",
                 clear_all: "Tout effacer",
@@ -1966,8 +1977,10 @@
                 alert_recap: "Summary email",
                 alert_db: "External database",
                 alert_temp: "High temperature alert",
-                temp_threshold: "Temperature threshold (°C)",
-                alert_if_temp: "Alert if temperature ≥ threshold",
+                temp_threshold: "Critical Threshold (°C)",
+                temp_threshold_warning: "Warning Threshold (°C)",
+                alert_if_temp: "Alert + Visual if temperature ≥ critical threshold",
+                alert_if_temp_warning: "Visual only if temperature ≥ warning threshold",
                 save_alerts: "Save alerts",
                 quick_actions: "Quick Actions",
                 clear_all: "Clear all",
@@ -2785,7 +2798,8 @@
                 mail_recap: document.getElementById('check-mail-recap').checked,
                 db_externe: document.getElementById('check-db-externe').checked,
                 temp_alert: document.getElementById('check-temp-alert').checked,
-                temp_seuil: parseInt(document.getElementById('input-temp-seuil').value) || 70
+                temp_seuil: parseInt(document.getElementById('input-temp-seuil').value) || 70,
+                temp_seuil_warning: parseInt(document.getElementById('input-temp-seuil-warning').value) || 60
             };
 
             try {
@@ -3042,6 +3056,7 @@
                     document.getElementById('check-db-externe').checked = result.alerts.db_externe || false;
                     document.getElementById('check-temp-alert').checked = result.alerts.temp_alert || false;
                     document.getElementById('input-temp-seuil').value = result.alerts.temp_seuil || 70;
+                    document.getElementById('input-temp-seuil-warning').value = result.alerts.temp_seuil_warning || 60;
                 }
 
                 if (typeof result.monitoring_running !== 'undefined') {

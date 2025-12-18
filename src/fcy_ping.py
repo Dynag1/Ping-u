@@ -716,5 +716,21 @@ class SNMPWorker(QThread):
                     if not item_temp:
                         item_temp = QStandardItem()
                         self.tree_model.setItem(row, 6, item_temp)
-                    item_temp.setText(temp)
+                    
+                    item_temp.setText(f"{temp}°C")
+                    
+                    # Gestion de la couleur de fond pour la température
+                    try:
+                        temp_val = float(temp)
+                        if GUI_AVAILABLE:
+                            from PySide6.QtGui import QColor, QBrush
+                            if temp_val >= var.tempSeuil:
+                                item_temp.setBackground(QBrush(QColor(AppColors.ROUGE_PALE)))
+                            elif temp_val >= var.tempSeuilWarning:
+                                item_temp.setBackground(QBrush(QColor(AppColors.ORANGE_PALE)))
+                            else:
+                                # Fond normal (blanc ou transparent selon le thème, ici on met transparent)
+                                item_temp.setBackground(QBrush(Qt.NoBrush))
+                    except (ValueError, TypeError):
+                        pass
                 break
