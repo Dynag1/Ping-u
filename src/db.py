@@ -120,7 +120,8 @@ def save_param_db():
         param_db_ext = var.dbExterne
         param_temp_alert = var.tempAlert
         param_temp_seuil = var.tempSeuil
-        variables = [param_delais, param_nbr_hs, param_popup, param_mail, param_telegram, param_mail_recap, param_db_ext, param_temp_alert, param_temp_seuil]
+        param_temp_seuil_warning = var.tempSeuilWarning
+        variables = [param_delais, param_nbr_hs, param_popup, param_mail, param_telegram, param_mail_recap, param_db_ext, param_temp_alert, param_temp_seuil, param_temp_seuil_warning]
         try:
             fichierSauvegarde = open("tab4", "wb")
             pickle.dump(variables, fichierSauvegarde)
@@ -170,6 +171,8 @@ def load_temp_alert_params(variables):
             var.tempAlert = variables[7]
         if len(variables) > 8:
             var.tempSeuil = variables[8]
+        if len(variables) > 9:
+            var.tempSeuilWarning = variables[9]
     except Exception as e:
         logger.warning(f"Paramètres alerte température non trouvés, utilisation des valeurs par défaut: {e}")
 

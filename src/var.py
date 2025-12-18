@@ -31,7 +31,8 @@ envoie_alert = False
 
 # Alerte température
 tempAlert = False  # Activer/désactiver les alertes température
-tempSeuil = 70     # Seuil de température en °C (par défaut: 70°C)
+tempSeuilWarning = 60  # Seuil de warning (visuel uniquement)
+tempSeuil = 70         # Seuil critique (visuel + alerte)
 liste_temp_alert = {}  # Format: {'ip': compteur}
 
 liste_hs = {}

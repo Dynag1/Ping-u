@@ -158,7 +158,9 @@ class WebServer(QObject):
         
         @self.app.route('/api/hosts')
         def get_hosts():
-            hosts = self._get_hosts_data()
+            # Pour l'API web, on retourne toujours tous les hôtes 
+            # et on laisse le frontend gérer son propre filtrage
+            hosts = self._get_hosts_data(apply_filter=False)
             return jsonify(hosts)
         
         @self.app.route('/api/status')
@@ -427,6 +429,7 @@ class WebServer(QObject):
                 var.dbExterne = data.get('db_externe', False)
                 var.tempAlert = data.get('temp_alert', False)
                 var.tempSeuil = data.get('temp_seuil', 70)
+                var.tempSeuilWarning = data.get('temp_seuil_warning', 60)
                 
                 # Sauvegarder dans le fichier de configuration
                 db.save_param_db()
@@ -785,7 +788,8 @@ class WebServer(QObject):
                         'mail_recap': var.mailRecap,
                         'db_externe': var.dbExterne,
                         'temp_alert': var.tempAlert,
-                        'temp_seuil': var.tempSeuil
+                        'temp_seuil': var.tempSeuil,
+                        'temp_seuil_warning': var.tempSeuilWarning
                     },
                     'monitoring_running': monitoring_running,
                     'smtp': {
@@ -1169,9 +1173,20 @@ Ping ü - Monitoring Réseau
             """Récupère la liste des sites et leur état"""
             try:
                 from src import var
+                # On récupère aussi les sites présents dans le modèle pour ne rien oublier
+                model = self.main_window.treeIpModel
+                dynamic_sites = set()
+                for row in range(model.rowCount()):
+                    s = model.item(row, 8).text() if model.item(row, 8) else ''
+                    if s:
+                        dynamic_sites.add(s)
+                
+                # Fusionner avec la liste officielle
+                all_sites = sorted(list(set(var.sites_list) | dynamic_sites))
+                
                 return jsonify({
                     'success': True,
-                    'sites': var.sites_list,
+                    'sites': all_sites,
                     'sites_actifs': var.sites_actifs,
                     'site_filter': var.site_filter
                 })
@@ -1692,14 +1707,20 @@ Ping ü - Monitoring Réseau
     
     def broadcast_update(self):
         """Diffuse une mise à jour à tous les clients connectés"""
-        if not self.running:
-            return
-        
-        try:
-            hosts = self._get_hosts_data()
-            self.socketio.emit('hosts_update', hosts, namespace='/')
-        except Exception as e:
-            logger.error(f"Erreur diffusion mise à jour: {e}", exc_info=True)
+        if self.socketio and self.running:
+            try:
+                # Pour le broadcast temps réel, on envoie tous les hôtes
+                # Le filtrage est géré côté client (index.html)
+                hosts = self._get_hosts_data(apply_filter=False)
+                self.socketio.emit('hosts_update', hosts, namespace='/')
+                
+                # Envoyer aussi le statut du scan
+                monitoring_running = False
+                if hasattr(self.main_window, 'main_controller'):
+                    monitoring_running = self.main_window.main_controller.ping_manager is not None
+                self.socketio.emit('monitoring_status', {'running': monitoring_running}, namespace='/')
+            except Exception as e:
+                logger.error(f"Erreur diffusion mise à jour: {e}", exc_info=True)
     
     def emit_scan_complete(self, hosts_count):
         """Émet un événement quand le scan est terminé"""
