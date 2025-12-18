@@ -72,9 +72,17 @@ def lire_param_gene():
         logger.error(f"Erreur lecture param gene: {inst}", exc_info=True)
 
 
-def save_param_gene(param_site, param_li, param_theme):
-    variables = [param_site, param_li, param_theme]
+def save_param_gene(param_site, param_li, param_theme, param_advanced_title=None):
     try:
+        if param_advanced_title is None:
+            # Essayer de récupérer le titre existant pour ne pas l'écraser
+            current = lire_param_gene()
+            if current and len(current) > 3:
+                param_advanced_title = current[3]
+            else:
+                param_advanced_title = "Paramètres Avancés"
+        
+        variables = [param_site, param_li, param_theme, param_advanced_title]
         fichierSauvegarde = open(fichierini, "wb")
         pickle.dump(variables, fichierSauvegarde)
         fichierSauvegarde.close()

@@ -61,7 +61,18 @@ echo "🧹 Nettoyage du cache Python..."
 find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null
 find . -name "*.pyc" -delete 2>/dev/null
 
-# Vérifier si l'application est déjà en cours
+# Vérifier si le port est déjà utilisé
+PORT=9090
+if command -v lsof >/dev/null 2>&1; then
+    if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
+        echo "❌ Le port $PORT est déjà utilisé !"
+        echo "L'application est probablement déjà en cours d'exécution."
+        echo "Utilisez ./stop_headless.sh pour l'arrêter avant de recommencer."
+        exit 1
+    fi
+fi
+
+# Vérifier si l'application est déjà en cours via PID
 if [ -f "pingu_headless.pid" ]; then
     OLD_PID=$(cat pingu_headless.pid)
     if ps -p $OLD_PID > /dev/null 2>&1; then

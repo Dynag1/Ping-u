@@ -3,6 +3,20 @@
 
 ---
 
+### v99.03.03 (2025-12-18)
+- Amélioration de la gestion de l'arrêt en mode headless sur Linux/Raspberry Pi.
+*   `stop_headless.sh` : Ajout de la détection et de l'arrêt des processus via le port 9090 (lsof/fuser).
+*   `start_headless.sh` : Ajout d'une vérification de disponibilité du port avant le lancement.
+*   `WebServer` : Implémentation d'un arrêt plus propre du serveur SocketIO.
+
+### v99.03.02 (2025-12-18)
+- Ajout de la colonne "Commentaire" (index 9) synchronisée entre GUI, Web et Excel.
+- Implémentation du titre "Paramètres Avancés" éditable directement depuis l'interface web admin.
+- Correction et complétion des traductions Française et Anglaise.
+- Nettoyage et standardisation des fichiers de traduction XML (.ts).
+- Amélioration de la persistance des paramètres généraux (titre dynamique, thème, licence).
+- Correction d'un bug d'indexation lors de l'exclusion d'hôtes dans la GUI.
+
 ### v99.03.01 (2025-12)
 - Ajout de la gestion multi site. Possibilité d'assigner chaque IP à un site, de trier par site et de ne lancer le suivi que sur certains sites.
 - Ajout de l'obligation de se connecter pour accéder au dashboard, soit en admin soit avec un compte user
