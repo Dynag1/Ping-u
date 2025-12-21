@@ -32,7 +32,7 @@ class LicenseManager:
     
     # Clés de chiffrement (doivent être identiques côté PHP)
     # ⚠️ CHANGEZ CES VALEURS EN PRODUCTION !
-    _MASTER_KEY = b'DynagSecureLicenseSystem2025'  # 28 bytes
+    _MASTER_KEY = b'514zlF0wPREQlrr3UB0004naWwE1'  # 28 bytes
     _SALT = b'PyngOuin2025Salt'  # 16 bytes
     
     def __init__(self):
