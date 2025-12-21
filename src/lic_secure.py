@@ -55,25 +55,24 @@ class LicenseManager:
         """
         Génère un ID matériel unique et stable.
         DOIT être identique à la version PHP pour la validation.
+        Retourne 32 caractères hexadécimaux (0-9a-f).
         """
         # Composants matériels
-        components = [
-            platform.node(),                    # Nom de la machine
-            str(uuid.getnode()),                # Adresse MAC
-            platform.machine(),                 # Architecture (x86_64, etc.)
-            platform.processor()[:50],          # Processeur (limité à 50 chars)
-        ]
+        hostname = platform.node()
+        mac = format(uuid.getnode(), 'x')
+        machine = platform.machine()
+        processor = platform.processor()
         
-        # Combinaison
-        combined = '|'.join(components).encode()
+        # Combinaison (format identique au PHP)
+        combined = f"{hostname}|{mac}|{machine}|{processor}"
         
-        # Triple hash pour sécurité maximale
-        hash1 = hashlib.sha256(combined + self._SALT).digest()
+        # Triple hash (identique au PHP)
+        hash1 = hashlib.sha256((combined + self._SALT.decode()).encode('utf-8')).digest()
         hash2 = hashlib.sha512(hash1).digest()
-        hash3 = hashlib.blake2b(hash2, digest_size=32).digest()
+        hash3 = hashlib.blake2b(hash2).hexdigest()
         
-        # Encodage Base64 et tronquer à 32 caractères
-        return base64.b64encode(hash3).decode()[:32]
+        # Retourner les 32 premiers caractères hexadécimaux
+        return hash3[:32]
     
     def generate_activation_code(self):
         """
