@@ -29,6 +29,9 @@ TEMPERATURE_OIDS = {
     'raspberry_pi_cpu': '1.3.6.1.4.1.2021.13.16.2.1.3.1',  # CPU thermal via lm-sensors
     'raspberry_pi_thermal': '1.3.6.1.4.1.2021.13.16.2.1.3.2',  # Thermal zone
     'raspberry_pi_soc': '1.3.6.1.4.1.2021.13.16.2.1.3.3',  # SoC temp
+    'raspberry_ha': '1.3.6.1.4.1.2021.7890.1.2.1.3.0',    # RPi via Home Assistant
+    # Raspberry Pi avec HAOS (Home Assistant OS) - NET-SNMP-EXTEND-MIB sensor.cpu_temperature
+    'raspberry_haos_cpu': '1.3.6.1.4.1.8072.1.3.2.3.1.1.22.115.101.110.115.111.114.46.99.112.117.95.116.101.109.112.101.114.97.116.117.114.101',
     
     # NAS (priorité haute - testé en premier)
     'synology_cpu': '1.3.6.1.4.1.6574.1.2.0',  # Synology CPU temp
@@ -387,7 +390,7 @@ class SNMPHelper:
         device_specific_oids = {
             'synology': ['synology_cpu', 'synology_system'],
             'qnap': ['qnap_cpu', 'qnap_system'],
-            'raspberry': ['raspberry_pi_host_resources', 'raspberry_pi_lm_sensors', 'raspberry_pi_soc'],
+            'raspberry': ['raspberry_haos_cpu', 'raspberry_ha', 'raspberry_pi_host_resources', 'raspberry_pi_cpu', 'raspberry_pi_thermal', 'raspberry_pi_soc'],
             'cisco': ['cisco_cpu', 'cisco_env'],
             'hp': ['hp_icf_sensor', 'hp_rack'],
             'dell': ['dell_thermal'],
@@ -532,7 +535,8 @@ class SNMPHelper:
                             # Probablement en dixièmes de degrés (ex: 450 = 45.0°C)
                             numeric_value = numeric_value / 10.0
                         # Si < 200, c'est déjà en degrés Celsius (plage normale: -40°C à 150°C)
-                        return numeric_value
+                        # Arrondir à 1 chiffre après la virgule
+                        return round(numeric_value, 1)
                     except (ValueError, TypeError):
                         # Si conversion échoue et mode auto, retourner en string
                         if return_type == 'auto':
