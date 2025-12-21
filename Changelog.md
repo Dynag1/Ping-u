@@ -3,6 +3,10 @@
 
 ---
 
+### v99.03.04 (2025-12-21)
+- Ajout: Support SNMP de la température CPU pour Raspberry Pi avec Home Assistant OS (HAOS).
+*   Nouvel OID `raspberry_haos_cpu` via NET-SNMP-EXTEND-MIB (sensor.cpu_temperature).
+
 ### v99.03.03 (2025-12-18)
 - Amélioration de la gestion de l'arrêt en mode headless sur Linux/Raspberry Pi.
 *   `stop_headless.sh` : Ajout de la détection et de l'arrêt des processus via le port 9090 (lsof/fuser).
