@@ -7,6 +7,9 @@ import csv
 import os
 import sys
 
+from src.utils.logger import get_logger
+logger = get_logger(__name__)
+
 # Imports conditionnels pour éviter les erreurs en headless
 try:
     from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
@@ -70,14 +73,38 @@ except ImportError:
 
 
 def getIp(self):
+    """
+    Obtient l'adresse IP locale de l'interface réseau active.
+    Méthode robuste qui fonctionne sur Windows, Linux, et Debian.
+    """
     try:
-        h_name = socket.gethostname()
-        IP_addres = socket.gethostbyname(h_name)
+        # Méthode robuste: créer un socket UDP vers une IP externe
+        # Sans vraiment envoyer de données, juste pour que le système
+        # sélectionne l'interface réseau appropriée
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        try:
+            # On se "connecte" à 8.8.8.8 (Google DNS) sur le port 80
+            # Pas besoin que ce soit accessible, on veut juste l'IP locale
+            s.connect(('8.8.8.8', 80))
+            IP_addres = s.getsockname()[0]
+        except Exception:
+            # Fallback si la méthode ci-dessus échoue
+            IP_addres = '127.0.0.1'
+        finally:
+            s.close()
+        
+        # Extraire le sous-réseau (ex: 192.168.1.X -> 192.168.1.1)
         ip = IP_addres.split(".")
-        ipadress = ip[0]+"."+ip[1]+"."+ip[2]+".1"
+        if len(ip) == 4:
+            ipadress = ip[0]+"."+ip[1]+"."+ip[2]+".1"
+        else:
+            ipadress = "192.168.1.1"  # Valeur par défaut
+        
         return ipadress
     except Exception as e:
-        print("fct_ip - " + str(e))
+        logger.error(f"Erreur détection IP: {e}", exc_info=True)
+        return "192.168.1.1"  # Valeur par défaut en cas d'erreur
 
 
 def save_csv(self, treeModel, filepath=None, return_path=False, silent=False):

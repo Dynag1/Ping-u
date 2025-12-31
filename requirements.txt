@@ -17,9 +17,9 @@ urllib3>=2.0.0
 openpyxl>=3.1.0
 xmltodict>=0.13.0
 
-# --- Windows Only (GUI) ---
-PySide6>=6.5.0; sys_platform == 'win32'
-qt-themes; sys_platform == 'win32'
+# --- GUI Framework (tous systèmes pour interface graphique) ---
+PySide6>=6.5.0
+qt-themes
 
 # --- Linux / Raspberry Pi (async server) ---
 eventlet>=0.33.0; sys_platform != 'win32'
