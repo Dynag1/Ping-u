@@ -42,6 +42,14 @@ def send(type, comm, dialog):
         ).encode('ascii')
         port = 7701
         dest_ip = '255.255.255.255'
+    elif type == 'snmp':
+        # SNMPv2c GetRequest community='public' for sysDescr (.1.3.6.1.2.1.1.1.0) and sysName (.1.3.6.1.2.1.1.5.0)
+        # OID sysDescr: 1.3.6.1.2.1.1.1.0
+        # OID sysName:  1.3.6.1.2.1.1.5.0
+        # Packet constructed manually to include both OIDs in the VarBindList
+        msg = b'\x30\x34\x02\x01\x01\x04\x06public\xa0\x27\x02\x01\x00\x02\x01\x00\x02\x01\x00\x30\x1c\x30\x0c\x06\x08\x2b\x06\x01\x02\x01\x01\x01\x00\x05\x00\x30\x0c\x06\x08\x2b\x06\x01\x02\x01\x01\x05\x00\x05\x00'
+        port = 161
+        dest_ip = '255.255.255.255'
     else:
         print("Type inconnu")
         return
@@ -89,7 +97,11 @@ def send(type, comm, dialog):
                     break
                 ip = addr[0]
                 try:
-                    donn = fct.pars(data.decode(errors='ignore'), type)
+                    if type == 'snmp':
+                        # SNMP returns raw bytes
+                        donn = fct.pars(data, type)
+                    else:
+                        donn = fct.pars(data.decode(errors='ignore'), type)
                     nom = donn[0] if len(donn) > 0 else ""
                     modele = donn[1] if len(donn) > 1 else ""
                     mac = donn[2] if len(donn) > 2 else ""
@@ -101,10 +113,8 @@ def send(type, comm, dialog):
                 with lock:
                     if identifiant not in peripheriques_vus:
                         peripheriques_vus.add(identifiant)
-                        print(f"Ajout : {identifiant}")
-                        comm.addRow.emit("", ip, modele, mac, "", "", "")
-                    else:
-                        print(f"Déjà présent : {identifiant}")
+                        print(f"DEBUG: Scanner found: IP={ip} ID={identifiant} Data={donn}")
+                        comm.addRow.emit("", ip, modele, mac, nom, "", "")
         finally:
             s.close()
 
