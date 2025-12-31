@@ -125,6 +125,15 @@ python3 Pingu.py
 |----------|-------------|
 | [BANDWIDTH_OIDS.md](BANDWIDTH_OIDS.md) | Guide des OIDs SNMP pour la bande passante (Linux, Windows, Raspberry Pi, NAS, switches, etc.) |
 
+## 📜 Scripts utilitaires
+
+Les scripts de maintenance sont disponibles dans le dossier [`scripts/`](../scripts/) :
+- Migration des fichiers tab
+- Installation et configuration Raspberry Pi  
+- Nettoyage et réparations
+
+📖 [Voir tous les scripts](../scripts/README.md)
+
 ---
 
 ## 🔗 Liens utiles

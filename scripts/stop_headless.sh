@@ -1,9 +1,10 @@
 #!/bin/bash
 # Script d'arrêt Ping ü en mode headless (Linux/Mac)
  
-# Obtenir le répertoire du script
+# Se placer à la racine du projet (parent du dossier scripts)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT" || exit 1
 
 echo "🛑 Arrêt de Ping ü..."
 echo "===================="
@@ -11,10 +12,10 @@ echo "===================="
 # Vérifier et utiliser l'environnement virtuel
 if [ -d ".venv" ] && [ -f ".venv/bin/python" ]; then
     source .venv/bin/activate
-    PYTHON_CMD="$SCRIPT_DIR/.venv/bin/python"
+    PYTHON_CMD="$PROJECT_ROOT/.venv/bin/python"
 elif [ -d "venv" ] && [ -f "venv/bin/python" ]; then
     source venv/bin/activate
-    PYTHON_CMD="$SCRIPT_DIR/venv/bin/python"
+    PYTHON_CMD="$PROJECT_ROOT/venv/bin/python"
 else
     PYTHON_CMD="python3"
 fi

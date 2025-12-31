@@ -143,3 +143,65 @@ def recup_ip():
                 return ipadress
         except Exception as e:
                 print(str(e))
+
+#############################################################################################
+#####	Récupérer le nom via SNMP (Unicast)												#####
+#############################################################################################
+def resolve_snmp_name(ip, timeout=1.0):
+    try:
+        # SNMPv2c GetRequest community='public' for sysDescr and sysName
+        # Packet copied from src/Snyf/send.py
+        msg = b'\x30\x34\x02\x01\x01\x04\x06public\xa0\x27\x02\x01\x00\x02\x01\x00\x02\x01\x00\x30\x1c\x30\x0c\x06\x08\x2b\x06\x01\x02\x01\x01\x01\x00\x05\x00\x30\x0c\x06\x08\x2b\x06\x01\x02\x01\x01\x05\x00\x05\x00'
+        port = 161
+        
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.settimeout(timeout)
+            s.sendto(msg, (ip, port))
+            
+            try:
+                data, _ = s.recvfrom(4096)
+                if data:
+                    # Parsing simple (inspiré de src/Snyf/fct.py)
+                    # OID sysName: 1.3.6.1.2.1.1.5.0
+                    oid_sysName = b'\x2b\x06\x01\x02\x01\x01\x05\x00'
+                    
+                    # Chercher l'OID dans la réponse
+                    start = data.find(oid_sysName)
+                    if start != -1:
+                        # Position après l'OID
+                        pos = start + len(oid_sysName)
+                        if pos < len(data):
+                            tag = data[pos]
+                            pos += 1
+                            if tag == 0x04: # OctetString
+                                if pos < len(data):
+                                    length = data[pos]
+                                    pos += 1
+                                    
+                                    # Gestion longueur étendue
+                                    if length & 0x80:
+                                        n_bytes = length & 0x7f
+                                        if pos + n_bytes <= len(data):
+                                            real_len = int.from_bytes(data[pos:pos+n_bytes], 'big')
+                                            pos += n_bytes
+                                            length = real_len
+                                    
+                                    if pos + length <= len(data):
+                                        return data[pos:pos+length].decode(errors='ignore')
+                                        
+                    # Fallback: essayer de trouver une chaîne ASCII lisible si pas de parsing précis
+                    # (souvent sysDescr est le premier truc lisible)
+                    decoded = ''.join(chr(b) if 32 <= b < 127 else ' ' for b in data)
+                    desc = ' '.join(decoded.split())
+                    if "public" in desc:
+                        desc = desc.split("public")[-1].strip()
+                    if desc:
+                        return desc
+            except socket.timeout:
+                pass
+                
+    except Exception as e:
+        # print(f"SNMP Error: {e}")
+        pass
+        
+    return None

@@ -47,7 +47,7 @@ Les fichiers de configuration binaires `tab`, `tab4`, `tabG` et `tabr` ont été
 2. **`src/lic_secure.py`**
    - `fichier = "tabG"` → `fichier = "bd/tabs/tabG"`
 
-3. **`init_raspberry.py`**
+3. **`scripts/init_raspberry.py`**
    - Ajout de la création du dossier `bd/tabs`
    - Mise à jour de tous les chemins vers `bd/tabs/tab`, `bd/tabs/tab4`, `bd/tabs/tabG`, `bd/tabs/tabr`
 

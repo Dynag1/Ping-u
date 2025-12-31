@@ -61,7 +61,9 @@ def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
                 try:
                     nom = fct_ip.socket.gethostbyaddr(ip)[0]
                 except Exception:
-                    nom = ip
+                    # Fallback SNMP
+                    snmp_name = fct_ip.resolve_snmp_name(ip, timeout=0.5)
+                    nom = snmp_name if snmp_name else ip
                 try:
                     mac = fct_ip.getmac(ip)
                 except Exception:
@@ -86,7 +88,9 @@ def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
                 try:
                     nom = fct_ip.socket.gethostbyaddr(ip)[0]
                 except Exception:
-                    nom = ip
+                    # Fallback SNMP
+                    snmp_name = fct_ip.resolve_snmp_name(ip, timeout=0.5)
+                    nom = snmp_name if snmp_name else ip
                 try:
                     mac = fct_ip.getmac(ip)
                 except Exception:
@@ -128,7 +132,20 @@ def main(self, comm, model, ip, hote, tout, port, mac, site=""):
     for t in threads:
         t.join()
     if tout != self.tr("Site"):
+        # Valider que l'IP est bien formatée
+        if not ip or ip.count('.') != 3:
+            print(f"Erreur: IP invalide '{ip}' - abandon du scan")
+            return
+            
         ip1 = ip.split(".")
+        # Vérifier que chaque partie est un nombre valide
+        try:
+            for part in ip1:
+                int(part)
+        except ValueError:
+            print(f"Erreur: IP invalide '{ip}' - les parties ne sont pas des nombres")
+            return
+            
         u = 0
         i = 0
         if int(hote) > 500:

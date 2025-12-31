@@ -4,6 +4,11 @@
 # Migration automatique des fichiers de configuration
 ###############################################################################
 
+# Se placer à la racine du projet (parent du dossier scripts)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT" || exit 1
+
 echo "=============================================================="
 echo "  Migration des fichiers tab vers bd/tabs/"
 echo "  Ping ü - Configuration Migration Script"

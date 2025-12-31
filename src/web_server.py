@@ -62,6 +62,15 @@ except ImportError as e:
     snmp_helper = None
     SNMP_AVAILABLE = False
 
+# Import du scanner réseau
+try:
+    from src.utils.network_scanner import NetworkScanner
+    NETWORK_SCANNER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Network scanner non disponible: {e}")
+    NetworkScanner = None
+    NETWORK_SCANNER_AVAILABLE = False
+
 
 class WebServer(QObject):
     """Serveur Web Flask avec Socket.IO pour diffusion en temps réel"""
@@ -128,6 +137,13 @@ class WebServer(QObject):
         # Cache partagé pour les débits SNMP (référence au cache du PingManager)
         self.traffic_cache = {}
         self._bandwidth_cache = {}  # Cache des derniers débits calculés (IP -> {in_mbps, out_mbps})
+        
+        # Network scanner
+        self._network_scanner = None
+        self._scan_thread = None
+        if NETWORK_SCANNER_AVAILABLE:
+            self._network_scanner = NetworkScanner()
+            self._network_scanner.add_callback(self._on_device_discovered)
         
         self._setup_routes()
         self._setup_socketio()
@@ -463,6 +479,16 @@ class WebServer(QObject):
                 var.liste_mail.clear()
                 var.liste_telegram.clear()
                 
+                # Sauvegarde immédiate sur disque
+                try:
+                    import os
+                    from src import fct
+                    autosave_path = os.path.join("bd", "autosave.pin")
+                    # Passer None comme 'self' car fct.save_csv n'utilise self que pour GUI/tr si silent=False
+                    fct.save_csv(None, model, filepath=autosave_path, silent=True)
+                except Exception as e:
+                    logger.error(f"Erreur lors de la sauvegarde post-suppression : {e}")
+
                 logger.info(f"{count_before} hôtes supprimés")
                 
                 self.broadcast_update()
@@ -1362,6 +1388,89 @@ Ping ü - Monitoring Réseau
             except Exception as e:
                 logger.error(f"Erreur assignation multiple sites: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
+        
+        # ==================== Scanner Réseau ====================
+        
+        @self.app.route('/api/network_scan/start', methods=['POST'])
+        @WebAuth.login_required
+        def start_network_scan():
+            """Démarre un scan réseau"""
+            try:
+                if not NETWORK_SCANNER_AVAILABLE or not self._network_scanner:
+                    return jsonify({'success': False, 'error': 'Scanner réseau non disponible'}), 500
+                
+                data = request.get_json()
+                scan_types = data.get('scan_types', ['hik', 'onvif', 'dahua', 'samsung', 'upnp'])
+                timeout = data.get('timeout', 15)
+                
+                # Vérifier qu'aucun scan n'est en cours
+                if self._scan_thread and self._scan_thread.is_alive():
+                    return jsonify({'success': False, 'error': 'Un scan est déjà en cours'}), 400
+                
+                # Lancer le scan dans un thread séparé
+                def run_scan():
+                    try:
+                        logger.info(f"Démarrage scan réseau: {scan_types}")
+                        self.socketio.emit('scan_status', {'status': 'running', 'message': 'Scan démarré'})
+                        self._network_scanner.scan_network(scan_types, timeout)
+                        self.socketio.emit('scan_status', {'status': 'complete', 'message': 'Scan terminé'})
+                        logger.info("Scan réseau terminé")
+                    except Exception as e:
+                        logger.error(f"Erreur durant le scan: {e}", exc_info=True)
+                        self.socketio.emit('scan_status', {'status': 'error', 'message': str(e)})
+                
+                self._scan_thread = threading.Thread(target=run_scan)
+                self._scan_thread.start()
+                
+                logger.info(f"Scan réseau démarré: types={scan_types}, timeout={timeout}s")
+                return jsonify({'success': True, 'message': 'Scan démarré'})
+            except Exception as e:
+                logger.error(f"Erreur démarrage scan: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/network_scan/stop', methods=['POST'])
+        @WebAuth.login_required
+        def stop_network_scan():
+            """Arrête le scan réseau en cours"""
+            try:
+                if not NETWORK_SCANNER_AVAILABLE or not self._network_scanner:
+                    return jsonify({'success': False, 'error': 'Scanner réseau non disponible'}), 500
+                
+                self._network_scanner.stop_scan()
+                logger.info("Arrêt du scan réseau demandé")
+                return jsonify({'success': True, 'message': 'Scan arrêté'})
+            except Exception as e:
+                logger.error(f"Erreur arrêt scan: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/network_scan/status')
+        @WebAuth.login_required
+        def get_scan_status():
+            """Récupère le statut du scan en cours"""
+            try:
+                if not NETWORK_SCANNER_AVAILABLE:
+                    return jsonify({'success': False, 'error': 'Scanner non disponible'}), 500
+                
+                is_running = self._scan_thread and self._scan_thread.is_alive()
+                devices_found = len(self._network_scanner.discovered_devices) if self._network_scanner else 0
+                
+                return jsonify({
+                    'success': True,
+                    'running': is_running,
+                    'devices_found': devices_found
+                })
+            except Exception as e:
+                logger.error(f"Erreur statut scan: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+    
+    def _on_device_discovered(self, device):
+        """Callback appelé quand un périphérique est découvert"""
+        try:
+            # Envoyer via WebSocket
+            self.socketio.emit('scan_device_found', device.to_dict())
+            logger.info(f"Périphérique découvert: {device.ip} ({device.device_type.value})")
+        except Exception as e:
+            logger.error(f"Erreur callback device discovered: {e}", exc_info=True)
     
     def _setup_socketio(self):
         """Configuration des événements Socket.IO"""

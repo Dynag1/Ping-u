@@ -9,6 +9,11 @@ import pickle
 import os
 import sys
 
+# Se placer à la racine du projet (parent du dossier scripts)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+os.chdir(project_root)
+
 def create_config_files():
     """Crée les fichiers de configuration par défaut"""
     
