@@ -91,6 +91,132 @@ TEMPERATURE_OIDS = {
     'lm78': '1.3.6.1.4.1.2021.13.16.2.1.3.10',  # LM78/LM87
 }
 
+# OIDs pour la bande passante (trafic réseau) selon les constructeurs et systèmes
+# Ces OIDs complètent les OIDs standards IF-MIB déjà utilisés dans le code
+BANDWIDTH_OIDS = {
+    
+    # === OIDs Standards IF-MIB (RFC 2863) - Supportés par la plupart des équipements ===
+    # Ces OIDs sont utilisés par défaut et fonctionnent sur Linux, Windows, Raspberry, NAS, switches, etc.
+    'ifInOctets': '1.3.6.1.2.1.2.2.1.10',           # Octets reçus (32 bits) - nécessite index interface
+    'ifOutOctets': '1.3.6.1.2.1.2.2.1.16',          # Octets envoyés (32 bits) - nécessite index interface
+    'ifHCInOctets': '1.3.6.1.2.1.31.1.1.1.6',       # Octets reçus (64 bits, High Capacity) - nécessite index
+    'ifHCOutOctets': '1.3.6.1.2.1.31.1.1.1.10',     # Octets envoyés (64 bits, High Capacity) - nécessite index
+    'ifSpeed': '1.3.6.1.2.1.2.2.1.5',               # Vitesse interface en bps - nécessite index
+    'ifHighSpeed': '1.3.6.1.2.1.31.1.1.1.15',       # Vitesse interface en Mbps (haute capacité) - nécessite index
+    'ifDescr': '1.3.6.1.2.1.2.2.1.2',               # Description de l'interface - nécessite index
+    'ifOperStatus': '1.3.6.1.2.1.2.2.1.8',          # Statut opérationnel (1=up, 2=down) - nécessite index
+    
+    # === Linux (Net-SNMP) - Raspberry Pi, Ubuntu, Debian, etc. ===
+    # Sur Linux, les interfaces sont généralement indexées par leur numéro (eth0=2, eth1=3, wlan0=3, etc.)
+    # Usage typique: append l'index d'interface (ex: .2 pour eth0, .3 pour wlan0)
+    'linux_if_in_octets': '1.3.6.1.2.1.2.2.1.10',       # Identique à ifInOctets (standard IF-MIB)
+    'linux_if_out_octets': '1.3.6.1.2.1.2.2.1.16',      # Identique à ifOutOctets (standard IF-MIB)
+    'linux_if_in_octets_hc': '1.3.6.1.2.1.31.1.1.1.6',  # 64 bits pour grandes valeurs
+    'linux_if_out_octets_hc': '1.3.6.1.2.1.31.1.1.1.10', # 64 bits pour grandes valeurs
+    
+    # === Raspberry Pi (Net-SNMP sur Raspbian/Raspberry Pi OS) ===
+    # Identique aux OIDs Linux car Raspberry Pi utilise Net-SNMP
+    'raspberry_if_in': '1.3.6.1.2.1.2.2.1.10',          # Trafic entrant (+ index)
+    'raspberry_if_out': '1.3.6.1.2.1.2.2.1.16',         # Trafic sortant (+ index)
+    'raspberry_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',     # Haute capacité IN
+    'raspberry_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',   # Haute capacité OUT
+    
+    # === Windows (avec SNMP Service activé) ===
+    # Windows utilise les mêmes OIDs standards IF-MIB
+    'windows_if_in': '1.3.6.1.2.1.2.2.1.10',          # Trafic entrant (+ index)
+    'windows_if_out': '1.3.6.1.2.1.2.2.1.16',         # Trafic sortant (+ index)
+    'windows_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',     # Haute capacité IN
+    'windows_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',   # Haute capacité OUT
+    
+    # === NAS Synology ===
+    # Synology utilise les OIDs standards mais peut avoir des OIDs propriétaires
+    'synology_if_in': '1.3.6.1.2.1.2.2.1.10',         # Standard IF-MIB (+ index)
+    'synology_if_out': '1.3.6.1.2.1.2.2.1.16',        # Standard IF-MIB (+ index)
+    'synology_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',    # 64 bits
+    'synology_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',  # 64 bits
+    
+    # === NAS QNAP ===
+    'qnap_if_in': '1.3.6.1.2.1.2.2.1.10',             # Standard IF-MIB (+ index)
+    'qnap_if_out': '1.3.6.1.2.1.2.2.1.16',            # Standard IF-MIB (+ index)
+    'qnap_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',        # 64 bits
+    'qnap_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',      # 64 bits
+    
+    # === Switches Cisco ===
+    # Cisco supporte IF-MIB standard mais a aussi des OIDs propriétaires
+    'cisco_if_in': '1.3.6.1.2.1.2.2.1.10',            # Standard IF-MIB (+ index)
+    'cisco_if_out': '1.3.6.1.2.1.2.2.1.16',           # Standard IF-MIB (+ index)
+    'cisco_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',       # 64 bits
+    'cisco_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',     # 64 bits
+    
+    # === Switches HP/Aruba ===
+    'hp_if_in': '1.3.6.1.2.1.2.2.1.10',               # Standard IF-MIB (+ index)
+    'hp_if_out': '1.3.6.1.2.1.2.2.1.16',              # Standard IF-MIB (+ index)
+    'hp_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',          # 64 bits
+    'hp_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',        # 64 bits
+    
+    # === Switches Dell ===
+    'dell_if_in': '1.3.6.1.2.1.2.2.1.10',             # Standard IF-MIB (+ index)
+    'dell_if_out': '1.3.6.1.2.1.2.2.1.16',            # Standard IF-MIB (+ index)
+    'dell_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',        # 64 bits
+    'dell_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',      # 64 bits
+    
+    # === Ubiquiti (EdgeSwitch, UniFi) ===
+    'ubiquiti_if_in': '1.3.6.1.2.1.2.2.1.10',         # Standard IF-MIB (+ index)
+    'ubiquiti_if_out': '1.3.6.1.2.1.2.2.1.16',        # Standard IF-MIB (+ index)
+    'ubiquiti_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',    # 64 bits
+    'ubiquiti_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',  # 64 bits
+    
+    # === MikroTik (RouterOS) ===
+    'mikrotik_if_in': '1.3.6.1.2.1.2.2.1.10',         # Standard IF-MIB (+ index)
+    'mikrotik_if_out': '1.3.6.1.2.1.2.2.1.16',        # Standard IF-MIB (+ index)
+    'mikrotik_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',    # 64 bits
+    'mikrotik_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',  # 64 bits
+    
+    # === Netgear ===
+    'netgear_if_in': '1.3.6.1.2.1.2.2.1.10',          # Standard IF-MIB (+ index)
+    'netgear_if_out': '1.3.6.1.2.1.2.2.1.16',         # Standard IF-MIB (+ index)
+    'netgear_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',     # 64 bits
+    'netgear_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',   # 64 bits
+    
+    # === D-Link ===
+    'dlink_if_in': '1.3.6.1.2.1.2.2.1.10',            # Standard IF-MIB (+ index)
+    'dlink_if_out': '1.3.6.1.2.1.2.2.1.16',           # Standard IF-MIB (+ index)
+    'dlink_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',       # 64 bits
+    'dlink_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',     # 64 bits
+    
+    # === TP-Link ===
+    'tplink_if_in': '1.3.6.1.2.1.2.2.1.10',           # Standard IF-MIB (+ index)
+    'tplink_if_out': '1.3.6.1.2.1.2.2.1.16',          # Standard IF-MIB (+ index)
+    'tplink_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',      # 64 bits
+    'tplink_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',    # 64 bits
+    
+    # === Zyxel ===
+    'zyxel_if_in': '1.3.6.1.2.1.2.2.1.10',            # Standard IF-MIB (+ index)
+    'zyxel_if_out': '1.3.6.1.2.1.2.2.1.16',           # Standard IF-MIB (+ index)
+    'zyxel_if_in_hc': '1.3.6.1.2.1.31.1.1.1.6',       # 64 bits
+    'zyxel_if_out_hc': '1.3.6.1.2.1.31.1.1.1.10',     # 64 bits
+    
+    # === Box Internet Françaises ===
+    # Les box utilisent les OIDs standards IF-MIB
+    'freebox_if_in': '1.3.6.1.2.1.2.2.1.10',          # Standard IF-MIB (+ index, généralement .1 pour WAN)
+    'freebox_if_out': '1.3.6.1.2.1.2.2.1.16',         # Standard IF-MIB (+ index)
+    'livebox_if_in': '1.3.6.1.2.1.2.2.1.10',          # Standard IF-MIB (+ index)
+    'livebox_if_out': '1.3.6.1.2.1.2.2.1.16',         # Standard IF-MIB (+ index)
+    'bbox_if_in': '1.3.6.1.2.1.2.2.1.10',             # Standard IF-MIB (+ index)
+    'bbox_if_out': '1.3.6.1.2.1.2.2.1.16',            # Standard IF-MIB (+ index)
+    'sfrbox_if_in': '1.3.6.1.2.1.2.2.1.10',           # Standard IF-MIB (+ index)
+    'sfrbox_if_out': '1.3.6.1.2.1.2.2.1.16',          # Standard IF-MIB (+ index)
+    
+    # === Serveurs (Dell iDRAC, HP iLO, Supermicro IPMI) ===
+    # Les serveurs utilisent généralement les OIDs standards IF-MIB pour leurs interfaces réseau
+    'dell_server_if_in': '1.3.6.1.2.1.2.2.1.10',      # Standard IF-MIB (+ index)
+    'dell_server_if_out': '1.3.6.1.2.1.2.2.1.16',     # Standard IF-MIB (+ index)
+    'hp_server_if_in': '1.3.6.1.2.1.2.2.1.10',        # Standard IF-MIB (+ index)
+    'hp_server_if_out': '1.3.6.1.2.1.2.2.1.16',       # Standard IF-MIB (+ index)
+    'supermicro_if_in': '1.3.6.1.2.1.2.2.1.10',       # Standard IF-MIB (+ index)
+    'supermicro_if_out': '1.3.6.1.2.1.2.2.1.16',      # Standard IF-MIB (+ index)
+}
+
 # OIDs pour le débit des Box Internet (ADSL/VDSL/Fibre)
 # Ces OIDs sont standards et peuvent fonctionner sur les box qui supportent SNMP
 BOX_INTERNET_OIDS = {

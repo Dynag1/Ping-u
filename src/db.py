@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 """**************
     Creer dossier
 **************"""
-fichierini = "tabG"
+fichierini = "bd/tabs/tabG"
 
 
 def creerDossier(nom):
@@ -97,7 +97,7 @@ def save_param_gene(param_site, param_li, param_theme, param_advanced_title=None
 
 def lire_param_db():
     try:
-        fichierini = "tab4"
+        fichierini = "bd/tabs/tab4"
         if os.path.isfile(fichierini):
             fichierSauvegarde = open(fichierini, "rb")
             variables = pickle.load(fichierSauvegarde)
@@ -123,7 +123,7 @@ def save_param_db():
         param_temp_seuil_warning = var.tempSeuilWarning
         variables = [param_delais, param_nbr_hs, param_popup, param_mail, param_telegram, param_mail_recap, param_db_ext, param_temp_alert, param_temp_seuil, param_temp_seuil_warning]
         try:
-            fichierSauvegarde = open("tab4", "wb")
+            fichierSauvegarde = open("bd/tabs/tab4", "wb")
             pickle.dump(variables, fichierSauvegarde)
             fichierSauvegarde.close()
         except Exception as inst:
@@ -183,7 +183,7 @@ def load_temp_alert_params(variables):
 
 
 def lire_param_mail():
-    fichierini = "tab"
+    fichierini = "bd/tabs/tab"
     try:
         if os.path.isfile(fichierini):
             fichierSauvegarde = open(fichierini, "rb")
@@ -199,7 +199,7 @@ def lire_param_mail():
 
 def save_param_mail(variables):
     try:
-        fichierSauvegarde = open("tab", "wb")
+        fichierSauvegarde = open("bd/tabs/tab", "wb")
         pickle.dump(variables, fichierSauvegarde)
         fichierSauvegarde.close()
     except Exception as inst:
@@ -214,7 +214,7 @@ def save_param_mail(variables):
 
 def save_param_mail_recap(value):
     try:
-        fichierSauvegarde = open("tabr","wb")
+        fichierSauvegarde = open("bd/tabs/tabr","wb")
         pickle.dump(value, fichierSauvegarde)
         fichierSauvegarde.close()
     except Exception as inst:
@@ -223,7 +223,7 @@ def save_param_mail_recap(value):
 
 
 def lire_param_mail_recap():
-    fichierini = "tabr"
+    fichierini = "bd/tabs/tabr"
     try:
         if os.path.isfile(fichierini):
             fichierSauvegarde = open(fichierini, "rb")

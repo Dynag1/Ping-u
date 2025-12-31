@@ -119,6 +119,14 @@ python3 Pingu.py
 
 ---
 
+## 🔧 Documentation technique
+
+| Document | Description |
+|----------|-------------|
+| [BANDWIDTH_OIDS.md](BANDWIDTH_OIDS.md) | Guide des OIDs SNMP pour la bande passante (Linux, Windows, Raspberry Pi, NAS, switches, etc.) |
+
+---
+
 ## 🔗 Liens utiles
 
 | Ressource | URL |

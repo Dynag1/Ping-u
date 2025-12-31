@@ -15,12 +15,24 @@ def create_config_files():
     print("🔧 Initialisation des fichiers de configuration pour Ping ü")
     print("=" * 60)
     
+    # Créer le dossier bd/tabs si nécessaire
+    if not os.path.exists('bd/tabs'):
+        print("📁 Création du dossier 'bd/tabs'...")
+        try:
+            os.makedirs('bd/tabs', exist_ok=True)
+            print("   ✅ Dossier 'bd/tabs' créé")
+        except Exception as e:
+            print(f"   ❌ Erreur: {e}")
+            return False
+    else:
+        print("   ⏭️  Dossier 'bd/tabs' existe déjà")
+    
     # Fichier tab - Paramètres mail
-    if not os.path.exists('tab'):
+    if not os.path.exists('bd/tabs/tab'):
         print("📧 Création du fichier 'tab' (paramètres mail)...")
         mail_params = ['', '', '', '']  # [serveur, port, expediteur, mot_de_passe]
         try:
-            with open('tab', 'wb') as f:
+            with open('bd/tabs/tab', 'wb') as f:
                 pickle.dump(mail_params, f)
             print("   ✅ Fichier 'tab' créé")
         except Exception as e:
@@ -30,11 +42,11 @@ def create_config_files():
         print("   ⏭️  Fichier 'tab' existe déjà")
     
     # Fichier tabG - Paramètres généraux
-    if not os.path.exists('tabG'):
+    if not os.path.exists('bd/tabs/tabG'):
         print("⚙️  Création du fichier 'tabG' (paramètres généraux)...")
         general_params = ['MonRaspberry', 'fr', 'light']  # [nom_site, langue, theme]
         try:
-            with open('tabG', 'wb') as f:
+            with open('bd/tabs/tabG', 'wb') as f:
                 pickle.dump(general_params, f)
             print("   ✅ Fichier 'tabG' créé")
         except Exception as e:
@@ -44,12 +56,12 @@ def create_config_files():
         print("   ⏭️  Fichier 'tabG' existe déjà")
     
     # Fichier tab4 - Paramètres principaux
-    if not os.path.exists('tab4'):
+    if not os.path.exists('bd/tabs/tab4'):
         print("🔄 Création du fichier 'tab4' (paramètres monitoring)...")
         # [delais, nbr_hs, popup, mail, telegram, mail_recap, db_externe, temp_alert, temp_seuil]
         monitoring_params = [10, 3, False, False, False, False, False, False, 70]
         try:
-            with open('tab4', 'wb') as f:
+            with open('bd/tabs/tab4', 'wb') as f:
                 pickle.dump(monitoring_params, f)
             print("   ✅ Fichier 'tab4' créé")
         except Exception as e:
@@ -59,11 +71,11 @@ def create_config_files():
         print("   ⏭️  Fichier 'tab4' existe déjà")
     
     # Fichier tabr - Paramètres mail récapitulatif
-    if not os.path.exists('tabr'):
+    if not os.path.exists('bd/tabs/tabr'):
         print("📨 Création du fichier 'tabr' (mail récap)...")
         mail_recap_params = []  # Liste vide par défaut
         try:
-            with open('tabr', 'wb') as f:
+            with open('bd/tabs/tabr', 'wb') as f:
                 pickle.dump(mail_recap_params, f)
             print("   ✅ Fichier 'tabr' créé")
         except Exception as e:
