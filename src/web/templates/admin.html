@@ -700,6 +700,10 @@
                     <span class="status-dot stopped"></span>
                     <span data-i18n="status_stopped">Arrêté</span>
                 </div>
+                <!-- Bouton unique Start/Stop qui change selon l'état -->
+                <button id="btn-toggle-monitoring" class="btn btn-primary">
+                    <span id="btn-toggle-icon">▶️</span> <span id="btn-toggle-text" data-i18n="start">Démarrer</span>
+                </button>
                 <button id="btn-change-password" class="btn btn-info">🔑 <span data-i18n="change_credentials">Changer
                         identifiants</span></button>
                 <a href="/" class="btn btn-secondary">📊 <span data-i18n="monitoring_view">Vue Monitoring</span></a>
@@ -2632,16 +2636,33 @@
             const dot = statusEl.querySelector('.status-dot');
             const text = statusEl.querySelector('span[data-i18n]');
 
+            // Mise à jour du bouton toggle
+            const toggleBtn = document.getElementById('btn-toggle-monitoring');
+            const toggleIcon = document.getElementById('btn-toggle-icon');
+            const toggleText = document.getElementById('btn-toggle-text');
+
             if (running) {
                 statusEl.className = 'status-indicator running';
                 dot.className = 'status-dot running';
                 text.textContent = t('status_running');
                 text.setAttribute('data-i18n', 'status_running');
+
+                // Bouton devient "Arrêter" en rouge
+                toggleBtn.className = 'btn btn-danger';
+                toggleIcon.textContent = '⏹️';
+                toggleText.textContent = t('stop');
+                toggleText.setAttribute('data-i18n', 'stop');
             } else {
                 statusEl.className = 'status-indicator stopped';
                 dot.className = 'status-dot stopped';
                 text.textContent = t('status_stopped');
                 text.setAttribute('data-i18n', 'status_stopped');
+
+                // Bouton devient "Démarrer" en bleu
+                toggleBtn.className = 'btn btn-primary';
+                toggleIcon.textContent = '▶️';
+                toggleText.textContent = t('start');
+                toggleText.setAttribute('data-i18n', 'start');
             }
         }
 
@@ -2788,6 +2809,30 @@
                 monitoringRunning = false;
                 updateMonitoringStatus(false);
             } catch (error) { }
+        });
+
+        // Bouton toggle unique dans le header qui change selon l'état
+        document.getElementById('btn-toggle-monitoring').addEventListener('click', async function () {
+            if (monitoringRunning) {
+                // Arrêter le monitoring
+                try {
+                    const result = await apiCall('/api/stop_monitoring', 'POST');
+                    showNotification(t('monitoring_stopped'), 'info');
+                    monitoringRunning = false;
+                    updateMonitoringStatus(false);
+                } catch (error) { }
+            } else {
+                // Démarrer le monitoring
+                const delai = parseInt(document.getElementById('input-delai').value);
+                const nbHs = parseInt(document.getElementById('input-nb-hs').value);
+
+                try {
+                    const result = await apiCall('/api/start_monitoring', 'POST', { delai, nb_hs: nbHs });
+                    showNotification(t('monitoring_started'), 'success');
+                    monitoringRunning = true;
+                    updateMonitoringStatus(true);
+                } catch (error) { }
+            }
         });
 
         document.getElementById('btn-save-alerts').addEventListener('click', async function () {
