@@ -2,7 +2,7 @@
 
 ## 📋 Description
 
-Le script `migrate_tabs.sh` permet de migrer automatiquement les fichiers de configuration `tab`, `tab4`, `tabG` et `tabr` de la racine du projet vers le dossier `bd/tabs/`.
+Le script `migrate_tabs.sh` (situé dans `scripts/`) permet de migrer automatiquement les fichiers de configuration `tab`, `tab4`, `tabG` et `tabr` de la racine du projet vers le dossier `bd/tabs/`.
 
 ## 🚀 Utilisation
 
@@ -10,7 +10,7 @@ Le script `migrate_tabs.sh` permet de migrer automatiquement les fichiers de con
 
 ```bash
 # Depuis la racine du projet
-./migrate_tabs.sh
+./scripts/migrate_tabs.sh
 ```
 
 ### Avec permissions
@@ -19,10 +19,10 @@ Si vous obtenez une erreur de permission :
 
 ```bash
 # Rendre le script exécutable
-chmod +x migrate_tabs.sh
+chmod +x scripts/migrate_tabs.sh
 
 # Puis l'exécuter
-./migrate_tabs.sh
+./scripts/migrate_tabs.sh
 ```
 
 ## 📦 Ce que fait le script

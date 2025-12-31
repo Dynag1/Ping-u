@@ -29,7 +29,7 @@ echo ""
 
 # 2. Créer les fichiers de configuration
 echo -e "${YELLOW}[2/4]${NC} Création des fichiers de configuration..."
-if python3 init_raspberry.py; then
+if python3 scripts/init_raspberry.py; then
     echo -e "${GREEN}✅ Fichiers créés${NC}"
 else
     echo -e "${RED}❌ Erreur lors de la création des fichiers${NC}"

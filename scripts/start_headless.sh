@@ -1,22 +1,23 @@
 #!/bin/bash
 # Script de démarrage Ping ü en mode headless (Linux/Mac)
 
-# Aller dans le répertoire du script
-cd "$(dirname "$0")"
-SCRIPT_DIR="$(pwd)"
+# Se placer à la racine du projet (parent du dossier scripts)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT" || exit 1
 
 echo "🚀 Démarrage de Ping ü en mode headless..."
 echo "=========================================="
-echo "📂 Répertoire: $SCRIPT_DIR"
+echo "📂 Répertoire: $PROJECT_ROOT"
 
 # Définir le chemin Python du venv
-if [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
-    PYTHON_CMD="$SCRIPT_DIR/.venv/bin/python"
-    PIP_CMD="$SCRIPT_DIR/.venv/bin/pip"
+if [ -f "$PROJECT_ROOT/.venv/bin/python" ]; then
+    PYTHON_CMD="$PROJECT_ROOT/.venv/bin/python"
+    PIP_CMD="$PROJECT_ROOT/.venv/bin/pip"
     echo "✅ Venv trouvé: .venv"
-elif [ -f "$SCRIPT_DIR/venv/bin/python" ]; then
-    PYTHON_CMD="$SCRIPT_DIR/venv/bin/python"
-    PIP_CMD="$SCRIPT_DIR/venv/bin/pip"
+elif [ -f "$PROJECT_ROOT/venv/bin/python" ]; then
+    PYTHON_CMD="$PROJECT_ROOT/venv/bin/python"
+    PIP_CMD="$PROJECT_ROOT/venv/bin/pip"
     echo "✅ Venv trouvé: venv"
 else
     echo "❌ Aucun environnement virtuel trouvé !"
@@ -90,7 +91,7 @@ echo ""
 echo "🚀 Lancement de l'application..."
 
 # Utiliser le chemin complet du Python pour nohup
-nohup "$PYTHON_CMD" "$SCRIPT_DIR/Pingu.py" --headless > "$SCRIPT_DIR/pingu_headless.log" 2>&1 &
+nohup "$PYTHON_CMD" "$PROJECT_ROOT/Pingu.py" --headless > "$PROJECT_ROOT/pingu_headless.log" 2>&1 &
 NEW_PID=$!
 
 # Attendre et vérifier
@@ -109,6 +110,6 @@ else
     echo "❌ L'application a échoué au démarrage !"
     echo ""
     echo "📋 Dernières lignes du log:"
-    tail -30 "$SCRIPT_DIR/pingu_headless.log"
+    tail -30 "$PROJECT_ROOT/pingu_headless.log"
     exit 1
 fi
