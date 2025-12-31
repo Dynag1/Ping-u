@@ -3,6 +3,13 @@
 
 ---
 
+### v99.03.05 (2025-12-31)
+- Ajout: Dictionnaire complet `BANDWIDTH_OIDS` pour le monitoring de la bande passante via SNMP.
+*   Support de tous les équipements : Linux, Windows, Raspberry Pi, NAS (Synology, QNAP), switches (Cisco, HP, Dell, Ubiquiti, MikroTik, Netgear, D-Link, TP-Link, Zyxel), box internet (Freebox, Livebox, Bbox, SFR Box), et serveurs (Dell iDRAC, HP iLO, Supermicro IPMI).
+*   Utilisation des OIDs standards IF-MIB (RFC 2863) avec support des compteurs 32 bits et 64 bits (High Capacity).
+*   Documentation complète dans `docs/BANDWIDTH_OIDS.md` avec exemples de configuration et d'utilisation.
+*   Script de test `test_bandwidth_oids.py` pour valider les OIDs sur vos équipements.
+
 ### v99.03.04 (2025-12-21)
 - Ajout: Support SNMP de la température CPU pour Raspberry Pi avec Home Assistant OS (HAOS).
 *   Nouvel OID `raspberry_haos_cpu` via NET-SNMP-EXTEND-MIB (sensor.cpu_temperature).

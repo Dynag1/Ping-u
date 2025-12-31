@@ -272,7 +272,7 @@ class LicenseManager:
     
     def _read_license_from_file(self):
         """Lit la licence depuis le fichier de configuration"""
-        fichier = "tabG"
+        fichier = "bd/tabs/tabG"
         try:
             if os.path.isfile(fichier):
                 with open(fichier, "rb") as f:
