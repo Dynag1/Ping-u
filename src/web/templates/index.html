@@ -534,40 +534,426 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.05);
             background: #fff;
         }
+
+        /* ==================== Menu Hamburger & Panneau Latéral ==================== */
+
+        /* Overlay sombre */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Menu latéral */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -340px;
+            width: 320px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+            transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .side-menu.active {
+            left: 0;
+        }
+
+        .side-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .side-menu-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .close-menu-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 18px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        /* Sections du menu */
+        .menu-section {
+            padding: 18px 25px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .menu-section:last-child {
+            border-bottom: none;
+        }
+
+        .menu-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* User info dans le menu */
+        .menu-section .user-info-badge {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .menu-user-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .menu-user-actions .admin-link {
+            flex: 1;
+            text-align: center;
+            padding: 10px 15px;
+            border-radius: 10px;
+        }
+
+        .logout-btn-menu {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: #fee2e2;
+            border: none;
+            border-radius: 10px;
+            color: #991b1b;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn-menu:hover {
+            background: #fecaca;
+            transform: scale(1.02);
+        }
+
+        /* Sélecteurs dans le menu */
+        .menu-select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            font-size: 14px;
+            font-weight: 500;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .menu-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .menu-section .site-filter-select {
+            min-height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .menu-section .site-filter-reset-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        /* Badges dans le menu */
+        .badges-container-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .badges-container-menu .status-badge,
+        .badges-container-menu .scan-badge {
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        /* Stats dans le menu */
+        .stats-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-card-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #f3f4f6;
+        }
+
+        .stat-card-menu .label {
+            color: #6b7280;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .stat-card-menu .value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .stat-card-menu.total .value {
+            color: #3b82f6;
+        }
+
+        .stat-card-menu.online .value {
+            color: #10b981;
+        }
+
+        .stat-card-menu.offline .value {
+            color: #ef4444;
+        }
+
+        .stat-card-menu.warning-temp .value {
+            color: #f59e0b;
+        }
+
+        .stat-card-menu.high-temp .value {
+            color: #ef4444;
+        }
+
+        /* Lang selector dans le menu */
+        .menu-section .lang-selector {
+            padding: 0;
+            background: none;
+        }
+
+        .menu-section .lang-selector select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* Header minimaliste */
+        .header-minimal {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .main-title {
+            color: #333;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            margin: 0;
+        }
+
+        /* Bouton hamburger */
+        .hamburger-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            flex-shrink: 0;
+        }
+
+        .hamburger-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .hamburger-line {
+            width: 24px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-btn.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 6px);
+        }
+
+        .hamburger-btn.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .hamburger-btn.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -7px);
+        }
+
+        /* Mini stats */
+        .mini-stats {
+            display: flex;
+            gap: 15px;
+        }
+
+        .mini-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: #f3f4f6;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .mini-stat.online span {
+            color: #10b981;
+        }
+
+        .mini-stat.offline span {
+            color: #ef4444;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-minimal {
+                padding: 12px 15px;
+                gap: 12px;
+            }
+
+            .main-title {
+                font-size: 18px;
+            }
+
+            .hamburger-btn {
+                width: 42px;
+                height: 42px;
+            }
+
+            .mini-stats {
+                gap: 8px;
+            }
+
+            .mini-stat {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .side-menu {
+                width: 280px;
+                left: -300px;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-top">
-                <h1>
-                    🌐 <span data-i18n="title">Monitoring Réseau - Ping ü</span>
-                </h1>
-                <div class="user-controls">
-                    <!-- Info utilisateur et boutons -->
-                    <div class="user-info-badge" id="user-info-badge">
-                        <span class="user-icon">👤</span>
-                        <span class="user-name" id="current-username">{{ username or '' }}</span>
-                        {% if is_admin %}
-                        <a href="/admin" class="admin-link" title="Administration">
-                            ⚙️ <span data-i18n="admin">Admin</span>
-                        </a>
-                        {% endif %}
-                        <button class="logout-btn" onclick="logout()" title="Déconnexion">
-                            🚪
-                        </button>
-                    </div>
-                    <div class="lang-selector">
-                        <label>🌍</label>
-                        <select id="lang-select" onchange="changeLanguage(this.value)">
-                            <option value="fr">Français</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
-                </div>
+    <!-- Overlay sombre pour fermer le menu -->
+    <div class="menu-overlay" id="menu-overlay" onclick="toggleMenu()"></div>
+
+    <!-- Menu latéral (slide-in) -->
+    <div class="side-menu" id="side-menu">
+        <div class="side-menu-header">
+            <h2 data-i18n="menu">Menu</h2>
+            <button class="close-menu-btn" onclick="toggleMenu()">✕</button>
+        </div>
+
+        <!-- Section utilisateur -->
+        <div class="menu-section">
+            <div class="menu-section-title">👤 <span data-i18n="user">Utilisateur</span></div>
+            <div class="user-info-badge" id="user-info-badge">
+                <span class="user-icon">👤</span>
+                <span class="user-name" id="current-username">{{ username or '' }}</span>
             </div>
-            <div class="badges-container" style="margin-bottom: 15px;">
+            <div class="menu-user-actions">
+                {% if is_admin %}
+                <a href="/admin" class="admin-link" title="Administration">
+                    ⚙️ <span data-i18n="admin">Admin</span>
+                </a>
+                {% endif %}
+                <button class="logout-btn-menu" onclick="logout()">
+                    🚪 <span data-i18n="logout">Déconnexion</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Section langue -->
+        <div class="menu-section">
+            <div class="menu-section-title">🌍 <span data-i18n="language">Langue</span></div>
+            <div class="lang-selector">
+                <select id="lang-select" onchange="changeLanguage(this.value)">
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Section statut -->
+        <div class="menu-section">
+            <div class="menu-section-title">📊 <span data-i18n="status">Statut</span></div>
+            <div class="badges-container-menu">
                 <span class="status-badge" id="connection-badge">
                     <span class="status-dot"></span>
                     <span data-i18n="connected">Connecté</span>
@@ -577,161 +963,79 @@
                     <span data-i18n="scan_stopped">Scan arrêté</span>
                 </span>
             </div>
-            <div class="controls-row">
-                <label style="color: #6b7280; font-weight: 600;" data-i18n="sort_by">Trier par :</label>
-                <select id="sort-select" onchange="changeSort()"
-                    style="padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                    <option value="status-offline-first" data-i18n="sort_offline_first">Statut (HS en premier)</option>
-                    <option value="status-online-first" data-i18n="sort_online_first">Statut (En ligne en premier)
-                    </option>
-                    <option value="ip-asc" data-i18n="sort_ip_asc">Adresse IP (Croissant)</option>
-                    <option value="ip-desc" data-i18n="sort_ip_desc">Adresse IP (Décroissant)</option>
-                    <option value="name-asc" data-i18n="sort_name_asc">Nom (A-Z)</option>
-                    <option value="name-desc" data-i18n="sort_name_desc">Nom (Z-A)</option>
-                </select>
+        </div>
 
-                <!-- Filtre par site - Design Premium -->
-                <div class="site-filter-premium">
-                    <div class="site-filter-icon">🏢</div>
-                    <div class="site-filter-content">
-                        <span class="site-filter-label" data-i18n="filter_site">Filtrer par site</span>
-                        <select id="site-filter-select" multiple onchange="applySiteFilterLocal()"
-                            class="site-filter-select">
-                        </select>
-                    </div>
-                    <button onclick="clearSiteFilterLocal()" class="site-filter-reset-btn"
-                        title="Afficher tous les sites">
-                        <span data-i18n="all_sites">Tous</span>
-                    </button>
-                </div>
+        <!-- Section tri -->
+        <div class="menu-section">
+            <div class="menu-section-title">📋 <span data-i18n="sort_by">Trier par</span></div>
+            <select id="sort-select" onchange="changeSort()" class="menu-select">
+                <option value="status-offline-first" data-i18n="sort_offline_first">Statut (HS en premier)</option>
+                <option value="status-online-first" data-i18n="sort_online_first">Statut (En ligne en premier)</option>
+                <option value="ip-asc" data-i18n="sort_ip_asc">Adresse IP (Croissant)</option>
+                <option value="ip-desc" data-i18n="sort_ip_desc">Adresse IP (Décroissant)</option>
+                <option value="name-asc" data-i18n="sort_name_asc">Nom (A-Z)</option>
+                <option value="name-desc" data-i18n="sort_name_desc">Nom (Z-A)</option>
+            </select>
+        </div>
 
-                <style>
-                    .site-filter-premium {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-                        padding: 10px 18px;
-                        border-radius: 30px;
-                        margin-left: 15px;
-                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-                        border: 1px solid rgba(102, 126, 234, 0.15);
-                        transition: all 0.3s ease;
-                    }
+        <!-- Section filtre par site -->
+        <div class="menu-section">
+            <div class="menu-section-title">🏢 <span data-i18n="filter_site">Filtrer par site</span></div>
+            <select id="site-filter-select" multiple onchange="applySiteFilterLocal()"
+                class="menu-select site-filter-select">
+            </select>
+            <button onclick="clearSiteFilterLocal()" class="site-filter-reset-btn">
+                <span data-i18n="all_sites">Tous</span>
+            </button>
+        </div>
 
-                    .site-filter-premium:hover {
-                        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
-                        border-color: rgba(102, 126, 234, 0.3);
-                    }
-
-                    .site-filter-icon {
-                        width: 36px;
-                        height: 36px;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        border-radius: 10px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 18px;
-                        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.25);
-                        flex-shrink: 0;
-                    }
-
-                    .site-filter-content {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 4px;
-                    }
-
-                    .site-filter-label {
-                        font-size: 11px;
-                        color: #9ca3af;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                    }
-
-                    .site-filter-select {
-                        min-width: 140px;
-                        max-width: 200px;
-                        padding: 6px 10px;
-                        border-radius: 8px;
-                        border: 1px solid #e5e7eb;
-                        font-size: 13px;
-                        font-weight: 500;
-                        background: white;
-                        cursor: pointer;
-                        transition: all 0.2s ease;
-                    }
-
-                    .site-filter-select:focus {
-                        outline: none;
-                        border-color: #667eea;
-                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-                    }
-
-                    .site-filter-select option:checked {
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                    }
-
-                    .site-filter-reset-btn {
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        border: none;
-                        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-                        color: white;
-                        font-size: 12px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: all 0.3s ease;
-                        white-space: nowrap;
-                    }
-
-                    .site-filter-reset-btn:hover {
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        transform: scale(1.05);
-                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-                    }
-
-                    @media (max-width: 768px) {
-                        .site-filter-premium {
-                            margin-left: 0;
-                            margin-top: 10px;
-                            width: 100%;
-                        }
-
-                        .site-filter-select {
-                            flex: 1;
-                        }
-                    }
-                </style>
-            </div>
-            <div class="stats">
-                <div class="stat-card total">
+        <!-- Section statistiques -->
+        <div class="menu-section">
+            <div class="menu-section-title">📈 <span data-i18n="statistics">Statistiques</span></div>
+            <div class="stats-menu">
+                <div class="stat-card-menu total">
                     <span class="label" data-i18n="total">Total:</span>
                     <span class="value" id="total-hosts">0</span>
                 </div>
-                <div class="stat-card online">
+                <div class="stat-card-menu online">
                     <span class="icon">🟢</span>
                     <span class="label" data-i18n="online">En ligne:</span>
                     <span class="value" id="online-hosts">0</span>
                 </div>
-                <div class="stat-card offline">
+                <div class="stat-card-menu offline">
                     <span class="icon">🔴</span>
                     <span class="label" data-i18n="offline">Hors ligne:</span>
                     <span class="value" id="offline-hosts">0</span>
                 </div>
-                <div class="stat-card warning-temp">
+                <div class="stat-card-menu warning-temp">
                     <span class="icon">🌡️</span>
                     <span class="label" data-i18n="warning_temp">Warning Temp:</span>
                     <span class="value" id="warning-temp-hosts">0</span>
                 </div>
-                <div class="stat-card high-temp">
+                <div class="stat-card-menu high-temp">
                     <span class="icon">🔥</span>
                     <span class="label" data-i18n="high_temp">Temp. Critique:</span>
                     <span class="value" id="high-temp-hosts">0</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header minimaliste avec bouton hamburger -->
+        <div class="header-minimal">
+            <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMenu()" title="Menu">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <h1 class="main-title">
+                🌐 <span data-i18n="title">Monitoring Réseau - Ping ü</span>
+            </h1>
+            <!-- Mini stats visibles sur la page principale -->
+            <div class="mini-stats">
+                <span class="mini-stat online"><span id="mini-online">0</span> 🟢</span>
+                <span class="mini-stat offline"><span id="mini-offline">0</span> 🔴</span>
             </div>
         </div>
 
@@ -745,10 +1049,36 @@
     </div>
 
     <script>
+        // ==================== Menu Hamburger ====================
+        function toggleMenu() {
+            const sideMenu = document.getElementById('side-menu');
+            const overlay = document.getElementById('menu-overlay');
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+
+            sideMenu.classList.toggle('active');
+            overlay.classList.toggle('active');
+            hamburgerBtn.classList.toggle('active');
+        }
+
+        // Fermer le menu avec la touche Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                const sideMenu = document.getElementById('side-menu');
+                if (sideMenu && sideMenu.classList.contains('active')) {
+                    toggleMenu();
+                }
+            }
+        });
+
         // ==================== Système de traduction ====================
         const translations = {
             fr: {
                 title: "Monitoring Réseau - Ping ü",
+                menu: "Menu",
+                user: "Utilisateur",
+                language: "Langue",
+                status: "Statut",
+                statistics: "Statistiques",
                 connected: "Connecté",
                 disconnected: "Déconnecté",
                 scan_running: "Scan en cours",
@@ -787,6 +1117,11 @@
             },
             en: {
                 title: "Network Monitoring - Ping ü",
+                menu: "Menu",
+                user: "User",
+                language: "Language",
+                status: "Status",
+                statistics: "Statistics",
                 connected: "Connected",
                 disconnected: "Disconnected",
                 scan_running: "Scan running",
@@ -1361,12 +1696,19 @@
             const highTempCount = hosts.filter(h => h.status === 'online' && getTempAlertLevel(h.temp) === 'critical').length;
             const warningTempCount = hosts.filter(h => h.status === 'online' && getTempAlertLevel(h.temp) === 'warning').length;
 
+            // Stats dans le menu latéral
             document.getElementById('total-hosts').textContent = total;
             document.getElementById('online-hosts').textContent = online;
             document.getElementById('offline-hosts').textContent = offline;
             document.getElementById('high-temp-hosts').textContent = highTempCount;
             const warningEl = document.getElementById('warning-temp-hosts');
             if (warningEl) warningEl.textContent = warningTempCount;
+
+            // Mini stats dans le header
+            const miniOnline = document.getElementById('mini-online');
+            const miniOffline = document.getElementById('mini-offline');
+            if (miniOnline) miniOnline.textContent = online;
+            if (miniOffline) miniOffline.textContent = offline;
         }
 
         function updateLastUpdateTime() {
