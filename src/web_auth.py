@@ -191,6 +191,105 @@ class WebAuth:
         users = self.load_all_users()
         return [{'username': u['username'], 'role': u['role']} for u in users]
     
+    def add_user(self, username, password, role='user'):
+        """Ajoute un nouvel utilisateur"""
+        users = self.load_all_users()
+        
+        # Vérifier que le username n'existe pas déjà
+        for user in users:
+            if user['username'] == username:
+                return False, "Ce nom d'utilisateur existe déjà"
+        
+        # Valider le rôle
+        if role not in ['admin', 'user']:
+            role = 'user'
+        
+        # Ajouter l'utilisateur
+        new_user = {
+            'username': username,
+            'password': self.hash_password(password),
+            'role': role
+        }
+        users.append(new_user)
+        
+        if self.save_all_users({'users': users}):
+            logger.info(f"Nouvel utilisateur créé: {username} (role: {role})")
+            return True, "Utilisateur créé avec succès"
+        else:
+            return False, "Erreur lors de la sauvegarde"
+    
+    def delete_user(self, username):
+        """Supprime un utilisateur (ne peut pas supprimer le dernier admin)"""
+        users = self.load_all_users()
+        
+        # Trouver l'utilisateur à supprimer
+        user_to_delete = None
+        for user in users:
+            if user['username'] == username:
+                user_to_delete = user
+                break
+        
+        if not user_to_delete:
+            return False, "Utilisateur non trouvé"
+        
+        # Ne pas permettre de supprimer le dernier admin
+        if user_to_delete['role'] == 'admin':
+            admin_count = sum(1 for u in users if u['role'] == 'admin')
+            if admin_count <= 1:
+                return False, "Impossible de supprimer le dernier administrateur"
+        
+        # Supprimer l'utilisateur
+        users = [u for u in users if u['username'] != username]
+        
+        if self.save_all_users({'users': users}):
+            logger.info(f"Utilisateur supprimé: {username}")
+            return True, "Utilisateur supprimé avec succès"
+        else:
+            return False, "Erreur lors de la sauvegarde"
+    
+    def update_user_password(self, username, new_password):
+        """Met à jour le mot de passe d'un utilisateur (admin uniquement)"""
+        users = self.load_all_users()
+        
+        for user in users:
+            if user['username'] == username:
+                user['password'] = self.hash_password(new_password)
+                
+                if self.save_all_users({'users': users}):
+                    logger.info(f"Mot de passe modifié pour: {username}")
+                    return True, "Mot de passe modifié avec succès"
+                else:
+                    return False, "Erreur lors de la sauvegarde"
+        
+        return False, "Utilisateur non trouvé"
+    
+    def update_user_role(self, username, new_role):
+        """Met à jour le rôle d'un utilisateur"""
+        users = self.load_all_users()
+        
+        if new_role not in ['admin', 'user']:
+            return False, "Rôle invalide"
+        
+        for user in users:
+            if user['username'] == username:
+                old_role = user['role']
+                
+                # Ne pas permettre de retirer le dernier admin
+                if old_role == 'admin' and new_role == 'user':
+                    admin_count = sum(1 for u in users if u['role'] == 'admin')
+                    if admin_count <= 1:
+                        return False, "Impossible de retirer le rôle du dernier administrateur"
+                
+                user['role'] = new_role
+                
+                if self.save_all_users({'users': users}):
+                    logger.info(f"Rôle modifié pour {username}: {old_role} -> {new_role}")
+                    return True, "Rôle modifié avec succès"
+                else:
+                    return False, "Erreur lors de la sauvegarde"
+        
+        return False, "Utilisateur non trouvé"
+    
     @staticmethod
     def login_required(f):
         """Décorateur pour protéger les routes (admin uniquement)"""

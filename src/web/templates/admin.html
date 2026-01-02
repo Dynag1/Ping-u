@@ -1218,6 +1218,80 @@
                 min-width: 120px;
             }
         }
+
+        /* ==================== Gestion des utilisateurs ==================== */
+        .users-management {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .user-form .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .users-table {
+            overflow-x: auto;
+        }
+
+        .users-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .users-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .users-table tr:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-badge.admin {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .role-badge.user {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .user-actions .btn {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-sm {
+            padding: 4px 10px !important;
+            font-size: 11px !important;
+        }
     </style>
 </head>
 
@@ -1288,6 +1362,10 @@
                 <div class="menu-nav-item" data-section="configuration" onclick="switchSection('configuration')">
                     <span class="icon">🎛️</span>
                     <span data-i18n="menu_config">Configuration</span>
+                </div>
+                <div class="menu-nav-item" data-section="users" onclick="switchSection('users')">
+                    <span class="icon">👥</span>
+                    <span data-i18n="menu_users">Utilisateurs</span>
                 </div>
             </nav>
         </div>
@@ -2699,7 +2777,27 @@
                         comment: "Commentaire",
                         delete: "Supprimer",
                         include_excluded: "Inclure (Actuellement exclu)",
-                        exclude: "Exclure"
+                        exclude: "Exclure",
+                        menu_users: "Utilisateurs",
+                        add_user: "Ajouter un utilisateur",
+                        add_user_btn: "Ajouter l'utilisateur",
+                        users_list: "Liste des utilisateurs",
+                        username: "Nom d'utilisateur",
+                        password: "Mot de passe",
+                        role: "Rôle",
+                        role_user: "Utilisateur",
+                        role_admin: "Administrateur",
+                        user_actions: "Actions",
+                        change_password: "Mot de passe",
+                        change_role: "Rôle",
+                        current_user: "(Vous)",
+                        confirm_delete_user: "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+                        enter_new_password: "Entrez le nouveau mot de passe :",
+                        confirm_change_role: "Voulez-vous changer le rôle de cet utilisateur ?",
+                        user_created: "Utilisateur créé avec succès",
+                        user_deleted: "Utilisateur supprimé",
+                        password_changed: "Mot de passe modifié",
+                        role_changed: "Rôle modifié"
                     },
                     en: {
                         admin_title: "Administration - Ping ü",
@@ -2883,7 +2981,27 @@
                         comment: "Commentaire",
                         delete: "Delete",
                         include_excluded: "Include (Currently excluded)",
-                        exclude: "Exclude"
+                        exclude: "Exclude",
+                        menu_users: "Users",
+                        add_user: "Add user",
+                        add_user_btn: "Add user",
+                        users_list: "Users list",
+                        username: "Username",
+                        password: "Password",
+                        role: "Role",
+                        role_user: "User",
+                        role_admin: "Administrator",
+                        user_actions: "Actions",
+                        change_password: "Password",
+                        change_role: "Role",
+                        current_user: "(You)",
+                        confirm_delete_user: "Are you sure you want to delete this user?",
+                        enter_new_password: "Enter the new password:",
+                        confirm_change_role: "Do you want to change this user's role?",
+                        user_created: "User created successfully",
+                        user_deleted: "User deleted",
+                        password_changed: "Password changed",
+                        role_changed: "Role changed"
                     }
                 };
 
@@ -4549,12 +4667,174 @@
                     }
                 }
 
+                // ==================== Gestion des utilisateurs ====================
+                async function loadUsersList() {
+                    const tbody = document.getElementById('users-table-body');
+                    if (!tbody) {
+                        console.log('Users table body not found');
+                        return;
+                    }
+
+                    try {
+                        const result = await apiCall('/api/get_users');
+                        console.log('Users API result:', result);
+
+                        if (result.success && result.users && result.users.length > 0) {
+                            const currentUser = await getCurrentUsername();
+
+                            tbody.innerHTML = result.users.map(user => `
+                                <tr>
+                                    <td><strong>${user.username}</strong></td>
+                                    <td><span class="role-badge ${user.role}">${user.role === 'admin' ? '👑 Admin' : '👤 User'}</span></td>
+                                    <td>
+                                        <div class="user-actions">
+                                            <button class="btn btn-info btn-sm" onclick="changeUserPassword('${user.username}')">
+                                                🔑 <span data-i18n="change_password">Mot de passe</span>
+                                            </button>
+                                            ${user.username !== currentUser ? `
+                                                <button class="btn btn-warning btn-sm" onclick="changeUserRole('${user.username}', '${user.role}')">
+                                                    🔄 <span data-i18n="change_role">Rôle</span>
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="deleteUser('${user.username}')">
+                                                    🗑️ <span data-i18n="delete">Supprimer</span>
+                                                </button>
+                                            ` : '<em style="color:#888;" data-i18n="current_user">(Vous)</em>'}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('');
+
+                            // Recharger les traductions pour les nouveaux éléments
+                            applyTranslations();
+                        } else if (result.users && result.users.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#888;">Aucun utilisateur trouvé</td></tr>';
+                        } else {
+                            console.error('Unexpected response:', result);
+                            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#f00;">Erreur de chargement</td></tr>';
+                        }
+                    } catch (error) {
+                        console.error('Error loading users:', error);
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#f00;">Erreur: ' + error.message + '</td></tr>';
+                    }
+                }
+
+                async function getCurrentUsername() {
+                    try {
+                        const result = await apiCall('/api/user_info');
+                        return result.username || '';
+                    } catch {
+                        return '';
+                    }
+                }
+
+                async function addUser(username, password, role) {
+                    try {
+                        const result = await apiCall('/api/add_user', 'POST', {
+                            username: username,
+                            password: password,
+                            role: role
+                        });
+                        if (result.success) {
+                            showToast(result.message, 'success');
+                            loadUsersList();
+                            return true;
+                        } else {
+                            showToast(result.error || 'Erreur', 'error');
+                            return false;
+                        }
+                    } catch (error) {
+                        showToast(error.message, 'error');
+                        return false;
+                    }
+                }
+
+                async function deleteUser(username) {
+                    const t = translations[currentLang];
+                    if (confirm(t.confirm_delete_user || `Êtes-vous sûr de vouloir supprimer l'utilisateur "${username}" ?`)) {
+                        try {
+                            const result = await apiCall('/api/delete_user', 'POST', { username: username });
+                            if (result.success) {
+                                showToast(result.message, 'success');
+                                loadUsersList();
+                            } else {
+                                showToast(result.error || 'Erreur', 'error');
+                            }
+                        } catch (error) {
+                            showToast(error.message, 'error');
+                        }
+                    }
+                }
+
+                async function changeUserPassword(username) {
+                    const t = translations[currentLang];
+                    const newPassword = prompt(t.enter_new_password || `Nouveau mot de passe pour "${username}" :`);
+                    if (newPassword && newPassword.trim()) {
+                        try {
+                            const result = await apiCall('/api/update_user_password', 'POST', {
+                                username: username,
+                                new_password: newPassword.trim()
+                            });
+                            if (result.success) {
+                                showToast(result.message, 'success');
+                            } else {
+                                showToast(result.error || 'Erreur', 'error');
+                            }
+                        } catch (error) {
+                            showToast(error.message, 'error');
+                        }
+                    }
+                }
+
+                async function changeUserRole(username, currentRole) {
+                    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+                    const t = translations[currentLang];
+                    const confirmMsg = t.confirm_change_role || `Changer le rôle de "${username}" de ${currentRole} à ${newRole} ?`;
+
+                    if (confirm(confirmMsg)) {
+                        try {
+                            const result = await apiCall('/api/update_user_role', 'POST', {
+                                username: username,
+                                role: newRole
+                            });
+                            if (result.success) {
+                                showToast(result.message, 'success');
+                                loadUsersList();
+                            } else {
+                                showToast(result.error || 'Erreur', 'error');
+                            }
+                        } catch (error) {
+                            showToast(error.message, 'error');
+                        }
+                    }
+                }
+
+                // Fonction globale pour gérer l'ajout d'utilisateur (appelée via onsubmit)
+                async function handleAddUser(e) {
+                    e.preventDefault();
+                    console.log('handleAddUser called!');
+
+                    const username = document.getElementById('new-user-username').value.trim();
+                    const password = document.getElementById('new-user-password').value;
+                    const role = document.getElementById('new-user-role').value;
+
+                    console.log('Adding user:', username, role);
+
+                    if (await addUser(username, password, role)) {
+                        document.getElementById('new-user-username').value = '';
+                        document.getElementById('new-user-password').value = '';
+                        document.getElementById('new-user-role').value = 'user';
+                    }
+
+                    return false; // Empêcher la soumission normale du formulaire
+                }
+
                 // Initial load
                 loadLanguage();
                 loadSettings();
                 loadLicenseInfo();
                 loadUserInfo();
                 loadMailRecapSettings();
+                loadUsersList();
 
                 // ==================== Navigation depuis le menu hamburger ====================
                 function switchSection(section) {
@@ -4571,6 +4851,11 @@
                     // Fermer le menu après sélection
                     toggleMenu();
 
+                    // Charger les données spécifiques à la section
+                    if (section === 'users') {
+                        loadUsersList();
+                    }
+
                     // Scroll to top of content
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
@@ -4578,6 +4863,57 @@
 
         </div><!-- Fin collapsible-grid configuration -->
     </div><!-- Fin content-configuration -->
+
+    <!-- Section: Gestion des utilisateurs -->
+    <div id="content-users" class="content-section">
+        <div class="users-management">
+            <!-- Formulaire d'ajout d'utilisateur -->
+            <div class="card">
+                <h2>➕ <span data-i18n="add_user">Ajouter un utilisateur</span></h2>
+                <form id="form-add-user" class="user-form" onsubmit="return handleAddUser(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-user-username" data-i18n="username">Nom d'utilisateur</label>
+                            <input type="text" id="new-user-username" required placeholder="ex: john">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-user-password" data-i18n="password">Mot de passe</label>
+                            <input type="password" id="new-user-password" required placeholder="••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-user-role" data-i18n="role">Rôle</label>
+                            <select id="new-user-role">
+                                <option value="user" data-i18n="role_user">Utilisateur</option>
+                                <option value="admin" data-i18n="role_admin">Administrateur</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        ➕ <span data-i18n="add_user_btn">Ajouter l'utilisateur</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Liste des utilisateurs -->
+            <div class="card" style="margin-top: 20px;">
+                <h2>👥 <span data-i18n="users_list">Liste des utilisateurs</span></h2>
+                <div class="users-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-i18n="username">Nom d'utilisateur</th>
+                                <th data-i18n="role">Rôle</th>
+                                <th data-i18n="user_actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Rempli dynamiquement par JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div><!-- Fin content-users -->
 
     <!-- Liste des hôtes (toujours visible en bas) -->
     <div class="card full-width" style="margin-top: 20px;">

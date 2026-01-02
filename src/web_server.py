@@ -342,6 +342,102 @@ class WebServer(QObject):
                 logger.error(f"Erreur changement credentials utilisateur: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
+        @self.app.route('/api/add_user', methods=['POST'])
+        @WebAuth.login_required
+        def add_user():
+            """Ajoute un nouvel utilisateur (admin only)"""
+            try:
+                data = request.get_json()
+                username = data.get('username')
+                password = data.get('password')
+                role = data.get('role', 'user')
+                
+                if not all([username, password]):
+                    return jsonify({'success': False, 'error': 'Nom d\'utilisateur et mot de passe requis'}), 400
+                
+                success, message = web_auth.add_user(username, password, role)
+                
+                if success:
+                    return jsonify({'success': True, 'message': message})
+                else:
+                    return jsonify({'success': False, 'error': message}), 400
+            except Exception as e:
+                logger.error(f"Erreur ajout utilisateur: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/delete_user', methods=['POST'])
+        @WebAuth.login_required
+        def delete_user():
+            """Supprime un utilisateur (admin only)"""
+            try:
+                data = request.get_json()
+                username = data.get('username')
+                
+                if not username:
+                    return jsonify({'success': False, 'error': 'Nom d\'utilisateur requis'}), 400
+                
+                # Ne pas permettre de se supprimer soi-même
+                if username == session.get('username'):
+                    return jsonify({'success': False, 'error': 'Vous ne pouvez pas vous supprimer vous-même'}), 400
+                
+                success, message = web_auth.delete_user(username)
+                
+                if success:
+                    return jsonify({'success': True, 'message': message})
+                else:
+                    return jsonify({'success': False, 'error': message}), 400
+            except Exception as e:
+                logger.error(f"Erreur suppression utilisateur: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/update_user_password', methods=['POST'])
+        @WebAuth.login_required
+        def update_user_password():
+            """Met à jour le mot de passe d'un utilisateur (admin only)"""
+            try:
+                data = request.get_json()
+                username = data.get('username')
+                new_password = data.get('new_password')
+                
+                if not all([username, new_password]):
+                    return jsonify({'success': False, 'error': 'Nom d\'utilisateur et nouveau mot de passe requis'}), 400
+                
+                success, message = web_auth.update_user_password(username, new_password)
+                
+                if success:
+                    return jsonify({'success': True, 'message': message})
+                else:
+                    return jsonify({'success': False, 'error': message}), 400
+            except Exception as e:
+                logger.error(f"Erreur mise à jour mot de passe: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/update_user_role', methods=['POST'])
+        @WebAuth.login_required
+        def update_user_role():
+            """Met à jour le rôle d'un utilisateur (admin only)"""
+            try:
+                data = request.get_json()
+                username = data.get('username')
+                new_role = data.get('role')
+                
+                if not all([username, new_role]):
+                    return jsonify({'success': False, 'error': 'Nom d\'utilisateur et rôle requis'}), 400
+                
+                # Ne pas permettre de changer son propre rôle
+                if username == session.get('username'):
+                    return jsonify({'success': False, 'error': 'Vous ne pouvez pas changer votre propre rôle'}), 400
+                
+                success, message = web_auth.update_user_role(username, new_role)
+                
+                if success:
+                    return jsonify({'success': True, 'message': message})
+                else:
+                    return jsonify({'success': False, 'error': message}), 400
+            except Exception as e:
+                logger.error(f"Erreur mise à jour rôle: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
         @self.app.route('/api/add_hosts', methods=['POST'])
         @WebAuth.login_required
         def add_hosts():
