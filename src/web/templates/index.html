@@ -770,6 +770,22 @@
             color: #ef4444;
         }
 
+        .mini-stat.warning span {
+            color: #d97706;
+        }
+
+        .mini-stat.critical span {
+            color: #dc2626;
+        }
+
+        .stat-card-menu.warning .value {
+            color: #d97706;
+        }
+
+        .stat-card-menu.critical .value {
+            color: #dc2626;
+        }
+
         /* Lang selector dans le menu */
         .menu-section .lang-selector {
             padding: 0;
@@ -1036,6 +1052,10 @@
             <div class="mini-stats">
                 <span class="mini-stat online"><span id="mini-online">0</span> 🟢</span>
                 <span class="mini-stat offline"><span id="mini-offline">0</span> 🔴</span>
+                <span class="mini-stat warning">🌡️ <span data-i18n="temp_warning">Temp. Warning</span> <span
+                        id="mini-temp-warning">0</span></span>
+                <span class="mini-stat critical">🔥 <span data-i18n="temp_critical">Temp. Critique</span> <span
+                        id="mini-temp-critical">0</span></span>
             </div>
         </div>
 
@@ -1334,10 +1354,24 @@
             }
         }
 
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/get_settings');
+                const result = await response.json();
+
+                if (result.alerts) {
+                    // Les seuils ne sont plus affichés dans le header, on affiche les compteurs via updateStats
+                }
+            } catch (error) {
+                console.error('Erreur chargement settings:', error);
+            }
+        }
+
         socket.on('connect', function () {
             updateStatusBadge(true);
             socket.emit('request_update');
             loadSitesList(); // Charger la liste des sites
+            loadSettings(); // Charger les seuils de température
         });
 
         socket.on('disconnect', function () {
@@ -1381,13 +1415,35 @@
             return ax.length - bx.length;
         }
 
+        function getHostStatusScore(host) {
+            // 0: Offline (Priorité max)
+            // 1: Online + Critical Temp
+            // 2: Online + Warning Temp (Optionnel, mais logique)
+            // 3: Online Normal
+
+            if (host.status === 'offline') return 0;
+            if (host.status === 'online') {
+                const tempLevel = getTempAlertLevel(host.temp);
+                if (tempLevel === 'critical') return 1;
+                // Decommenter si on veut aussi trier warning avant normal
+                // if (tempLevel === 'warning') return 2; 
+            }
+            return 3;
+        }
+
         function sortHostsData(hosts) {
             return [...hosts].sort((a, b) => {
                 switch (currentSort) {
                     case 'status-offline-first':
-                        if (a.status === 'offline' && b.status === 'online') return -1;
-                        if (a.status === 'online' && b.status === 'offline') return 1;
-                        // Si même statut, trier par IP
+                        // Ordre : Offline > Critical Temp > Online
+                        const statusScoreA = getHostStatusScore(a);
+                        const statusScoreB = getHostStatusScore(b);
+
+                        if (statusScoreA !== statusScoreB) {
+                            return statusScoreA - statusScoreB;
+                        }
+
+                        // Si même statut/score, trier par IP
                         return compareIPs(a.ip, b.ip);
 
                     case 'status-online-first':
@@ -1707,8 +1763,13 @@
             // Mini stats dans le header
             const miniOnline = document.getElementById('mini-online');
             const miniOffline = document.getElementById('mini-offline');
+            const miniWarning = document.getElementById('mini-temp-warning');
+            const miniCritical = document.getElementById('mini-temp-critical');
+
             if (miniOnline) miniOnline.textContent = online;
             if (miniOffline) miniOffline.textContent = offline;
+            if (miniWarning) miniWarning.textContent = warningTempCount;
+            if (miniCritical) miniCritical.textContent = highTempCount;
         }
 
         function updateLastUpdateTime() {
