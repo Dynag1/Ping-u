@@ -1905,8 +1905,25 @@ Ping ü - Monitoring Réseau
                 # Tentative d'arrêt propre du serveur SocketIO
                 try:
                     self.socketio.stop()
+                    
+                    # Hack pour débloquer le serveur s'il est coincé en attente de requête
+                    # Envoie une connexion dummy pour forcer le réveil du thread
+                    try:
+                        import socket
+                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                            s.settimeout(0.1)
+                            s.connect(('127.0.0.1', self.port))
+                    except:
+                        pass
                 except:
                     pass
+            
+            # Attendre la fin du thread
+            if self.server_thread and self.server_thread.is_alive():
+                self.server_thread.join(timeout=1.0)
+                if self.server_thread.is_alive():
+                    logger.warning("Le thread du serveur web ne s'est pas arrêté proprement")
+                
         except Exception as e:
             logger.error(f"Erreur arrêt serveur web: {e}", exc_info=True)
     
@@ -1942,6 +1959,8 @@ Ping ü - Monitoring Réseau
         """Vérifie si un port est disponible"""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                # Ajout de SO_REUSEADDR pour cohérence avec fct.find_available_port
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind(('', port))
                 return True
         except OSError:
