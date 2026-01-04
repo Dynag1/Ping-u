@@ -107,6 +107,49 @@ def getIp(self):
         return "192.168.1.1"  # Valeur par défaut en cas d'erreur
 
 
+
+def find_available_port(start_port=9090, max_port=9100):
+    """
+    Trouve le premier port disponible dans la plage donnée.
+    
+    Args:
+        start_port (int): Port de début de recherche (défaut: 9090)
+        max_port (int): Port de fin de recherche (défaut: 9100)
+        
+    Returns:
+        int: Le premier port disponible, ou None si aucun n'est trouvé
+    """
+    try:
+        found_port = None
+        for port in range(start_port, max_port + 1):
+            s = None
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(0.1)
+                # Tente de se lier au port pour voir s'il est libre
+                # On utilise SO_REUSEADDR pour éviter les problèmes de "Address already in use" juste après arrêt
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind(('0.0.0.0', port))
+                found_port = port
+                break
+            except OSError:
+                continue
+            finally:
+                if s:
+                    s.close()
+        
+        if found_port:
+            logger.info(f"Port disponible trouvé: {found_port}")
+            return found_port
+        else:
+            logger.warning(f"Aucun port disponible entre {start_port} et {max_port}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Erreur recherche port: {e}", exc_info=True)
+        return None
+
+
 def save_csv(self, treeModel, filepath=None, return_path=False, silent=False):
     try:
         # Récupérer le modèle depuis le QTreeView

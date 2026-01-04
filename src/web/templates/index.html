@@ -1025,12 +1025,12 @@
                 </div>
                 <div class="stat-card-menu warning-temp">
                     <span class="icon">🌡️</span>
-                    <span class="label" data-i18n="warning_temp">Warning Temp:</span>
+                    <span class="label" data-i18n="warning_temp"></span>
                     <span class="value" id="warning-temp-hosts">0</span>
                 </div>
                 <div class="stat-card-menu high-temp">
                     <span class="icon">🔥</span>
-                    <span class="label" data-i18n="high_temp">Temp. Critique:</span>
+                    <span class="label" data-i18n="high_temp"></span>
                     <span class="value" id="high-temp-hosts">0</span>
                 </div>
             </div>
@@ -1050,11 +1050,15 @@
             </h1>
             <!-- Mini stats visibles sur la page principale -->
             <div class="mini-stats">
+                <span class="scan-badge" id="header-scan-badge">
+                    <span class="status-dot"></span>
+                    <span data-i18n="scan_stopped">Scan arrêté</span>
+                </span>
                 <span class="mini-stat online"><span id="mini-online">0</span> 🟢</span>
                 <span class="mini-stat offline"><span id="mini-offline">0</span> 🔴</span>
-                <span class="mini-stat warning">🌡️ <span data-i18n="temp_warning">Temp. Warning</span> <span
+                <span class="mini-stat warning">🌡️ <span data-i18n="temp_warning"></span> <span
                         id="mini-temp-warning">0</span></span>
-                <span class="mini-stat critical">🔥 <span data-i18n="temp_critical">Temp. Critique</span> <span
+                <span class="mini-stat critical">🔥 <span data-i18n="temp_critical"></span> <span
                         id="mini-temp-critical">0</span></span>
             </div>
         </div>
@@ -1518,10 +1522,32 @@
                 badge.classList.add('running');
                 badgeText.textContent = t('scan_running');
                 badgeText.setAttribute('data-i18n', 'scan_running');
+
+                // Update header badge
+                const headerBadge = document.getElementById('header-scan-badge');
+                if (headerBadge) {
+                    headerBadge.classList.add('running');
+                    const headerText = headerBadge.querySelector('span[data-i18n]');
+                    if (headerText) {
+                        headerText.textContent = t('scan_running');
+                        headerText.setAttribute('data-i18n', 'scan_running');
+                    }
+                }
             } else {
                 badge.classList.remove('running');
                 badgeText.textContent = t('scan_stopped');
                 badgeText.setAttribute('data-i18n', 'scan_stopped');
+
+                // Update header badge
+                const headerBadge = document.getElementById('header-scan-badge');
+                if (headerBadge) {
+                    headerBadge.classList.remove('running');
+                    const headerText = headerBadge.querySelector('span[data-i18n]');
+                    if (headerText) {
+                        headerText.textContent = t('scan_stopped');
+                        headerText.setAttribute('data-i18n', 'scan_stopped');
+                    }
+                }
             }
         }
 

@@ -850,7 +850,15 @@ class MainWindow(QMainWindow):
         """Démarre ou arrête le serveur web"""
         try:
             if not self.web_server_running:
-                self.web_server = WebServer(self, port=9090)
+                # Recherche d'un port disponible
+                port = fct.find_available_port(9090, 9100)
+                
+                if not port:
+                    QMessageBox.critical(self, self.tr("Erreur"), 
+                                       self.tr("Aucun port disponible entre 9090 et 9100."))
+                    return
+                
+                self.web_server = WebServer(self, port=port)
                 if self.web_server.start():
                     self.web_server_running = True
                     self.action_toggle_web_server.setText(self.tr("Arrêter le serveur"))
@@ -862,10 +870,10 @@ class MainWindow(QMainWindow):
                     msg += self.tr("Accès local: ") + urls['local'] + "\n"
                     msg += self.tr("Accès réseau: ") + urls['network']
                     QMessageBox.information(self, self.tr("Serveur Web"), msg)
-                    logger.info("Serveur web démarré")
+                    logger.info(f"Serveur web démarré sur le port {port}")
                 else:
                     QMessageBox.critical(self, self.tr("Erreur"), 
-                                       self.tr("Impossible de démarrer le serveur web.\nLe port 9090 est peut-être déjà utilisé."))
+                                       self.tr(f"Impossible de démarrer le serveur web sur le port {port}."))
             else:
                 if self.web_server:
                     self.web_server.stop()
@@ -1205,10 +1213,17 @@ def run_headless_mode():
     
     # Démarrer le serveur web APRÈS le chargement des données
     from src.web_server import WebServer
-    window.web_server = WebServer(window, port=9090)
+    
+    # Recherche d'un port disponible
+    port = fct.find_available_port(9090, 9100)
+    if not port:
+         logger.error("[HEADLESS] Aucun port disponible entre 9090 et 9100. Impossible de démarrer le serveur web.")
+         sys.exit(1)
+
+    window.web_server = WebServer(window, port=port)
     if window.web_server.start():
         window.web_server_running = True
-        logger.info("[HEADLESS] Serveur web demarre sur http://0.0.0.0:9090")
+        logger.info(f"[HEADLESS] Serveur web demarre sur http://0.0.0.0:{port}")
     else:
         logger.error("[HEADLESS] Impossible de demarrer le serveur web")
         sys.exit(1)
@@ -1217,9 +1232,9 @@ def run_headless_mode():
     # L'utilisateur peut le démarrer via l'interface web admin
     if hosts_loaded:
         logger.info(f"Monitoring pret pour {window.treeIpModel.rowCount()} hôte(s)")
-        logger.info("Demarrez le monitoring via l'interface web: http://localhost:9090/admin")
+        logger.info(f"Demarrez le monitoring via l'interface web: http://localhost:{port}/admin")
     else:
-        logger.info("Aucun hôte configuré. Configurez via l'interface web: http://localhost:9090/admin")
+        logger.info(f"Aucun hôte configuré. Configurez via l'interface web: http://localhost:{port}/admin")
     
     # Gestionnaire de signal pour arrêt propre
     def signal_handler(signum, frame):
