@@ -179,6 +179,26 @@ class WebServer(QObject):
             hosts = self._get_hosts_data(apply_filter=False)
             return jsonify(hosts)
         
+        @self.app.route('/api/local_ip')
+        @WebAuth.login_required
+        def get_local_ip():
+            try:
+                # Créer une socket dummy pour trouver l'IP routable vvers l'extérieur
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                try:
+                    # N'a pas besoin d'être atteignable
+                    s.connect(('10.255.255.255', 1))
+                    IP = s.getsockname()[0]
+                except Exception:
+                    IP = '127.0.0.1'
+                finally:
+                    s.close()
+                
+                return jsonify({'success': True, 'ip': IP})
+            except Exception as e:
+                logger.error(f"Erreur récupération IP locale: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
         @self.app.route('/api/status')
         def status():
             return jsonify({

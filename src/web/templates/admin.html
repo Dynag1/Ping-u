@@ -2111,7 +2111,7 @@
                                                 <div class="form-group">
                                                     <label for="input-hosts" data-i18n="hosts_count">Nombre
                                                         d'hôtes</label>
-                                                    <input type="number" id="input-hosts" value="1" min="1" max="255">
+                                                    <input type="number" id="input-hosts" value="255" min="1" max="255">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="input-port">Port</label>
@@ -3327,6 +3327,29 @@
 
                 // ==================== Gestion des Sites ====================
 
+                // ==================== Gestion des Sites ====================
+
+                async function loadLocalIp() {
+                    try {
+                        const response = await fetch('/api/local_ip');
+                        const data = await response.json();
+                        if (data.success && data.ip) {
+                            const parts = data.ip.split('.');
+                            if (parts.length === 4) {
+                                parts[3] = '1';
+                                const subnetIp = parts.join('.');
+                                const ipInput = document.getElementById('input-ip');
+                                if (ipInput && !ipInput.value) { // Only set if empty? User asked to fill it, maybe overwrite? "remplisse automatiquement". Let's overwrite or fill if empty. Standard behavior is usually fill initial value. The input is hardcoded placeholder="192...". 
+                                    // Let's overwrite for now as per "remplisse automatiquement".
+                                    ipInput.value = subnetIp;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erreur chargement IP locale:', error);
+                    }
+                }
+
                 async function loadSites() {
                     try {
                         const response = await fetch('/api/get_sites');
@@ -3608,6 +3631,7 @@
                     console.log('✅ Connected to server');
                     loadSites();
                     loadSettings();
+                    loadLocalIp();
                     socket.emit('request_update');
                 });
 
