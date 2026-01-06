@@ -132,6 +132,31 @@ def pars(data, scan_type):
             except Exception:
                 pass
         
+            except Exception:
+                pass
+
+        # Xiaomi
+        elif scan_type == "xiaomi":
+            try:
+                # Miio packet header (32 bytes)
+                # Magic: 0x2131 (2 bytes)
+                # Length: 2 bytes
+                # Unknown: 4 bytes
+                # Device ID: 4 bytes (offset 8)
+                # Stamp: 4 bytes (offset 12)
+                # Token: 16 bytes (offset 16)
+                
+                if len(data) >= 32 and data[0:2] == b'\x21\x31':
+                     dev_id = data[8:12].hex()
+                     nom = "Xiaomi Device"
+                     modele = f"ID: {dev_id}"
+                     # Mac is not in the hello packet, usually.
+                     # We might extract it if we had more complex interaction, but for now we rely on IP.
+                     # Or maybe we can't get MAC easily.
+                     pass
+            except:
+                pass
+        
         # SNMP
         elif scan_type == "snmp":
             try:

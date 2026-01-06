@@ -1516,7 +1516,7 @@ Ping ü - Monitoring Réseau
                     return jsonify({'success': False, 'error': 'Scanner réseau non disponible'}), 500
                 
                 data = request.get_json()
-                scan_types = data.get('scan_types', ['hik', 'onvif', 'dahua', 'samsung', 'upnp'])
+                scan_types = data.get('scan_types', ['hik', 'onvif', 'dahua', 'xiaomi', 'samsung', 'upnp'])
                 timeout = data.get('timeout', 15)
                 
                 # Vérifier qu'aucun scan n'est en cours
