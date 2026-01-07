@@ -442,14 +442,16 @@ class PingManager(QObject):
                     return # Pas d'alerte pour les exclus
 
             if latency == 500:
-                # Incrémenter les 3 listes (un seul log pour les 3)
+                # Incrémenter les 4 listes (un seul log pour les 4)
                 self.list_increment(var.liste_hs, ip, log=True)
                 self.list_increment(var.liste_mail, ip, log=False)
                 self.list_increment(var.liste_telegram, ip, log=False)
+                self.list_increment(var.liste_stats, ip, log=False)  # Liste stats indépendante
             else:
                 self.list_ok(var.liste_hs, ip)
                 self.list_ok(var.liste_mail, ip)
                 self.list_ok(var.liste_telegram, ip)
+                self.list_ok(var.liste_stats, ip)  # Liste stats indépendante
         except Exception as e:
             logger.error(f"Erreur update lists {ip}: {e}")
 

@@ -68,6 +68,15 @@ from src import thread_mail, thread_recap_mail, thread_telegram, var, db
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
 
+# Import du gestionnaire de statistiques de connexion
+try:
+    from src.connection_stats import stats_manager
+    STATS_AVAILABLE = True
+except ImportError as e:
+    get_logger(__name__).warning(f"Stats de connexion non disponibles: {e}")
+    stats_manager = None
+    STATS_AVAILABLE = False
+
 logger = get_logger(__name__)
 
 class AlertManager(QObject):
@@ -128,6 +137,9 @@ class AlertManager(QObject):
             self.timer.setInterval(new_interval)
 
         try:
+            # Toujours traiter les statistiques, quel que soit le mode d'alerte
+            self.process_stats()
+            
             if var.popup:
                 self.process_popup()
             if var.mail:
@@ -158,6 +170,53 @@ class AlertManager(QObject):
                 logger.info("Thread mail recap lancé")
             except Exception as e:
                 logger.error(f"Erreur lancement recap mail: {e}", exc_info=True)
+
+    def process_stats(self):
+        """Enregistre les événements de déconnexion/reconnexion dans les statistiques.
+        Utilise liste_stats qui est indépendante des listes d'alertes."""
+        if not STATS_AVAILABLE or not stats_manager:
+            return
+        
+        # Set pour tracker les IPs déjà enregistrées (éviter doublons)
+        if not hasattr(self, '_stats_recorded_disconnects'):
+            self._stats_recorded_disconnects = set()
+        
+        try:
+            erase = []
+            # Traiter liste_stats (indépendante des alertes popup/mail/telegram)
+            for key, value in list(var.liste_stats.items()):
+                int_value = int(value)
+                
+                if int_value == int(var.nbrHs):
+                    # Déconnexion détectée
+                    if key not in self._stats_recorded_disconnects:
+                        hostname = db.lireNom(key, self.model) or key
+                        stats_manager.record_disconnect(key, hostname)
+                        logger.info(f"[STATS] Déconnexion enregistrée: {key}")
+                        self._stats_recorded_disconnects.add(key)
+                    # Passer à l'état "alerté" pour permettre la détection de reconnexion
+                    var.liste_stats[key] = 10
+                    
+                elif int_value == 20:
+                    # Reconnexion détectée
+                    if key in self._stats_recorded_disconnects:
+                        hostname = db.lireNom(key, self.model) or key
+                        stats_manager.record_reconnect(key, hostname)
+                        logger.info(f"[STATS] Reconnexion enregistrée: {key}")
+                        self._stats_recorded_disconnects.discard(key)
+                    # Marquer pour suppression
+                    erase.append(key)
+                    
+                elif int_value == 10:
+                    # État alerté - s'assurer qu'on l'a dans le set
+                    self._stats_recorded_disconnects.add(key)
+            
+            # Nettoyer les entrées traitées
+            for key in erase:
+                var.liste_stats.pop(key, None)
+                
+        except Exception as e:
+            logger.error(f"Erreur process_stats: {e}", exc_info=True)
 
     def process_popup(self):
         """Traite les alertes popup."""
