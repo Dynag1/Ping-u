@@ -13,6 +13,7 @@ site = 'http://prog.dynag.co'
 thread_ouvert = 0
 thread_ferme = 0
 u = 0
+scan_hs_hosts = []  # Liste des hôtes HS trouvés pendant le scan
 
 tourne = True
 delais = 5

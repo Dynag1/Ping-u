@@ -42,11 +42,19 @@ class ConnectionStatsManager:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ip TEXT NOT NULL,
                     hostname TEXT,
+                    site TEXT DEFAULT '',
                     event_type TEXT NOT NULL,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                     duration_seconds INTEGER DEFAULT NULL
                 )
             ''')
+            
+            # Ajouter la colonne site si elle n'existe pas (migration)
+            try:
+                cursor.execute('ALTER TABLE connection_events ADD COLUMN site TEXT DEFAULT ""')
+                logger.info("Colonne 'site' ajoutée à la table connection_events")
+            except sqlite3.OperationalError:
+                pass  # Colonne existe déjà
             
             # Index pour accélérer les requêtes
             cursor.execute('''
@@ -72,21 +80,21 @@ class ConnectionStatsManager:
         finally:
             conn.close()
     
-    def record_disconnect(self, ip: str, hostname: str = None):
+    def record_disconnect(self, ip: str, hostname: str = None, site: str = None):
         """Enregistre une déconnexion d'hôte."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    INSERT INTO connection_events (ip, hostname, event_type, timestamp)
-                    VALUES (?, ?, 'disconnect', datetime('now', 'localtime'))
-                ''', (ip, hostname or ''))
+                    INSERT INTO connection_events (ip, hostname, site, event_type, timestamp)
+                    VALUES (?, ?, ?, 'disconnect', datetime('now', 'localtime'))
+                ''', (ip, hostname or '', site or ''))
                 conn.commit()
-                logger.info(f"[STATS] Déconnexion enregistrée: {ip} ({hostname})")
+                logger.info(f"[STATS] Déconnexion enregistrée: {ip} ({hostname}) [site: {site or 'N/A'}]")
         except Exception as e:
             logger.error(f"Erreur enregistrement déconnexion {ip}: {e}")
     
-    def record_reconnect(self, ip: str, hostname: str = None):
+    def record_reconnect(self, ip: str, hostname: str = None, site: str = None):
         """Enregistre une reconnexion et calcule la durée de la panne."""
         try:
             with self._get_connection() as conn:
@@ -115,13 +123,13 @@ class ConnectionStatsManager:
                 
                 # Enregistrer la reconnexion avec la durée
                 cursor.execute('''
-                    INSERT INTO connection_events (ip, hostname, event_type, timestamp, duration_seconds)
-                    VALUES (?, ?, 'reconnect', datetime('now', 'localtime'), ?)
-                ''', (ip, hostname or '', duration_seconds))
+                    INSERT INTO connection_events (ip, hostname, site, event_type, timestamp, duration_seconds)
+                    VALUES (?, ?, ?, 'reconnect', datetime('now', 'localtime'), ?)
+                ''', (ip, hostname or '', site or '', duration_seconds))
                 conn.commit()
                 
                 duration_str = f"{duration_seconds}s" if duration_seconds else "inconnue"
-                logger.info(f"[STATS] Reconnexion enregistrée: {ip} ({hostname}) - durée panne: {duration_str}")
+                logger.info(f"[STATS] Reconnexion enregistrée: {ip} ({hostname}) [site: {site or 'N/A'}] - durée panne: {duration_str}")
         except Exception as e:
             logger.error(f"Erreur enregistrement reconnexion {ip}: {e}")
     
@@ -212,6 +220,7 @@ class ConnectionStatsManager:
                     SELECT 
                         ip,
                         hostname,
+                        site,
                         COUNT(*) as disconnect_count,
                         MAX(timestamp) as last_disconnect
                     FROM connection_events
@@ -234,6 +243,7 @@ class ConnectionStatsManager:
                     results.append({
                         'ip': row['ip'],
                         'hostname': row['hostname'] or row['ip'],
+                        'site': row['site'] or '',
                         'disconnect_count': row['disconnect_count'],
                         'last_disconnect': row['last_disconnect'],
                         'total_downtime_seconds': total_downtime
@@ -324,7 +334,7 @@ class ConnectionStatsManager:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT id, ip, hostname, event_type, timestamp, duration_seconds
+                    SELECT id, ip, hostname, site, event_type, timestamp, duration_seconds
                     FROM connection_events
                     ORDER BY timestamp DESC
                     LIMIT ?

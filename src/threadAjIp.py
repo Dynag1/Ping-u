@@ -75,6 +75,8 @@ def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
                 nom = ip
                 port_val = ""
                 mac = ""
+                # Ajouter à la liste des hôtes HS pour le récapitulatif
+                var.scan_hs_hosts.append(ip)
             # Ajoute la ligne via le signal (UP ou DOWN) avec le site
             comm.addRow.emit(i, ip, nom, mac, str(port_val), site, is_ok)
             var.u += 1

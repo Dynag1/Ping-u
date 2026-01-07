@@ -433,25 +433,33 @@ class PingManager(QObject):
         self.update_lists(ip, latency)
 
     def update_lists(self, ip, latency):
-        # Vérifier si l'hôte est exclu avant de mettre à jour les listes d'alertes
+        # Vérifier si l'hôte est exclu
+        is_excluded = False
         try:
             row = self.find_item_row(ip)
             if row != -1:
                 item_excl = self.tree_model.item(row, 10)  # Colonne 10 = Excl
                 if item_excl and item_excl.text() == "x":
-                    return # Pas d'alerte pour les exclus
+                    is_excluded = True
 
+            # TOUJOURS mettre à jour liste_stats (même pour les hôtes exclus)
+            # Les alertes sont bloquées pour les exclus, mais pas les statistiques
             if latency == 500:
-                # Incrémenter les 4 listes (un seul log pour les 4)
-                self.list_increment(var.liste_hs, ip, log=True)
-                self.list_increment(var.liste_mail, ip, log=False)
-                self.list_increment(var.liste_telegram, ip, log=False)
-                self.list_increment(var.liste_stats, ip, log=False)  # Liste stats indépendante
+                # Stats toujours mises à jour
+                self.list_increment(var.liste_stats, ip, log=False)
+                # Alertes uniquement pour les non-exclus
+                if not is_excluded:
+                    self.list_increment(var.liste_hs, ip, log=True)
+                    self.list_increment(var.liste_mail, ip, log=False)
+                    self.list_increment(var.liste_telegram, ip, log=False)
             else:
-                self.list_ok(var.liste_hs, ip)
-                self.list_ok(var.liste_mail, ip)
-                self.list_ok(var.liste_telegram, ip)
-                self.list_ok(var.liste_stats, ip)  # Liste stats indépendante
+                # Stats toujours mises à jour
+                self.list_ok(var.liste_stats, ip)
+                # Alertes uniquement pour les non-exclus
+                if not is_excluded:
+                    self.list_ok(var.liste_hs, ip)
+                    self.list_ok(var.liste_mail, ip)
+                    self.list_ok(var.liste_telegram, ip)
         except Exception as e:
             logger.error(f"Erreur update lists {ip}: {e}")
 

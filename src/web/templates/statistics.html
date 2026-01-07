@@ -395,6 +395,92 @@
             color: #6b7280;
         }
 
+        /* Timeline Chart */
+        .timeline-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .timeline-chart {
+            position: relative;
+            height: 40px;
+            background: linear-gradient(to right, #d1fae5 0%, #d1fae5 100%);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .timeline-bar {
+            position: absolute;
+            height: 100%;
+            background: #ef4444;
+            opacity: 0.8;
+            min-width: 2px;
+        }
+
+        .timeline-bar:hover {
+            opacity: 1;
+            z-index: 10;
+        }
+
+        .timeline-bar::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .timeline-bar:hover::after {
+            opacity: 1;
+        }
+
+        .timeline-legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-color.online {
+            background: #10b981;
+        }
+
+        .legend-color.offline {
+            background: #ef4444;
+        }
+
         /* Full width card */
         .full-width {
             grid-column: 1 / -1;
@@ -404,10 +490,12 @@
 
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <h1>📊 Statistiques de Connexion</h1>
             <div class="header-actions">
+                <select id="site-filter" class="host-select" style="width: auto; min-width: 150px; margin-right: 10px;">
+                    <option value="">Tous les sites</option>
+                </select>
                 <div class="period-filter">
                     <button class="period-btn" data-days="1">24h</button>
                     <button class="period-btn" data-days="7">7 jours</button>
@@ -444,7 +532,6 @@
 
         <!-- Main Grid -->
         <div class="main-grid">
-            <!-- Top Disconnectors -->
             <div class="card">
                 <div class="card-header">
                     <h2>🏆 Top Déconnecteurs</h2>
@@ -455,20 +542,20 @@
                             <tr>
                                 <th>Hôte</th>
                                 <th>IP</th>
+                                <th>Site</th>
                                 <th>Déco.</th>
                                 <th>Temps total</th>
                             </tr>
                         </thead>
                         <tbody id="top-disconnectors-body">
                             <tr>
-                                <td colspan="4" class="loading">Chargement</td>
+                                <td colspan="5" class="loading">Chargement</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Recent Events -->
             <div class="card">
                 <div class="card-header">
                     <h2>📋 Événements Récents</h2>
@@ -479,13 +566,14 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Hôte</th>
+                                <th>Site</th>
                                 <th>Type</th>
                                 <th>Durée</th>
                             </tr>
                         </thead>
                         <tbody id="recent-events-body">
                             <tr>
-                                <td colspan="4" class="loading">Chargement</td>
+                                <td colspan="5" class="loading">Chargement</td>
                             </tr>
                         </tbody>
                     </table>
@@ -530,6 +618,8 @@
     <script>
         // State
         let currentPeriod = 30;
+        let currentSiteFilter = '';
+        let allSites = new Set();
 
         // Utility functions
         function formatDuration(seconds) {
@@ -623,15 +713,33 @@
 
         function updateTopDisconnectors(hosts) {
             const tbody = document.getElementById('top-disconnectors-body');
-            if (!hosts || hosts.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="icon">✅</div>Aucune déconnexion enregistrée</td></tr>';
+
+            // Appliquer le filtre par site
+            let filteredHosts = hosts;
+            if (currentSiteFilter) {
+                filteredHosts = hosts.filter(h => h.site === currentSiteFilter);
+            }
+
+            // Collecter les sites pour le filtre
+            hosts.forEach(h => { if (h.site) allSites.add(h.site); });
+            updateSiteFilter();
+
+            if (!filteredHosts || filteredHosts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="icon">✅</div>Aucune déconnexion enregistrée</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = hosts.map(host => `
+            // Trier par site puis par nombre de déconnexions
+            filteredHosts.sort((a, b) => {
+                if (a.site !== b.site) return (a.site || '').localeCompare(b.site || '');
+                return b.disconnect_count - a.disconnect_count;
+            });
+
+            tbody.innerHTML = filteredHosts.map(host => `
                 <tr onclick="showHostModal('${host.ip}')" style="cursor: pointer;">
                     <td><strong>${host.hostname || host.ip}</strong></td>
                     <td><code>${host.ip}</code></td>
+                    <td>${host.site || '-'}</td>
                     <td><span class="badge badge-count">${host.disconnect_count}</span></td>
                     <td class="duration">${formatDuration(host.total_downtime_seconds)}</td>
                 </tr>
@@ -640,22 +748,53 @@
 
         function updateRecentEvents(events) {
             const tbody = document.getElementById('recent-events-body');
-            if (!events || events.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="icon">📭</div>Aucun événement</td></tr>';
+
+            // Appliquer le filtre par site
+            let filteredEvents = events;
+            if (currentSiteFilter) {
+                filteredEvents = events.filter(e => e.site === currentSiteFilter);
+            }
+
+            // Collecter les sites pour le filtre
+            events.forEach(e => { if (e.site) allSites.add(e.site); });
+            updateSiteFilter();
+
+            if (!filteredEvents || filteredEvents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="icon">📭</div>Aucun événement</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = events.map(event => {
+            tbody.innerHTML = filteredEvents.map(event => {
                 const isDisconnect = event.event_type === 'disconnect';
                 return `
                     <tr>
                         <td>${formatDate(event.timestamp)}</td>
                         <td><strong>${event.hostname || event.ip}</strong></td>
+                        <td>${event.site || '-'}</td>
                         <td><span class="badge ${isDisconnect ? 'badge-disconnect' : 'badge-reconnect'}">${isDisconnect ? '🔻 Déco' : '🔺 Reco'}</span></td>
                         <td class="duration">${event.duration_seconds ? formatDuration(event.duration_seconds) : '-'}</td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        function updateSiteFilter() {
+            const select = document.getElementById('site-filter');
+            const currentValue = select.value;
+            const sites = Array.from(allSites).sort();
+
+            // Ne mettre à jour que si de nouveaux sites sont disponibles
+            const existingOptions = Array.from(select.options).slice(1).map(o => o.value);
+            if (JSON.stringify(sites) === JSON.stringify(existingOptions)) return;
+
+            select.innerHTML = '<option value="">Tous les sites</option>';
+            sites.forEach(site => {
+                const option = document.createElement('option');
+                option.value = site;
+                option.textContent = site;
+                select.appendChild(option);
+            });
+            select.value = currentValue;
         }
 
         function populateHostSelect(hosts) {
@@ -696,9 +835,14 @@
                 </div>
             `;
 
+            // Générer la timeline graphique
+            if (events && events.length > 0) {
+                html += renderTimeline(events, currentPeriod);
+            }
+
             if (events && events.length > 0) {
                 html += `
-                    <h4 style="margin-bottom: 15px; color: #374151;">Historique des événements</h4>
+                    <h4 style="margin: 20px 0 15px; color: #374151;">Historique des événements</h4>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -721,6 +865,66 @@
             }
 
             container.innerHTML = html;
+        }
+
+        function renderTimeline(events, days) {
+            const now = new Date();
+            const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+            const totalMs = now.getTime() - startDate.getTime();
+
+            // Formater les dates pour l'affichage
+            const startStr = startDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+            const endStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+
+            // Construire les barres de déconnexion
+            let bars = '';
+
+            // Grouper les événements par paires disconnect/reconnect
+            const sortedEvents = [...events].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            for (let i = 0; i < sortedEvents.length; i++) {
+                const event = sortedEvents[i];
+                if (event.event_type === 'disconnect') {
+                    const disconnectTime = new Date(event.timestamp);
+
+                    // Chercher la reconnexion suivante
+                    let reconnectTime = now; // Par défaut, considérer encore offline
+                    for (let j = i + 1; j < sortedEvents.length; j++) {
+                        if (sortedEvents[j].event_type === 'reconnect') {
+                            reconnectTime = new Date(sortedEvents[j].timestamp);
+                            break;
+                        }
+                    }
+
+                    // Calculer la position et largeur en pourcentage
+                    const startPos = Math.max(0, (disconnectTime.getTime() - startDate.getTime()) / totalMs * 100);
+                    const endPos = Math.min(100, (reconnectTime.getTime() - startDate.getTime()) / totalMs * 100);
+                    const width = Math.max(0.5, endPos - startPos);
+
+                    if (startPos < 100 && endPos > 0) {
+                        const duration = Math.round((reconnectTime - disconnectTime) / 1000);
+                        const tooltip = `${disconnectTime.toLocaleString('fr-FR')} - ${formatDuration(duration)}`;
+                        bars += `<div class="timeline-bar" style="left: ${startPos}%; width: ${width}%;" data-tooltip="${tooltip}"></div>`;
+                    }
+                }
+            }
+
+            return `
+                <div class="timeline-container">
+                    <h4 style="margin-bottom: 10px; color: #374151;">📈 Timeline des déconnexions</h4>
+                    <div class="timeline-header">
+                        <span>${startStr}</span>
+                        <span>${endStr}</span>
+                    </div>
+                    <div class="timeline-chart">
+                        ${bars || '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#10b981;font-size:12px;">✓ Aucune déconnexion</div>'}
+                    </div>
+                    <div class="timeline-legend">
+                        <div class="legend-item"><div class="legend-color online"></div> En ligne</div>
+                        <div class="legend-item"><div class="legend-color offline"></div> Hors ligne</div>
+                    </div>
+                </div>
+            `;
         }
 
         function showHostModal(ip) {
@@ -748,6 +952,11 @@
             if (e.target.value) {
                 fetchHostStats(e.target.value);
             }
+        });
+
+        document.getElementById('site-filter').addEventListener('change', (e) => {
+            currentSiteFilter = e.target.value;
+            refreshAll();
         });
 
         // Refresh all data
