@@ -1,39 +1,59 @@
-Business Source License 1.1
+Licence Propriétaire - Ping ü
+Copyright (c) 2024-2026 Dynag. Tous droits réservés.
 
-Licensor: Dynag
+AVERTISSEMENT IMPORTANT : LISEZ ATTENTIVEMENT AVANT TOUTE UTILISATION
 
-Licensed Work: Ping ü
-Change Date: 4 years after lat commit
-Change License: Licence Publique Générale GNU v2 ou ultérieure
+1. DROITS ACCORDÉS
 
-Terms
+Le Licensor (Dynag) accorde à l'utilisateur final ("Licensié") le droit 
+d'utiliser ce logiciel ("Ping ü") uniquement pour un usage personnel ou 
+professionnel interne.
 
-Le Licensor accorde par la présente au Licensié le droit de copier, modifier, créer des œuvres dérivées, redistribuer et faire un usage non-production de l'Œuvre Licenciée. Le Licensor peut accorder un Droit d'Usage Additionnel, ci-dessus, autorisant un usage en production limité.
+2. RESTRICTIONS
 
-À compter de la Date de Changement, ou du quatrième anniversaire de la première distribution publique d'une version spécifique de l'Œuvre Licenciée sous cette Licence, selon la première éventualité, le Licensor accorde par la présente au Licensié des droits aux termes de la Licence de Changement, et les droits accordés au paragraphe ci-dessus sont terminés.
+Les actions suivantes sont STRICTEMENT INTERDITES sans autorisation 
+écrite préalable du Licensor :
 
-Si l'usage de l'Œuvre Licenciée par le Licensié ne respecte pas les exigences actuellement en vigueur telles que décrites dans cette Licence, le Licensié doit acheter une licence commerciale auprès du Licensor, de ses entités affiliées ou de ses revendeurs autorisés, ou s'abstenir d'utiliser l'Œuvre Licenciée.
+a) Modifier, adapter ou créer des œuvres dérivées du logiciel
+b) Décompiler, désassembler ou effectuer de l'ingénierie inverse
+c) Redistribuer, vendre, louer, prêter ou sous-licencier le logiciel
+d) Supprimer ou modifier les notices de copyright
+e) Utiliser le code source à des fins autres que l'exécution du logiciel
 
-Toutes les copies de l'Œuvre Licenciée originale et modifiée, et des œuvres dérivées de l'Œuvre Licenciée, sont soumises à cette Licence. Cette Licence s'applique séparément pour chaque version de l'Œuvre Licenciée et la Date de Changement peut varier pour chaque version de l'Œuvre Licenciée publiée par le Licensor. Vous devez afficher de manière visible cette Licence sur chaque copie originale ou modifiée de l'Œuvre Licenciée. Si vous recevez l'Œuvre Licenciée sous forme originale ou modifiée d'un tiers, les termes et conditions énoncés dans cette Licence s'appliquent à votre usage de cette œuvre.
+3. PROPRIÉTÉ INTELLECTUELLE
 
-Tout usage de l'Œuvre Licenciée en violation de cette Licence entraînera automatiquement la résiliation de vos droits sous cette Licence pour la version actuelle et toutes les autres versions de l'Œuvre Licenciée. Cette Licence ne vous accorde aucun droit sur une marque de commerce ou un logo du Licensor ou de ses affiliés (sous réserve que vous puissiez utiliser une marque de commerce ou un logo du Licensor tel qu'expressément requis par cette Licence).
+Le logiciel et tout son code source, documentation et ressources associées 
+restent la propriété exclusive de Dynag. Aucun droit de propriété n'est 
+transféré au Licensié.
 
-DANS LA MESURE AUTORISÉE PAR LA LÉGISLATION APPLICABLE, L'ŒUVRE LICENCIÉE EST FOURNIE « TELLE QUELLE ». LE LICENSOR DÉNIE PAR LA PRÉSENTE TOUTES GARANTIES ET CONDITIONS, EXPRESSES OU IMPLICITES, Y COMPRIS (SANS LIMITATION) LES GARANTIES MARCHANDISES, D'ADÉQUATION À UN USAGE PARTICULIER, DE NON-VIOLATION ET DE TITRE.
+4. DEMANDE D'AUTORISATION
 
-MariaDB accorde par la présente l'autorisation d'utiliser le texte de cette Licence pour licencier vos œuvres, et de s'y référer en utilisant la marque « Business Source License », tant que vous respectez les Engagements du Licensor ci-dessous.
+Toute demande de modification, redistribution ou usage commercial doit être 
+adressée à : [votre email de contact]
 
-Engagements du Licensor
+5. CLAUSE DE NON-GARANTIE
 
-En contrepartie du droit d'utiliser le texte de cette Licence et le nom et la marque « Business Source License », le Licensor s'engage envers MariaDB, et envers tous les autres destinataires de l'œuvre licenciée fournie par le Licensor :
+CE LOGICIEL EST FOURNI "TEL QUEL", SANS GARANTIE D'AUCUNE SORTE, EXPRESSE 
+OU IMPLICITE. LE LICENSOR NE GARANTIT PAS QUE LE LOGICIEL SERA EXEMPT 
+D'ERREURS OU QU'IL RÉPONDRA À VOS BESOINS SPÉCIFIQUES.
 
-- Spécifier en tant que Licence de Changement la Version 2.0 de la GPL ou toute version ultérieure, ou une licence compatible avec la Version 2.0 de la GPL ou une version ultérieure, où « compatible » signifie qu'un logiciel fourni sous la Licence de Changement peut être inclus dans un programme avec un logiciel fourni sous la Version 2.0 de la GPL ou une version ultérieure. Le Licensor peut spécifier des Licences de Changement supplémentaires sans limitation.
+6. LIMITATION DE RESPONSABILITÉ
 
-- Soit : (a) spécifier un droit d'usage additionnel qui n'impose aucune restriction supplémentaire au droit accordé dans cette Licence, en tant que Droit d'Usage Additionnel ; soit (b) insérer le texte « Aucune » pour spécifier une Date de Changement.
+EN AUCUN CAS LE LICENSOR NE SERA RESPONSABLE DES DOMMAGES DIRECTS, INDIRECTS, 
+ACCESSOIRES, SPÉCIAUX OU CONSÉCUTIFS RÉSULTANT DE L'UTILISATION OU DE 
+L'IMPOSSIBILITÉ D'UTILISER CE LOGICIEL.
 
-- Ne pas modifier cette Licence de toute autre manière.
+7. RÉSILIATION
 
-Notice
+Cette licence est automatiquement résiliée si vous violez l'une de ses 
+conditions. En cas de résiliation, vous devez cesser immédiatement toute 
+utilisation du logiciel et détruire toutes les copies en votre possession.
 
-La Business Source License (ce document, ou la « Licence ») n'est pas une licence Open Source. Cependant, l'Œuvre Licenciée deviendra finalement disponible sous une Licence Open Source, comme indiqué dans cette Licence.
+8. DROIT APPLICABLE
 
-Pour plus d'informations sur l'usage de la Business Source License pour les produits MariaDB, veuillez consulter le FAQ Business Source License de MariaDB. Pour plus d'informations sur l'usage général de la Business Source License, veuillez consulter le FAQ Adopting and Developing Business Source License.
+Cette licence est régie par le droit français.
+
+---
+
+Pour toute question ou demande d'autorisation, contactez :
+Dynag - [insérer email de contact]
