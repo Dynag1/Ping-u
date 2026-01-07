@@ -630,6 +630,9 @@ class MainWindow(QMainWindow):
         alive = self.ui.txtAlive.currentText()
         port = self.ui.txtPort.text()
         self.ui.progressBar.show()
+        # Réinitialiser les variables de scan
+        var.u = 0
+        var.scan_hs_hosts = []
         threading.Thread(target=threadAjIp.main, args=(self, self.comm, self.treeIpModel, ip,nbr_hote, alive, port, "")).start()
 
     def on_add_row(self, i, ip, nom, mac, port, site, is_ok):
@@ -723,10 +726,21 @@ class MainWindow(QMainWindow):
         self.ui.progressBar.setValue(i)
         if i == 100:
             self.ui.progressBar.hide()
+            # Construire le message de récapitulatif
+            msg = self.tr("Scan terminé, ")+str(var.u)+self.tr(" hôtes trouvés")
+            
+            # Ajouter les hôtes HS s'il y en a
+            if var.scan_hs_hosts:
+                msg += "\n\n" + self.tr("Hôtes HS détectés :") + "\n"
+                for ip in var.scan_hs_hosts:
+                    msg += f"  • {ip}\n"
+                # Réinitialiser la liste après affichage
+                var.scan_hs_hosts = []
+            
             QMessageBox.information(
                 self,
                 self.tr("Succès"),
-                self.tr("Scan terminé, ")+str(var.u)+self.tr(" hôtes trouvés"),
+                msg,
                 QMessageBox.Ok
             )
 

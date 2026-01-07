@@ -191,8 +191,16 @@ class AlertManager(QObject):
                     # Déconnexion détectée
                     if key not in self._stats_recorded_disconnects:
                         hostname = db.lireNom(key, self.model) or key
-                        stats_manager.record_disconnect(key, hostname)
-                        logger.info(f"[STATS] Déconnexion enregistrée: {key}")
+                        # Récupérer le site de l'hôte
+                        site = ""
+                        for row in range(self.model.rowCount()):
+                            item_ip = self.model.item(row, 1)
+                            if item_ip and item_ip.text() == key:
+                                site_item = self.model.item(row, 8)
+                                site = site_item.text() if site_item else ""
+                                break
+                        stats_manager.record_disconnect(key, hostname, site)
+                        logger.info(f"[STATS] Déconnexion enregistrée: {key} [site: {site or 'N/A'}]")
                         self._stats_recorded_disconnects.add(key)
                     # Passer à l'état "alerté" pour permettre la détection de reconnexion
                     var.liste_stats[key] = 10
@@ -201,8 +209,16 @@ class AlertManager(QObject):
                     # Reconnexion détectée
                     if key in self._stats_recorded_disconnects:
                         hostname = db.lireNom(key, self.model) or key
-                        stats_manager.record_reconnect(key, hostname)
-                        logger.info(f"[STATS] Reconnexion enregistrée: {key}")
+                        # Récupérer le site de l'hôte
+                        site = ""
+                        for row in range(self.model.rowCount()):
+                            item_ip = self.model.item(row, 1)
+                            if item_ip and item_ip.text() == key:
+                                site_item = self.model.item(row, 8)
+                                site = site_item.text() if site_item else ""
+                                break
+                        stats_manager.record_reconnect(key, hostname, site)
+                        logger.info(f"[STATS] Reconnexion enregistrée: {key} [site: {site or 'N/A'}]")
                         self._stats_recorded_disconnects.discard(key)
                     # Marquer pour suppression
                     erase.append(key)
