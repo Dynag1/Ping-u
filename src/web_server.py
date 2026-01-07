@@ -1681,6 +1681,82 @@ Ping ü - Monitoring Réseau
                 logger.error(f"Erreur liste hôtes stats: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
 
+        # ============= Monitoring Graphiques (Température & Débit) =============
+        
+        @self.app.route('/monitoring')
+        @WebAuth.login_required
+        def monitoring_page():
+            """Page de monitoring avec graphiques de température et débit"""
+            return render_template('monitoring.html')
+        
+        @self.app.route('/api/monitoring/hosts')
+        @WebAuth.login_required
+        def monitoring_hosts():
+            """Liste des hôtes avec données de monitoring disponibles"""
+            try:
+                from src.monitoring_history import get_monitoring_manager
+                manager = get_monitoring_manager()
+                
+                hosts_data = manager.get_hosts_with_data()
+                
+                # Enrichir avec les noms depuis le modèle
+                model = self.main_window.treeIpModel
+                result = []
+                for ip, data in hosts_data.items():
+                    hostname = ip
+                    for row in range(model.rowCount()):
+                        item_ip = model.item(row, 1)
+                        if item_ip and item_ip.text() == ip:
+                            name_item = model.item(row, 2)
+                            hostname = name_item.text() if name_item else ip
+                            break
+                    
+                    result.append({
+                        'ip': ip,
+                        'hostname': hostname,
+                        'has_temperature': data.get('has_temperature', False),
+                        'has_bandwidth': data.get('has_bandwidth', False)
+                    })
+                
+                return jsonify({'success': True, 'data': result})
+            except ImportError:
+                return jsonify({'success': False, 'error': 'Module monitoring non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur liste hôtes monitoring: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/monitoring/temperature/<ip>')
+        @WebAuth.login_required
+        def monitoring_temperature(ip):
+            """Historique de température pour un hôte"""
+            try:
+                from src.monitoring_history import get_monitoring_manager
+                manager = get_monitoring_manager()
+                
+                hours = request.args.get('hours', 24, type=int)
+                data = manager.get_temperature_history(ip, hours)
+                
+                return jsonify({'success': True, 'data': data})
+            except Exception as e:
+                logger.error(f"Erreur historique température {ip}: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/monitoring/bandwidth/<ip>')
+        @WebAuth.login_required
+        def monitoring_bandwidth(ip):
+            """Historique de débit pour un hôte"""
+            try:
+                from src.monitoring_history import get_monitoring_manager
+                manager = get_monitoring_manager()
+                
+                hours = request.args.get('hours', 24, type=int)
+                data = manager.get_bandwidth_history(ip, hours)
+                
+                return jsonify({'success': True, 'data': data})
+            except Exception as e:
+                logger.error(f"Erreur historique débit {ip}: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+
     
     def _on_device_discovered(self, device):
         """Callback appelé quand un périphérique est découvert"""

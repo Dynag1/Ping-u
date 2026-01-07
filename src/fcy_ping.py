@@ -712,6 +712,17 @@ class SNMPWorker(QThread):
         if temp or bandwidth:
             try:
                 self.snmp_update_signal.emit(ip, str(temp) if temp else "", bandwidth)
+                
+                # Enregistrer dans l'historique pour les graphiques
+                try:
+                    from src.monitoring_history import get_monitoring_manager
+                    manager = get_monitoring_manager()
+                    if temp:
+                        manager.record_temperature(ip, temp)
+                    if bandwidth:
+                        manager.record_bandwidth(ip, bandwidth['in_mbps'], bandwidth['out_mbps'])
+                except Exception as e:
+                    logger.debug(f"Erreur enregistrement historique {ip}: {e}")
             except Exception as e:
                 logger.debug(f"Erreur émission signal SNMP {ip}: {e}")
 
