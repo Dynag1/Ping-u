@@ -1834,6 +1834,10 @@
                         <span class="icon">📊</span>
                         <span data-i18n="menu_statistics">Statistiques</span>
                     </div>
+                    <div class="menu-nav-item" onclick="window.location.href='/monitoring'">
+                        <span class="icon">📈</span>
+                        <span data-i18n="menu_monitoring">Monitoring Graphiques</span>
+                    </div>
                 </nav>
             </div>
 
@@ -1841,7 +1845,13 @@
             <div class="menu-section">
                 <div class="menu-section-title">🔗 <span data-i18n="navigation">Navigation</span></div>
                 <div class="menu-actions">
-                    <a href="/" class="btn btn-secondary">📊 <span data-i18n="monitoring_view">Vue Monitoring</span></a>
+                    <a href="/" class="btn btn-secondary">🖥️ <span data-i18n="monitoring_view">Vue
+                            Monitoring</span></a>
+                    <a href="/statistics" class="btn btn-info">📊 <span
+                            data-i18n="menu_statistics">Statistiques</span></a>
+                    <a href="/monitoring" class="btn btn-info"
+                        style="background: linear-gradient(135deg, #4ecdc4, #44a08d);">📈 <span
+                            data-i18n="menu_monitoring">Graphiques</span></a>
                     <button id="btn-logout" class="btn btn-danger">🚪 <span
                             data-i18n="logout">Déconnexion</span></button>
                 </div>
