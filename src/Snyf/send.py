@@ -42,6 +42,12 @@ def send(type, comm, dialog):
         ).encode('ascii')
         port = 7701
         dest_ip = '255.255.255.255'
+        dest_ip = '255.255.255.255'
+    elif type == 'xiaomi':
+        # Miio Hello Packet
+        msg = bytes.fromhex('21 31 00 20 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff')
+        port = 54321
+        dest_ip = '255.255.255.255'
     elif type == 'snmp':
         # SNMPv2c GetRequest community='public' for sysDescr (.1.3.6.1.2.1.1.1.0) and sysName (.1.3.6.1.2.1.1.5.0)
         # OID sysDescr: 1.3.6.1.2.1.1.1.0

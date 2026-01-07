@@ -179,6 +179,26 @@ class WebServer(QObject):
             hosts = self._get_hosts_data(apply_filter=False)
             return jsonify(hosts)
         
+        @self.app.route('/api/local_ip')
+        @WebAuth.login_required
+        def get_local_ip():
+            try:
+                # Créer une socket dummy pour trouver l'IP routable vvers l'extérieur
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                try:
+                    # N'a pas besoin d'être atteignable
+                    s.connect(('10.255.255.255', 1))
+                    IP = s.getsockname()[0]
+                except Exception:
+                    IP = '127.0.0.1'
+                finally:
+                    s.close()
+                
+                return jsonify({'success': True, 'ip': IP})
+            except Exception as e:
+                logger.error(f"Erreur récupération IP locale: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
         @self.app.route('/api/status')
         def status():
             return jsonify({
@@ -1496,7 +1516,7 @@ Ping ü - Monitoring Réseau
                     return jsonify({'success': False, 'error': 'Scanner réseau non disponible'}), 500
                 
                 data = request.get_json()
-                scan_types = data.get('scan_types', ['hik', 'onvif', 'dahua', 'samsung', 'upnp'])
+                scan_types = data.get('scan_types', ['hik', 'onvif', 'dahua', 'xiaomi', 'samsung', 'upnp'])
                 timeout = data.get('timeout', 15)
                 
                 # Vérifier qu'aucun scan n'est en cours
@@ -1558,6 +1578,109 @@ Ping ü - Monitoring Réseau
             except Exception as e:
                 logger.error(f"Erreur statut scan: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
+        
+        # ==================== Statistiques de Connexion ====================
+        
+        @self.app.route('/statistics')
+        @WebAuth.login_required
+        def statistics_page():
+            """Page des statistiques de connexion (admin only)"""
+            return render_template('statistics.html')
+        
+        @self.app.route('/api/stats/overview')
+        @WebAuth.login_required
+        def stats_overview():
+            """Retourne les statistiques globales de connexion"""
+            try:
+                from src.connection_stats import stats_manager
+                days = request.args.get('days', 30, type=int)
+                stats = stats_manager.get_overview_stats(days)
+                return jsonify({'success': True, 'data': stats})
+            except ImportError:
+                return jsonify({'success': False, 'error': 'Module de statistiques non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur stats overview: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/stats/top')
+        @WebAuth.login_required
+        def stats_top_disconnectors():
+            """Retourne les hôtes avec le plus de déconnexions"""
+            try:
+                from src.connection_stats import stats_manager
+                limit = request.args.get('limit', 10, type=int)
+                days = request.args.get('days', 30, type=int)
+                data = stats_manager.get_top_disconnectors(limit, days)
+                return jsonify({'success': True, 'data': data})
+            except ImportError:
+                return jsonify({'success': False, 'error': 'Module de statistiques non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur stats top: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/stats/host/<path:ip>')
+        @WebAuth.login_required
+        def stats_host(ip):
+            """Retourne les statistiques d'un hôte spécifique"""
+            try:
+                from src.connection_stats import stats_manager
+                stats = stats_manager.get_host_stats(ip)
+                events = stats_manager.get_host_events(ip, limit=50)
+                return jsonify({'success': True, 'data': {'stats': stats, 'events': events}})
+            except ImportError:
+                return jsonify({'success': False, 'error': 'Module de statistiques non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur stats hôte {ip}: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/stats/events')
+        @WebAuth.login_required
+        def stats_recent_events():
+            """Retourne les événements récents"""
+            try:
+                from src.connection_stats import stats_manager
+                limit = request.args.get('limit', 50, type=int)
+                events = stats_manager.get_recent_events(limit)
+                return jsonify({'success': True, 'data': events})
+            except ImportError:
+                return jsonify({'success': False, 'error': 'Module de statistiques non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur events récents: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/stats/hosts')
+        @WebAuth.login_required
+        def stats_all_hosts():
+            """Retourne la liste de TOUS les hôtes surveillés, avec indication si des stats existent"""
+            try:
+                from src.connection_stats import stats_manager
+                
+                # Récupérer les hôtes avec des événements
+                tracked_hosts = stats_manager.get_all_tracked_hosts()
+                tracked_ips = {h['ip'] for h in tracked_hosts}
+                
+                # Récupérer TOUS les hôtes du modèle
+                model = self.main_window.treeIpModel
+                all_hosts = []
+                for row in range(model.rowCount()):
+                    ip_item = model.item(row, 1)
+                    name_item = model.item(row, 2)
+                    if ip_item:
+                        ip = ip_item.text()
+                        hostname = name_item.text() if name_item else ip
+                        all_hosts.append({
+                            'ip': ip,
+                            'hostname': hostname,
+                            'has_events': ip in tracked_ips
+                        })
+                
+                return jsonify({'success': True, 'data': all_hosts})
+            except ImportError:
+                return jsonify({'success': False, 'error': 'Module de statistiques non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur liste hôtes stats: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+
     
     def _on_device_discovered(self, device):
         """Callback appelé quand un périphérique est découvert"""

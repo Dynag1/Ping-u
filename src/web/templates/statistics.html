@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques - Ping ü</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Stats Overview Cards */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .stat-card.danger .value {
+            color: #ef4444;
+        }
+
+        .stat-card.warning .value {
+            color: #f59e0b;
+        }
+
+        .stat-card.success .value {
+            color: #10b981;
+        }
+
+        .stat-card.info .value {
+            color: #3b82f6;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            padding: 18px 22px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-size: 18px;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: #f3f4f6;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        .data-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-disconnect {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-reconnect {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-count {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Duration formatting */
+        .duration {
+            font-family: monospace;
+            color: #6b7280;
+        }
+
+        /* Host select */
+        .host-select-container {
+            margin-bottom: 20px;
+        }
+
+        .host-select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .host-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Period filter */
+        .period-filter {
+            display: flex;
+            gap: 8px;
+        }
+
+        .period-btn {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .period-btn:hover,
+        .period-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60%,
+            100% {
+                content: '...';
+            }
+        }
+
+        /* Host details modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 15px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .host-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .host-stat {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .host-stat .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .host-stat .label {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* Full width card */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📊 Statistiques de Connexion</h1>
+            <div class="header-actions">
+                <div class="period-filter">
+                    <button class="period-btn" data-days="1">24h</button>
+                    <button class="period-btn" data-days="7">7 jours</button>
+                    <button class="period-btn active" data-days="30">30 jours</button>
+                </div>
+                <a href="/admin" class="btn btn-secondary">⚙️ Admin</a>
+                <a href="/" class="btn btn-secondary">📊 Monitoring</a>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-overview" id="stats-overview">
+            <div class="stat-card danger">
+                <div class="icon">🔻</div>
+                <div class="value" id="stat-total-disconnects">-</div>
+                <div class="label">Déconnexions</div>
+            </div>
+            <div class="stat-card success">
+                <div class="icon">🔺</div>
+                <div class="value" id="stat-total-reconnects">-</div>
+                <div class="label">Reconnexions</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="icon">⏱️</div>
+                <div class="value" id="stat-avg-duration">-</div>
+                <div class="label">Durée moyenne</div>
+            </div>
+            <div class="stat-card info">
+                <div class="icon">🖥️</div>
+                <div class="value" id="stat-unique-hosts">-</div>
+                <div class="label">Hôtes affectés</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Top Disconnectors -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🏆 Top Déconnecteurs</h2>
+                </div>
+                <div class="card-body">
+                    <table class="data-table" id="top-disconnectors-table">
+                        <thead>
+                            <tr>
+                                <th>Hôte</th>
+                                <th>IP</th>
+                                <th>Déco.</th>
+                                <th>Temps total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-disconnectors-body">
+                            <tr>
+                                <td colspan="4" class="loading">Chargement</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Events -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 Événements Récents</h2>
+                </div>
+                <div class="card-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Hôte</th>
+                                <th>Type</th>
+                                <th>Durée</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-events-body">
+                            <tr>
+                                <td colspan="4" class="loading">Chargement</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Host Details -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <h2>🔍 Détail par Hôte</h2>
+                </div>
+                <div class="card-body">
+                    <div class="host-select-container">
+                        <select class="host-select" id="host-select">
+                            <option value="">-- Sélectionner un hôte --</option>
+                        </select>
+                    </div>
+                    <div id="host-details">
+                        <div class="empty-state">
+                            <div class="icon">🖥️</div>
+                            <p>Sélectionnez un hôte pour voir ses statistiques</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Host Detail Modal -->
+    <div class="modal-overlay" id="host-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Détail de l'hôte</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentPeriod = 30;
+
+        // Utility functions
+        function formatDuration(seconds) {
+            if (!seconds || seconds === 0) return '-';
+            if (seconds < 60) return `${seconds}s`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${mins}m`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // API calls
+        async function fetchStats() {
+            try {
+                const response = await fetch(`/api/stats/overview?days=${currentPeriod}`);
+                const data = await response.json();
+                if (data.success) {
+                    updateOverview(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch stats:', err);
+            }
+        }
+
+        async function fetchTopDisconnectors() {
+            try {
+                const response = await fetch(`/api/stats/top?days=${currentPeriod}&limit=10`);
+                const data = await response.json();
+                if (data.success) {
+                    updateTopDisconnectors(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch top:', err);
+            }
+        }
+
+        async function fetchRecentEvents() {
+            try {
+                const response = await fetch('/api/stats/events?limit=15');
+                const data = await response.json();
+                if (data.success) {
+                    updateRecentEvents(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch events:', err);
+            }
+        }
+
+        async function fetchHosts() {
+            try {
+                const response = await fetch('/api/stats/hosts');
+                const data = await response.json();
+                if (data.success) {
+                    populateHostSelect(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch hosts:', err);
+            }
+        }
+
+        async function fetchHostStats(ip) {
+            try {
+                const response = await fetch(`/api/stats/host/${encodeURIComponent(ip)}`);
+                const data = await response.json();
+                if (data.success) {
+                    displayHostDetails(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch host stats:', err);
+            }
+        }
+
+        // UI updates
+        function updateOverview(stats) {
+            document.getElementById('stat-total-disconnects').textContent = stats.total_disconnects || 0;
+            document.getElementById('stat-total-reconnects').textContent = stats.total_reconnects || 0;
+            document.getElementById('stat-avg-duration').textContent = formatDuration(stats.avg_duration_seconds);
+            document.getElementById('stat-unique-hosts').textContent = stats.unique_hosts_affected || 0;
+        }
+
+        function updateTopDisconnectors(hosts) {
+            const tbody = document.getElementById('top-disconnectors-body');
+            if (!hosts || hosts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="icon">✅</div>Aucune déconnexion enregistrée</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = hosts.map(host => `
+                <tr onclick="showHostModal('${host.ip}')" style="cursor: pointer;">
+                    <td><strong>${host.hostname || host.ip}</strong></td>
+                    <td><code>${host.ip}</code></td>
+                    <td><span class="badge badge-count">${host.disconnect_count}</span></td>
+                    <td class="duration">${formatDuration(host.total_downtime_seconds)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateRecentEvents(events) {
+            const tbody = document.getElementById('recent-events-body');
+            if (!events || events.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="icon">📭</div>Aucun événement</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = events.map(event => {
+                const isDisconnect = event.event_type === 'disconnect';
+                return `
+                    <tr>
+                        <td>${formatDate(event.timestamp)}</td>
+                        <td><strong>${event.hostname || event.ip}</strong></td>
+                        <td><span class="badge ${isDisconnect ? 'badge-disconnect' : 'badge-reconnect'}">${isDisconnect ? '🔻 Déco' : '🔺 Reco'}</span></td>
+                        <td class="duration">${event.duration_seconds ? formatDuration(event.duration_seconds) : '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function populateHostSelect(hosts) {
+            const select = document.getElementById('host-select');
+            select.innerHTML = '<option value="">-- Sélectionner un hôte --</option>';
+            hosts.forEach(host => {
+                const option = document.createElement('option');
+                option.value = host.ip;
+                option.textContent = `${host.hostname || host.ip} (${host.ip})`;
+                select.appendChild(option);
+            });
+        }
+
+        function displayHostDetails(data) {
+            const container = document.getElementById('host-details');
+            const stats = data.stats;
+            const events = data.events;
+
+            if (!stats.exists) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Aucune donnée pour cet hôte</p></div>';
+                return;
+            }
+
+            let html = `
+                <div class="host-stats-grid">
+                    <div class="host-stat">
+                        <div class="value">${stats.disconnect_count || 0}</div>
+                        <div class="label">Déconnexions</div>
+                    </div>
+                    <div class="host-stat">
+                        <div class="value">${formatDuration(stats.avg_duration_seconds)}</div>
+                        <div class="label">Durée moyenne</div>
+                    </div>
+                    <div class="host-stat">
+                        <div class="value">${formatDuration(stats.total_downtime_seconds)}</div>
+                        <div class="label">Temps total HS</div>
+                    </div>
+                </div>
+            `;
+
+            if (events && events.length > 0) {
+                html += `
+                    <h4 style="margin-bottom: 15px; color: #374151;">Historique des événements</h4>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Durée</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${events.slice(0, 20).map(event => `
+                                <tr>
+                                    <td>${formatDate(event.timestamp)}</td>
+                                    <td><span class="badge ${event.event_type === 'disconnect' ? 'badge-disconnect' : 'badge-reconnect'}">${event.event_type === 'disconnect' ? '🔻 Déconnexion' : '🔺 Reconnexion'}</span></td>
+                                    <td class="duration">${event.duration_seconds ? formatDuration(event.duration_seconds) : '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function showHostModal(ip) {
+            fetchHostStats(ip).then(() => {
+                // Modal display handled by displayHostDetails for inline view
+            });
+            document.getElementById('host-select').value = ip;
+        }
+
+        function closeModal() {
+            document.getElementById('host-modal').classList.remove('active');
+        }
+
+        // Event listeners
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPeriod = parseInt(btn.dataset.days);
+                refreshAll();
+            });
+        });
+
+        document.getElementById('host-select').addEventListener('change', (e) => {
+            if (e.target.value) {
+                fetchHostStats(e.target.value);
+            }
+        });
+
+        // Refresh all data
+        function refreshAll() {
+            fetchStats();
+            fetchTopDisconnectors();
+            fetchRecentEvents();
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+            fetchHosts();
+
+            // Auto-refresh every 30 seconds
+            setInterval(refreshAll, 30000);
+        });
+    </script>
+</body>
+
+</html>

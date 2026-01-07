@@ -5,7 +5,7 @@
 import threading
 from src.utils.colors import AppColors
 
-version = "99.03.06"
+version = "99.03.07"
 nom = "Ping ü"
 nom_logiciel = "PingU"
 site = 'http://prog.dynag.co'
@@ -38,6 +38,7 @@ liste_temp_alert = {}  # Format: {'ip': compteur}
 liste_hs = {}
 liste_mail = {}
 liste_telegram = {}
+liste_stats = {}  # Liste dédiée au suivi des statistiques de connexion (indépendante des alertes)
 
 # Cache SNMP - Stockage global des données de trafic réseau et des débits calculés
 # Format: {'ip': {'in': octets, 'out': octets, 'timestamp': float}}

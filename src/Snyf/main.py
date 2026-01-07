@@ -41,6 +41,10 @@ def main(self, comm):
             t = threading.Thread(target=send.send, args=("avigilon", comm, dialog))
             t.start()
             threads.append(t)
+        if sfenetre.checkXiaomi.isChecked():
+            t = threading.Thread(target=send.send, args=("xiaomi", comm, dialog))
+            t.start()
+            threads.append(t)
         if sfenetre.checkSamsung.isChecked():
             t = threading.Thread(target=send.send, args=("samsung", comm, dialog))
             t.start()
@@ -54,4 +58,24 @@ def main(self, comm):
     sfenetre.labTitre.setText("Snyf, récupération automatique des éléments.\n Version " + version)
     sfenetre.pushAnnule.clicked.connect(dialog.reject)
     sfenetre.pushValid.clicked.connect(lambda: valider(comm, dialog))
+
+    def tout_cocher():
+        sfenetre.checkHik.setChecked(True)
+        sfenetre.checkOnvif.setChecked(True)
+        sfenetre.checkAvigilon.setChecked(True)
+        sfenetre.checkXiaomi.setChecked(True)
+        sfenetre.checkSamsung.setChecked(True)
+        sfenetre.checkUpnp.setChecked(True)
+
+    def tout_decocher():
+        sfenetre.checkHik.setChecked(False)
+        sfenetre.checkOnvif.setChecked(False)
+        sfenetre.checkAvigilon.setChecked(False)
+        sfenetre.checkXiaomi.setChecked(False)
+        sfenetre.checkSamsung.setChecked(False)
+        sfenetre.checkUpnp.setChecked(False)
+
+    sfenetre.pushCocher.clicked.connect(tout_cocher)
+    sfenetre.pushDecocher.clicked.connect(tout_decocher)
+    
     dialog.exec()

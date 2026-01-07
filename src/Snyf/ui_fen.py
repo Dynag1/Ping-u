@@ -76,6 +76,11 @@ class Ui_Dialog(object):
 
         self.verticalLayout_2.addWidget(self.checkSamsung)
 
+        self.checkXiaomi = QCheckBox(self.frame_3)
+        self.checkXiaomi.setObjectName(u"checkXiaomi")
+
+        self.verticalLayout_2.addWidget(self.checkXiaomi)
+
         self.checkAvigilon = QCheckBox(self.frame_3)
         self.checkAvigilon.setObjectName(u"checkAvigilon")
 
@@ -135,6 +140,14 @@ class Ui_Dialog(object):
 
         self.horizontalLayout.addWidget(self.pushAnnule)
 
+        self.pushCocher = QPushButton(self.frame_2)
+        self.pushCocher.setObjectName(u"pushCocher")
+        self.horizontalLayout.addWidget(self.pushCocher)
+
+        self.pushDecocher = QPushButton(self.frame_2)
+        self.pushDecocher.setObjectName(u"pushDecocher")
+        self.horizontalLayout.addWidget(self.pushDecocher)
+
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
@@ -155,10 +168,13 @@ class Ui_Dialog(object):
         self.checkOnvif.setText(QCoreApplication.translate("Dialog", u"Onvif", None))
         self.checkHik.setText(QCoreApplication.translate("Dialog", u"Hik Vision", None))
         self.checkSamsung.setText(QCoreApplication.translate("Dialog", u"Samsung", None))
+        self.checkXiaomi.setText(QCoreApplication.translate("Dialog", u"Xiaomi", None))
         self.checkAvigilon.setText(QCoreApplication.translate("Dialog", u"Avigilon", None))
         self.label_2.setText(QCoreApplication.translate("Dialog", u"Autres", None))
         self.checkUpnp.setText(QCoreApplication.translate("Dialog", u"Upnp", None))
         self.pushValid.setText(QCoreApplication.translate("Dialog", u"Valider", None))
         self.pushAnnule.setText(QCoreApplication.translate("Dialog", u"Annuler", None))
+        self.pushCocher.setText(QCoreApplication.translate("Dialog", u"Tout cocher", None))
+        self.pushDecocher.setText(QCoreApplication.translate("Dialog", u"Tout décocher", None))
     # retranslateUi
 

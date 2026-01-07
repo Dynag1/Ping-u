@@ -7,6 +7,7 @@ import socket
 import threading
 import time
 import asyncio
+import binascii  # Pour Xiaomi handshake
 from typing import Dict, List, Callable, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
@@ -238,6 +239,66 @@ class NetworkScanner:
         except Exception as e:
             logger.error(f"Erreur scan Samsung: {e}")
 
+    def scan_xiaomi(self, timeout: int = 10):
+        """
+        Scan pour caméras/équipements Xiaomi
+        Protocole UDP miio sur port 54321
+        """
+        logger.info("Scan Xiaomi démarré")
+        
+        # Handshake Miio: '2131' + 30 bytes (0x00... ou 0xFF...)
+        # Ici on envoie une payload de découverte standard
+        xiaomi_msg = binascii.unhexlify("21310020ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+        port = 54321
+        
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.settimeout(timeout)
+        
+        try:
+            s.bind(('', 0))
+            s.sendto(xiaomi_msg, ('255.255.255.255', port))
+            
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                try:
+                    data, addr = s.recvfrom(4096)
+                    ip = addr[0]
+                    
+                    if self._is_new_device(ip):
+                        # Parser le header (2131 + length + unknown + device_id + stamp + md5)
+                        # Le Device ID est à l'offset 8 (4 bytes)
+                        manufacturer = "Xiaomi"
+                        model = ""
+                        name = "Xiaomi Device"
+                        
+                        if len(data) >= 32 and data[0:2] == b'\x21\x31':
+                            try:
+                                dev_id = data[8:12].hex()
+                                model = f"ID: {dev_id}"
+                                name = f"Xiaomi_{dev_id}"
+                            except:
+                                pass
+                        
+                        device = DiscoveredDevice(
+                            ip=ip,
+                            device_type=DeviceType.CAMERA_XIAOMI,
+                            manufacturer=manufacturer,
+                            model=model,
+                            name=name,
+                            protocol="miio"
+                        )
+                        self._notify_device_found(device)
+                except socket.timeout:
+                    break
+                except Exception as e:
+                    logger.debug(f"Erreur parsing Xiaomi: {e}")
+                    
+        except Exception as e:
+            logger.error(f"Erreur scan Xiaomi: {e}")
+        finally:
+            s.close()
+            
     def scan_avigilon(self, timeout: int = 10):
         """Scan Avigilon"""
         logger.info("Scan Avigilon démarré")
@@ -392,6 +453,13 @@ class NetworkScanner:
         
         if 'dahua' in scan_types:
             t = threading.Thread(target=self.scan_dahua, args=(timeout,))
+            t.start()
+            threads.append(t)
+
+
+
+        if 'xiaomi' in scan_types or 'camera_xiaomi' in scan_types:
+            t = threading.Thread(target=self.scan_xiaomi, args=(timeout,))
             t.start()
             threads.append(t)
 
