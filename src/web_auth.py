@@ -2,6 +2,7 @@
 """
 Module d'authentification pour le serveur web
 Support multi-utilisateurs avec rôles (admin, user)
+SÉCURITÉ: Utilise bcrypt pour le hachage des mots de passe
 """
 import os
 import json
@@ -10,7 +11,19 @@ from functools import wraps
 from flask import session, redirect, url_for, request
 from src.utils.logger import get_logger
 
+# Essayer d'importer bcrypt pour un hachage sécurisé
+try:
+    import bcrypt
+    BCRYPT_AVAILABLE = True
+except ImportError:
+    BCRYPT_AVAILABLE = False
+
 logger = get_logger(__name__)
+
+# Compteur de tentatives de connexion pour rate limiting simple
+_login_attempts = {}  # {ip: {'count': n, 'last_attempt': timestamp}}
+MAX_LOGIN_ATTEMPTS = 5
+LOGIN_LOCKOUT_TIME = 300  # 5 minutes
 
 class WebAuth:
     def __init__(self, config_file='web_users.json'):
@@ -26,18 +39,20 @@ class WebAuth:
                 'users': [
                     {
                         'username': 'admin',
-                        'password': self.hash_password('a'),
-                        'role': 'admin'
+                        'password': self.hash_password('admin123'),  # Mot de passe par défaut plus fort
+                        'role': 'admin',
+                        'must_change_password': True  # Forcer le changement au premier login
                     },
                     {
                         'username': 'user',
-                        'password': self.hash_password('a'),
-                        'role': 'user'
+                        'password': self.hash_password('user123'),
+                        'role': 'user',
+                        'must_change_password': True
                     }
                 ]
             }
             self.save_all_users(default_users)
-            logger.info("Fichier de configuration créé avec les utilisateurs par défaut (admin/a et user/a)")
+            logger.warning("⚠️ SÉCURITÉ: Fichier créé avec mots de passe par défaut (admin/admin123, user/user123) - À CHANGER IMMÉDIATEMENT!")
         else:
             # Migration: si ancien format (un seul utilisateur), convertir
             self._migrate_old_format()
@@ -61,8 +76,9 @@ class WebAuth:
                         old_user,
                         {
                             'username': 'user',
-                            'password': self.hash_password('a'),
-                            'role': 'user'
+                            'password': self.hash_password('user123'),
+                            'role': 'user',
+                            'must_change_password': True
                         }
                     ]
                 }
@@ -72,8 +88,23 @@ class WebAuth:
             logger.error(f"Erreur lors de la migration: {e}")
     
     def hash_password(self, password):
-        """Hash un mot de passe avec SHA256"""
-        return hashlib.sha256(password.encode('utf-8')).hexdigest()
+        """Hash un mot de passe avec bcrypt (si disponible) ou SHA256"""
+        if BCRYPT_AVAILABLE:
+            # bcrypt avec coût de 12 (bon équilibre sécurité/performance)
+            return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
+        else:
+            # Fallback SHA256 (moins sécurisé mais fonctionne partout)
+            logger.warning("bcrypt non disponible, utilisation de SHA256 (moins sécurisé)")
+            return hashlib.sha256(password.encode('utf-8')).hexdigest()
+    
+    def verify_password(self, password, hashed):
+        """Vérifie un mot de passe contre son hash"""
+        if BCRYPT_AVAILABLE and hashed.startswith('$2'):
+            # Hash bcrypt
+            return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+        else:
+            # Fallback SHA256 pour compatibilité avec anciens hash
+            return hashlib.sha256(password.encode('utf-8')).hexdigest() == hashed
     
     def load_all_users(self):
         """Charge tous les utilisateurs depuis le fichier"""
@@ -85,8 +116,8 @@ class WebAuth:
             logger.error(f"Erreur chargement users: {e}")
             # Retourner les utilisateurs par défaut en cas d'erreur
             return [
-                {'username': 'admin', 'password': self.hash_password('a'), 'role': 'admin'},
-                {'username': 'user', 'password': self.hash_password('a'), 'role': 'user'}
+                {'username': 'admin', 'password': self.hash_password('admin123'), 'role': 'admin'},
+                {'username': 'user', 'password': self.hash_password('user123'), 'role': 'user'}
             ]
     
     def save_all_users(self, data):
@@ -105,7 +136,7 @@ class WebAuth:
         for user in users:
             if user.get('role') == 'admin':
                 return user
-        return {'username': 'admin', 'password': self.hash_password('a'), 'role': 'admin'}
+        return {'username': 'admin', 'password': self.hash_password('admin123'), 'role': 'admin'}
     
     def save_credentials(self, username, password_hash):
         """Sauvegarde les identifiants admin (compatibilité)"""
@@ -117,18 +148,57 @@ class WebAuth:
                 break
         return self.save_all_users({'users': users})
     
-    def verify_credentials(self, username, password):
-        """Vérifie les identifiants et retourne le rôle si succès"""
+    def verify_credentials(self, username, password, client_ip=None):
+        """Vérifie les identifiants et retourne le rôle si succès
+        
+        Args:
+            username: Nom d'utilisateur
+            password: Mot de passe en clair
+            client_ip: IP du client pour rate limiting (optionnel)
+        
+        Returns:
+            tuple: (success: bool, role: str|None, must_change: bool)
+        """
+        import time
+        
+        # Rate limiting basé sur l'IP
+        if client_ip:
+            current_time = time.time()
+            if client_ip in _login_attempts:
+                attempt_info = _login_attempts[client_ip]
+                # Nettoyer si lockout expiré
+                if current_time - attempt_info['last_attempt'] > LOGIN_LOCKOUT_TIME:
+                    del _login_attempts[client_ip]
+                elif attempt_info['count'] >= MAX_LOGIN_ATTEMPTS:
+                    remaining = int(LOGIN_LOCKOUT_TIME - (current_time - attempt_info['last_attempt']))
+                    logger.warning(f"SÉCURITÉ: IP {client_ip} bloquée - trop de tentatives ({attempt_info['count']})")
+                    return False, None, False
+        
         users = self.load_all_users()
-        password_hash = self.hash_password(password)
         
         for user in users:
-            if user['username'] == username and user['password'] == password_hash:
-                logger.info(f"Connexion réussie pour l'utilisateur: {username} (role: {user.get('role', 'user')})")
-                return True, user.get('role', 'user')
+            if user['username'] == username:
+                # Utiliser verify_password pour compatibilité bcrypt/SHA256
+                if self.verify_password(password, user['password']):
+                    # Réinitialiser le compteur de tentatives
+                    if client_ip and client_ip in _login_attempts:
+                        del _login_attempts[client_ip]
+                    
+                    must_change = user.get('must_change_password', False)
+                    logger.info(f"Connexion réussie pour l'utilisateur: {username} (role: {user.get('role', 'user')})")
+                    return True, user.get('role', 'user'), must_change
         
-        logger.warning(f"Tentative de connexion échouée pour l'utilisateur: {username}")
-        return False, None
+        # Incrémenter le compteur de tentatives échouées
+        if client_ip:
+            if client_ip not in _login_attempts:
+                _login_attempts[client_ip] = {'count': 0, 'last_attempt': 0}
+            _login_attempts[client_ip]['count'] += 1
+            _login_attempts[client_ip]['last_attempt'] = time.time()
+            logger.warning(f"Tentative de connexion échouée pour: {username} depuis {client_ip} (tentative {_login_attempts[client_ip]['count']}/{MAX_LOGIN_ATTEMPTS})")
+        else:
+            logger.warning(f"Tentative de connexion échouée pour l'utilisateur: {username}")
+        
+        return False, None, False
     
     def change_credentials(self, old_password, new_username, new_password):
         """Change les identifiants admin (nécessite l'ancien mot de passe)"""
@@ -138,7 +208,7 @@ class WebAuth:
         # Trouver l'admin
         for user in users:
             if user.get('role') == 'admin':
-                if user['password'] != old_password_hash:
+                if not self.verify_password(old_password, user['password']):
                     logger.warning("Tentative de changement de credentials avec mauvais mot de passe")
                     return False, "Mot de passe actuel incorrect"
                 

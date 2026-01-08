@@ -121,6 +121,7 @@ class WebServer(QObject):
         # C'est OBLIGATOIRE pour que Socket.IO fonctionne dans PyInstaller
         # Sans ce paramètre → Erreur : "Invalid async_mode specified"
         # ═══════════════════════════════════════════════════════════════
+        # NOTE: CORS ouvert (*) pour accès réseau - Sécurité assurée par authentification
         self.socketio = SocketIO(self.app, 
                                 cors_allowed_origins="*",
                                 async_mode='threading',  # ← NE JAMAIS RETIRER !
@@ -227,19 +228,29 @@ class WebServer(QObject):
                 username = data.get('username')
                 password = data.get('password')
                 
-                success, role = web_auth.verify_credentials(username, password)
+                # Récupérer l'IP client pour le rate limiting
+                client_ip = request.remote_addr
+                
+                success, role, must_change = web_auth.verify_credentials(username, password, client_ip)
                 if success:
                     session['logged_in'] = True
                     session['username'] = username
                     session['role'] = role
                     logger.info(f"Connexion réussie: {username} (role: {role})")
-                    # Indiquer si c'est un admin pour la redirection côté client
-                    return jsonify({'success': True, 'message': 'Connexion réussie', 'role': role})
+                    # Indiquer si c'est un admin et si changement de mot de passe requis
+                    return jsonify({
+                        'success': True, 
+                        'message': 'Connexion réussie', 
+                        'role': role,
+                        'must_change_password': must_change
+                    })
                 else:
-                    return jsonify({'success': False, 'error': 'Identifiants incorrects'}), 401
+                    # Message générique pour ne pas révéler si l'utilisateur existe
+                    return jsonify({'success': False, 'error': 'Identifiants incorrects ou compte bloqué'}), 401
             except Exception as e:
                 logger.error(f"Erreur login: {e}", exc_info=True)
-                return jsonify({'success': False, 'error': str(e)}), 500
+                # Message générique en production
+                return jsonify({'success': False, 'error': 'Erreur de connexion'}), 500
         
         @self.app.route('/api/logout', methods=['POST'])
         def api_logout():
@@ -463,11 +474,38 @@ class WebServer(QObject):
         def add_hosts():
             try:
                 data = request.get_json()
-                ip = data.get('ip')
+                ip = data.get('ip', '').strip()
                 hosts = data.get('hosts', 1)
                 port = data.get('port', '80')
                 scan_type = data.get('scan_type', 'alive')
                 site = data.get('site', '')  # Site à assigner aux hôtes scannés
+                
+                # SÉCURITÉ: Validation stricte de l'IP
+                try:
+                    from src import secure_config
+                    if not secure_config.validate_ip(ip):
+                        return jsonify({'success': False, 'error': 'Adresse IP invalide'}), 400
+                except ImportError:
+                    # Fallback de validation basique
+                    import re
+                    if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
+                        return jsonify({'success': False, 'error': 'Adresse IP invalide'}), 400
+                
+                # Validation du nombre d'hôtes
+                try:
+                    hosts = int(hosts)
+                    if hosts < 1 or hosts > 255:
+                        return jsonify({'success': False, 'error': 'Nombre d\'hôtes invalide (1-255)'}), 400
+                except (ValueError, TypeError):
+                    return jsonify({'success': False, 'error': 'Nombre d\'hôtes invalide'}), 400
+                
+                # Validation du port
+                try:
+                    port_int = int(port)
+                    if port_int < 1 or port_int > 65535:
+                        return jsonify({'success': False, 'error': 'Port invalide (1-65535)'}), 400
+                except (ValueError, TypeError):
+                    return jsonify({'success': False, 'error': 'Port invalide'}), 400
                 
                 # Lancer le scan dans un thread séparé
                 import threading
@@ -477,7 +515,7 @@ class WebServer(QObject):
                     target=threadAjIp.main,
                     args=(self.main_window, self.main_window.comm, 
                           self.main_window.treeIpModel, ip, hosts, 
-                          scan_type.capitalize(), port, "", site)
+                          scan_type.capitalize(), str(port), "", site)
                 )
                 thread.start()
                 
@@ -486,7 +524,7 @@ class WebServer(QObject):
                 return jsonify({'success': True, 'message': f'Scan de {hosts} hôte(s) démarré'})
             except Exception as e:
                 logger.error(f"Erreur ajout hôtes: {e}", exc_info=True)
-                return jsonify({'success': False, 'error': str(e)}), 500
+                return jsonify({'success': False, 'error': 'Erreur lors du scan'}), 500
         
         @self.app.route('/api/start_monitoring', methods=['POST'])
         @WebAuth.login_required
@@ -941,7 +979,7 @@ class WebServer(QObject):
                         'recipients': smtp_params[4] if len(smtp_params) > 4 else ''
                     },
                     'telegram': {
-                        'token': '5584289469:AAHYRhZhDCXKE5l1v1UbLs-MUKGPoimMYAQ',
+                        'configured': bool(smtp_params[5] if len(smtp_params) > 5 else ''),
                         'chatid': smtp_params[5] if len(smtp_params) > 5 else ''
                     },
                     'general': {
@@ -1019,36 +1057,52 @@ class WebServer(QObject):
         @self.app.route('/api/save_telegram', methods=['POST'])
         @WebAuth.login_required
         def save_telegram():
+            """
+            Sauvegarde la configuration Telegram de manière sécurisée.
+            Le token est stocké dans secure_config (jamais exposé via l'API).
+            """
             try:
                 data = request.get_json()
-                from src import db
                 
                 token = data.get('token', '')
                 chatid = data.get('chatid', '')
                 
-                # Charger les paramètres mail actuels
+                # Sauvegarder le token dans le nouveau système sécurisé
+                try:
+                    from src import secure_config
+                    if token:
+                        # Convertir les chat_ids en liste
+                        chat_ids_list = [c.strip() for c in chatid.split(',') if c.strip()]
+                        secure_config.save_telegram_config(
+                            token=token,
+                            chat_ids=chat_ids_list,
+                            enabled=True
+                        )
+                        logger.info("Token Telegram sauvegardé dans secure_config")
+                except Exception as e:
+                    logger.error(f"Erreur sauvegarde secure_config Telegram: {e}")
+                
+                # Aussi sauvegarder les chat_ids dans l'ancien système pour compatibilité
+                from src import db
                 smtp_params = db.lire_param_mail()
                 if not smtp_params or len(smtp_params) < 6:
                     smtp_params = ['', '', '', '', '', '']
                 
-                # Mettre à jour le chat_id (index 5)
                 smtp_params_list = list(smtp_params)
                 if len(smtp_params_list) > 5:
                     smtp_params_list[5] = chatid
                 else:
-                    # Étendre la liste si nécessaire
                     while len(smtp_params_list) < 5:
                         smtp_params_list.append('')
                     smtp_params_list.append(chatid)
                 
-                # Sauvegarder
                 db.save_param_mail(smtp_params_list)
                 
-                logger.info(f"Configuration Telegram sauvegardée: chat_id={chatid}")
+                logger.info(f"Configuration Telegram sauvegardée: chat_ids={chatid}")
                 return jsonify({'success': True, 'message': 'Configuration Telegram sauvegardée'})
             except Exception as e:
                 logger.error(f"Erreur sauvegarde Telegram: {e}", exc_info=True)
-                return jsonify({'success': False, 'error': str(e)}), 500
+                return jsonify({'success': False, 'error': 'Erreur de sauvegarde'}), 500
         
         @self.app.route('/api/test_telegram', methods=['POST'])
         @WebAuth.login_required

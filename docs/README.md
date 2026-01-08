@@ -123,6 +123,7 @@ python3 Pingu.py
 
 | Document | Description |
 |----------|-------------|
+| [INTERFACE_WEB.md](INTERFACE_WEB.md) | Guide complet d'utilisation de l'interface web (monitoring, admin, statistiques, graphiques) |
 | [BANDWIDTH_OIDS.md](BANDWIDTH_OIDS.md) | Guide des OIDs SNMP pour la bande passante (Linux, Windows, Raspberry Pi, NAS, switches, etc.) |
 
 ## 📜 Scripts utilitaires
