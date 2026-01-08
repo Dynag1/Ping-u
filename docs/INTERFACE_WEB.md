@@ -1,5 +1,7 @@
 # 🌐 Notice d'utilisation - Interface Web Ping ü
 
+![Ping ü](../src/web/static/img/logo.png)
+
 Cette notice détaille l'utilisation de l'interface web de Ping ü pour le monitoring réseau.
 
 ---

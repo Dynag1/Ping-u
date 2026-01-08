@@ -1,5 +1,7 @@
 # 📘 Notice d'utilisation - Ping ü
 
+![Ping ü](../src/web/static/img/logo.png)
+
 **Version** : 99.02.08
 
 Ping ü est une application de monitoring réseau disponible en deux modes :

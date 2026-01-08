@@ -1,4 +1,6 @@
 # Release Note
+
+![Ping ü](src/web/static/img/logo.png)
 ## Historique des Versions
 
 ---

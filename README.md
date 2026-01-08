@@ -1,6 +1,6 @@
 # Ping ü 🌐
 
-![Ping ü](https://prog.dynag.co/PyngOuin/logoP50.png "Ping ü")
+![Ping ü](src/web/static/img/logo.png "Ping ü")
 
 [![Version](https://img.shields.io/badge/version-99.01.05-blue.svg)](https://github.com/Dynag1/ping-u)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt)

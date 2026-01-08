@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitoring Réseau - Ping ü</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         * {
@@ -15,9 +16,10 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #e4e4e4;
         }
 
         .container {
@@ -26,11 +28,12 @@
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(45, 55, 72, 0.95);
             padding: 25px 30px;
             border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .header-top {
@@ -41,7 +44,7 @@
         }
 
         .header h1 {
-            color: #333;
+            color: #e4e4e4;
             font-size: 32px;
             display: flex;
             align-items: center;
@@ -139,13 +142,13 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: #f3f4f6;
+            background: rgba(255, 255, 255, 0.1);
             padding: 6px 12px;
             border-radius: 20px;
         }
 
         .lang-selector label {
-            color: #6b7280;
+            color: #a0aec0;
             font-size: 12px;
             font-weight: 600;
         }
@@ -153,7 +156,7 @@
         .lang-selector select {
             background: transparent;
             border: none;
-            color: #374151;
+            color: #e4e4e4;
             font-weight: 600;
             font-size: 14px;
             cursor: pointer;
@@ -175,13 +178,14 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background: rgba(255, 255, 255, 0.1);
             padding: 8px 15px;
             border-radius: 25px;
             font-size: 14px;
             font-weight: 600;
-            color: #374151;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            color: #e4e4e4;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .user-icon {
@@ -189,7 +193,7 @@
         }
 
         .user-name {
-            color: #1f2937;
+            color: #e4e4e4;
         }
 
         .admin-link {
@@ -212,8 +216,8 @@
         }
 
         .logout-btn {
-            background: #fee2e2;
-            border: none;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             padding: 6px 10px;
             border-radius: 50%;
             cursor: pointer;
@@ -222,7 +226,7 @@
         }
 
         .logout-btn:hover {
-            background: #fecaca;
+            background: rgba(239, 68, 68, 0.4);
             transform: scale(1.1);
         }
 
@@ -241,21 +245,22 @@
         }
 
         .stat-card {
-            background: #f3f4f6;
+            background: rgba(255, 255, 255, 0.08);
             padding: 12px 20px;
             border-radius: 10px;
             display: flex;
             align-items: center;
             gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .stat-card .label {
-            color: #6b7280;
+            color: #a0aec0;
             font-size: 14px;
         }
 
         .stat-card .value {
-            color: #111827;
+            color: #e4e4e4;
             font-size: 20px;
             font-weight: bold;
         }
@@ -300,17 +305,19 @@
         }
 
         .host-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(45, 55, 72, 0.95);
             border-radius: 15px;
             padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid #10b981;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-left: 5px solid #10b981;
         }
 
         .host-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
         }
 
         .host-card.offline {
@@ -320,12 +327,12 @@
 
         .host-card.warning-temp {
             border-left-color: #f59e0b;
-            background: rgba(255, 251, 235, 0.98);
+            background: rgba(60, 55, 45, 0.95);
         }
 
         .host-card.high-temp {
             border-left-color: #ef4444;
-            background: rgba(254, 242, 242, 0.98);
+            background: rgba(60, 45, 45, 0.95);
         }
 
         .detail-value.temp-warning {
@@ -344,13 +351,13 @@
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #e5e7eb;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .host-name {
             font-size: 18px;
             font-weight: bold;
-            color: #111827;
+            color: #e4e4e4;
             word-break: break-word;
             flex: 1;
         }
@@ -402,7 +409,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            background: #f9fafb;
+            background: rgba(0, 0, 0, 0.2);
             padding: 15px;
             border-radius: 8px;
         }
@@ -414,7 +421,7 @@
         }
 
         .detail-label {
-            color: #6b7280;
+            color: #a0aec0;
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -422,7 +429,7 @@
         }
 
         .detail-value {
-            color: #111827;
+            color: #e4e4e4;
             font-size: 13px;
             font-weight: 500;
             word-break: break-all;
@@ -431,19 +438,20 @@
         .no-hosts {
             text-align: center;
             padding: 60px 20px;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(45, 55, 72, 0.95);
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .no-hosts h2 {
-            color: #6b7280;
+            color: #a0aec0;
             font-size: 24px;
             margin-bottom: 10px;
         }
 
         .no-hosts p {
-            color: #9ca3af;
+            color: #718096;
             font-size: 16px;
         }
 
@@ -509,13 +517,13 @@
         .comment-item {
             grid-column: span 2;
             margin-top: 8px;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             padding-top: 8px;
         }
 
         .comment-input {
             width: 100%;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 4px;
             padding: 8px;
             font-size: 13px;
@@ -523,16 +531,20 @@
             min-height: 50px;
             font-family: inherit;
             transition: all 0.2s;
-            background: #ffffff;
-            color: #374151;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+            background: rgba(0, 0, 0, 0.3);
+            color: #e4e4e4;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .comment-input:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.05);
-            background: #fff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .comment-input::placeholder {
+            color: #718096;
         }
 
         /* ==================== Menu Hamburger & Panneau Latéral ==================== */
@@ -564,9 +576,9 @@
             left: -340px;
             width: 320px;
             height: 100%;
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(30, 41, 59, 0.98);
             backdrop-filter: blur(20px);
-            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
             z-index: 999;
             transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
@@ -618,7 +630,7 @@
         /* Sections du menu */
         .menu-section {
             padding: 18px 25px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .menu-section:last-child {
@@ -628,7 +640,7 @@
         .menu-section-title {
             font-size: 13px;
             font-weight: 700;
-            color: #6b7280;
+            color: #a0aec0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 12px;
@@ -639,10 +651,11 @@
 
         /* User info dans le menu */
         .menu-section .user-info-badge {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background: rgba(255, 255, 255, 0.1);
             padding: 12px 15px;
             border-radius: 12px;
             margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .menu-user-actions {
@@ -665,10 +678,10 @@
             justify-content: center;
             gap: 8px;
             padding: 10px 15px;
-            background: #fee2e2;
-            border: none;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             border-radius: 10px;
-            color: #991b1b;
+            color: #fca5a5;
             font-weight: 600;
             font-size: 13px;
             cursor: pointer;
@@ -676,7 +689,7 @@
         }
 
         .logout-btn-menu:hover {
-            background: #fecaca;
+            background: rgba(239, 68, 68, 0.3);
             transform: scale(1.02);
         }
 
@@ -685,10 +698,11 @@
             width: 100%;
             padding: 12px 15px;
             border-radius: 10px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             font-size: 14px;
             font-weight: 500;
-            background: white;
+            background: rgba(0, 0, 0, 0.3);
+            color: #e4e4e4;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -696,7 +710,12 @@
         .menu-select:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .menu-select option {
+            background: #1e293b;
+            color: #e4e4e4;
         }
 
         .menu-section .site-filter-select {
@@ -736,11 +755,11 @@
             gap: 10px;
             padding: 10px 14px;
             border-radius: 10px;
-            background: #f3f4f6;
+            background: rgba(0, 0, 0, 0.3);
         }
 
         .stat-card-menu .label {
-            color: #6b7280;
+            color: #a0aec0;
             font-size: 13px;
             flex: 1;
         }
@@ -796,25 +815,27 @@
             width: 100%;
             padding: 12px 15px;
             border-radius: 10px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             font-size: 14px;
-            background: white;
+            background: rgba(0, 0, 0, 0.3);
+            color: #e4e4e4;
         }
 
         /* Header minimaliste */
         .header-minimal {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(45, 55, 72, 0.95);
             padding: 15px 25px;
             border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             margin-bottom: 25px;
             display: flex;
             align-items: center;
             gap: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .main-title {
-            color: #333;
+            color: #e4e4e4;
             font-size: 26px;
             display: flex;
             align-items: center;
@@ -878,10 +899,11 @@
             align-items: center;
             gap: 6px;
             padding: 8px 14px;
-            background: #f3f4f6;
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 20px;
             font-weight: 700;
             font-size: 14px;
+            color: #e4e4e4;
         }
 
         .mini-stat.online span {
@@ -1056,7 +1078,9 @@
                 <span class="hamburger-line"></span>
             </button>
             <h1 class="main-title">
-                🌐 <span data-i18n="title">Monitoring Réseau - Ping ü</span>
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Ping ü"
+                    style="height: 40px; width: auto; vertical-align: middle;">
+                <span data-i18n="title">Monitoring Réseau - Ping ü</span>
             </h1>
             <!-- Mini stats visibles sur la page principale -->
             <div class="mini-stats">
