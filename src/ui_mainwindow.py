@@ -102,8 +102,8 @@ class Ui_MainWindow(object):
         self.label_7.setObjectName(u"label_7")
         self.label_7.setMinimumSize(QSize(50, 50))
         self.label_7.setMaximumSize(QSize(50, 50))
-        self.label_7.setText(u"")
-        self.label_7.setPixmap(QPixmap(u"img/logoP.png"))
+        self.label_7.setText("")
+        self.label_7.setPixmap(QPixmap(u"src/img/logoP.png"))
         self.label_7.setScaledContents(True)
         self.label_7.setAlignment(Qt.AlignmentFlag.AlignCenter)
 

@@ -1,5 +1,7 @@
 # 📚 Documentation Ping ü
 
+![Ping ü](../src/web/static/img/logo.png)
+
 Bienvenue dans la documentation de **Ping ü** - Application de monitoring réseau.
 
 ---

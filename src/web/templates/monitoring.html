@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitoring - Ping ü</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
     <style>
         * {
             margin: 0;
@@ -38,8 +39,15 @@
 
         .header h1 {
             font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 span {
             background: linear-gradient(135deg, #667eea, #764ba2);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -258,7 +266,11 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📈 Monitoring Graphiques</h1>
+            <h1>
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Ping ü"
+                    style="height: 40px; width: auto;">
+                <span>Monitoring Graphiques</span>
+            </h1>
             <div class="header-actions">
                 <a href="/statistics" class="btn btn-secondary">📊 Statistiques</a>
                 <a href="/" class="btn btn-secondary">🖥️ Monitoring</a>

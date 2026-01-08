@@ -1,5 +1,7 @@
 # 🔐 Rapport d'Audit de Sécurité - Ping ü
 
+![Ping ü](../src/web/static/img/logo.png)
+
 **Date d'audit** : 2026-01-08  
 **Version auditée** : 99.02.08 (post-corrections)  
 **Auditeur** : Audit automatisé complet  
