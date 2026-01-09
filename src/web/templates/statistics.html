@@ -391,10 +391,11 @@
         }
 
         .host-stat {
-            background: #f9fafb;
+            background: rgba(0, 0, 0, 0.2);
             padding: 15px;
             border-radius: 10px;
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .host-stat .value {
@@ -405,15 +406,16 @@
 
         .host-stat .label {
             font-size: 12px;
-            color: #6b7280;
+            color: #a0aec0;
         }
 
         /* Timeline Chart */
         .timeline-container {
             margin: 20px 0;
             padding: 15px;
-            background: #f9fafb;
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .timeline-header {
@@ -421,16 +423,16 @@
             justify-content: space-between;
             margin-bottom: 10px;
             font-size: 12px;
-            color: #6b7280;
+            color: #a0aec0;
         }
 
         .timeline-chart {
             position: relative;
             height: 40px;
-            background: linear-gradient(to right, #d1fae5 0%, #d1fae5 100%);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 6px;
             overflow: hidden;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .timeline-bar {
@@ -472,6 +474,7 @@
             gap: 15px;
             margin-top: 10px;
             font-size: 12px;
+            color: #a0aec0;
         }
 
         .legend-item {
@@ -859,7 +862,7 @@
 
             if (events && events.length > 0) {
                 html += `
-                    <h4 style="margin: 20px 0 15px; color: #374151;">Historique des événements</h4>
+                    <h4 style="margin: 20px 0 15px; color: #e4e4e4;">Historique des événements</h4>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -928,7 +931,7 @@
 
             return `
                 <div class="timeline-container">
-                    <h4 style="margin-bottom: 10px; color: #374151;">📈 Timeline des déconnexions</h4>
+                    <h4 style="margin-bottom: 10px; color: #e4e4e4;">📈 Timeline des déconnexions</h4>
                     <div class="timeline-header">
                         <span>${startStr}</span>
                         <span>${endStr}</span>

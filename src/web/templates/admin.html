@@ -623,11 +623,20 @@
         }
 
         /* Selects dans les tables */
+        /* Selects dans les tables */
+        select {
+            background-color: rgba(0, 0, 0, 0.3) !important;
+            color: #e4e4e4 !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
+
         .hosts-table select {
             padding: 6px 10px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 6px;
-            background: rgba(0, 0, 0, 0.3);
+            background-color: rgba(0, 0, 0, 0.3);
             color: #e4e4e4;
             font-size: 13px;
             cursor: pointer;
@@ -636,10 +645,11 @@
         .hosts-table select:focus {
             outline: none;
             border-color: #667eea;
+            background-color: rgba(0, 0, 0, 0.5);
         }
 
         .hosts-table select option {
-            background: #1a1a2e;
+            background-color: #1a1a2e;
             color: #e4e4e4;
         }
 
@@ -797,7 +807,7 @@
         }
 
         .accordion-header {
-            background: #f3f4f6;
+            background: rgba(0, 0, 0, 0.2);
             padding: 15px 20px;
             border-radius: 8px;
             cursor: pointer;
@@ -806,25 +816,30 @@
             align-items: center;
             transition: background 0.3s;
             font-weight: 600;
-            color: #374151;
+            color: #a0aec0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .accordion-header:hover {
-            background: #e5e7eb;
+            background: rgba(255, 255, 255, 0.05);
+            color: #e4e4e4;
         }
 
         .accordion-header.active {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-radius: 8px 8px 0 0;
+            border: none;
         }
 
         .accordion-content {
             display: none;
             padding: 20px;
-            background: #f9fafb;
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 0 0 8px 8px;
             margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
         }
 
         .accordion-content.active {
@@ -1528,7 +1543,9 @@
         }
 
         .sites-content {
-            background: #fdfeff;
+            background: rgba(45, 55, 72, 0.4);
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
         }
 
         .sites-controls-grid {
@@ -1539,9 +1556,9 @@
         }
 
         .site-control-card {
-            background: white;
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             overflow: hidden;
             transition: all 0.3s ease;
             display: flex;
@@ -1549,15 +1566,15 @@
         }
 
         .site-control-card:hover {
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             transform: translateY(-2px);
             border-color: #667eea;
         }
 
         .control-card-header {
             padding: 15px 20px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e5e7eb;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             gap: 15px;
@@ -1574,26 +1591,26 @@
         }
 
         .control-icon.monitor-icon {
-            background: #d1fae5;
-            color: #065f46;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
         }
 
         .control-icon.filter-icon {
-            background: #dbeafe;
-            color: #1e40af;
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
         }
 
         .control-info h3 {
             margin: 0;
             font-size: 15px;
-            color: #1e293b;
+            color: #e4e4e4;
             font-weight: 600;
         }
 
         .control-info p {
             margin: 2px 0 0;
             font-size: 12px;
-            color: #64748b;
+            color: #a0aec0;
         }
 
         .control-card-body {
@@ -1607,19 +1624,19 @@
         .site-multiselect {
             width: 100%;
             padding: 10px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            background: #f8fafc;
+            background: rgba(0, 0, 0, 0.2);
             min-height: 100px;
             font-size: 14px;
-            color: #334155;
+            color: #e4e4e4;
             transition: all 0.2s;
         }
 
         .site-multiselect:focus {
             outline: none;
             border-color: #667eea;
-            background: white;
+            background: rgba(0, 0, 0, 0.4);
         }
 
         .control-actions {
@@ -1653,21 +1670,21 @@
         }
 
         .control-btn.reset-btn {
-            background: #e2e8f0;
-            color: #475569;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e4e4e4;
         }
 
         .control-btn.reset-btn:hover {
-            background: #cbd5e1;
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .add-site-form {
             display: flex;
             gap: 10px;
-            background: white;
+            background: rgba(0, 0, 0, 0.2);
             padding: 6px;
             border-radius: 12px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
@@ -1678,6 +1695,8 @@
             border-radius: 8px;
             font-size: 14px;
             outline: none;
+            background: transparent;
+            color: #e4e4e4;
         }
 
         .add-site-btn {
@@ -1700,9 +1719,9 @@
         }
 
         .sites-list-section {
-            background: white;
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 20px;
         }
 
@@ -1712,12 +1731,12 @@
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .sites-count-badge {
-            background: #f1f5f9;
-            color: #64748b;
+            background: rgba(102, 126, 234, 0.2);
+            color: #a0aec0;
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 12px;
@@ -1732,8 +1751,8 @@
         }
 
         .site-tag-premium {
-            background: white;
-            border: 1px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 8px 12px;
             border-radius: 10px;
             display: flex;
@@ -1775,7 +1794,7 @@
         }
 
         .site-tag-name {
-            color: #374151;
+            color: #e4e4e4;
         }
 
         .site-tag-delete {
@@ -1980,7 +1999,7 @@
         <div id="modal-change-password"
             style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
             <div
-                style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+                style="background: rgba(26, 32, 44, 0.98); padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.1);">
                 <h2 style="margin-bottom: 20px; color: #333;" data-i18n="manage_users_title">👥 Gestion des
                     Utilisateurs
                 </h2>
@@ -1993,7 +2012,7 @@
                         👑 <span data-i18n="admin_user">Administrateur</span>
                     </button>
                     <button type="button" class="user-tab" data-tab="user" onclick="switchUserTab('user')"
-                        style="padding: 10px 20px; border: 1px solid #e5e7eb; background: white; color: #374151; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        style="padding: 10px 20px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.3); color: #e4e4e4; border-radius: 8px; cursor: pointer; font-weight: 600;">
                         👤 <span data-i18n="standard_user">Utilisateur</span>
                     </button>
                 </div>
@@ -2267,7 +2286,7 @@
                                                 <div
                                                     style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px;">
                                                     <label class="scan-option-card"
-                                                        style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                                        style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.2); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                                                         <input type="checkbox" id="scan-type-hik" value="hik" checked
                                                             style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
                                                         <span style="font-weight: 500; font-size: 15px;">📹
@@ -2275,7 +2294,7 @@
                                                     </label>
 
                                                     <label class="scan-option-card"
-                                                        style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                                        style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.2); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                                                         <input type="checkbox" id="scan-type-dahua" value="dahua"
                                                             checked
                                                             style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
@@ -2284,7 +2303,7 @@
                                                     </label>
 
                                                     <label class="scan-option-card"
-                                                        style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                                        style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.2); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                                                         <input type="checkbox" id="scan-type-onvif" value="onvif"
                                                             checked
                                                             style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
@@ -3502,13 +3521,16 @@
                         </div>
                     `;
                         } else {
-                            sitesList_container.innerHTML = sitesList.map((site, index) => `
-                        <div class="site-tag-premium" style="animation-delay: ${index * 0.05}s;">
-                            <div class="site-tag-icon">🏢</div>
-                            <span class="site-tag-name">${escapeHtml(site)}</span>
+                            sitesList_container.innerHTML = sitesList.map((site, index) => {
+                                const colors = getSiteColor(site);
+                                return `
+                        <div class="site-tag-premium" style="animation-delay: ${index * 0.05}s; background: ${colors.badge}; border-color: ${colors.border};">
+                            <div class="site-tag-icon" style="background: linear-gradient(135deg, ${colors.text}, ${colors.bg});">🏢</div>
+                            <span class="site-tag-name" style="color: ${colors.text};">${escapeHtml(site)}</span>
                             <button class="site-tag-delete" onclick="deleteSite('${escapeHtml(site)}')" title="${t('delete') || 'Supprimer'}">✕</button>
                         </div>
-                    `).join('');
+                    `;
+                            }).join('');
                         }
                     }
 
@@ -3743,12 +3765,12 @@
                 }
 
                 // ==================== Socket Events ====================
-                socket.on('connect', function () {
+                socket.on('connect', async function () {
                     console.log('✅ Connected to server');
-                    loadSites();
+                    await loadSites();  // Attendre le chargement des sites
                     loadSettings();
                     loadLocalIp();
-                    socket.emit('request_update');
+                    socket.emit('request_update');  // Demander les hôtes APRÈS avoir chargé les sites
                 });
 
                 socket.on('disconnect', function () {
@@ -3925,7 +3947,13 @@
                         return;
                     }
 
-                    tbody.innerHTML = hosts.map(host => `
+                    // Debug: vérifier si les sites sont bien reçus
+                    console.log('Sites présents dans les données:', hosts.filter(h => h.site).map(h => `${h.ip} -> ${h.site}`));
+                    console.log('sitesList disponibles:', sitesList);
+
+                    tbody.innerHTML = hosts.map(host => {
+                        const siteColors = host.site ? getSiteColor(host.site) : { bg: 'rgba(0, 0, 0, 0.3)', text: '#e4e4e4', border: 'rgba(255, 255, 255, 0.2)' };
+                        return `
                     <tr>
                         <td><strong>${escapeHtml(host.ip)}</strong></td>
                         <td>
@@ -3954,9 +3982,12 @@
                         </td>
                         <td>
                             <select class="site-select" onchange="setHostSite('${host.ip}', this.value)"
-                                style="padding: 5px 10px; border-radius: 15px; border: 1px solid #d1d5db; background: ${host.site ? '#ecfdf5' : '#f9fafb'}; font-size: 12px; cursor: pointer;">
+                                style="padding: 5px 10px; border-radius: 15px; border: 1px solid ${siteColors.border} !important; background-color: ${siteColors.bg} !important; color: ${siteColors.text} !important; font-size: 12px; cursor: pointer; -webkit-appearance: none; appearance: none; text-align: center;">
                                 <option value="" ${!host.site ? 'selected' : ''}>- ${t('no_site') || 'Aucun'} -</option>
-                                ${sitesList.map(site => `<option value="${escapeHtml(site)}" ${host.site === site ? 'selected' : ''}>${escapeHtml(site)}</option>`).join('')}
+                                ${sitesList.map(site => {
+                            const isSelected = (host.site && host.site === site);
+                            return `<option value="${escapeHtml(site)}" ${isSelected ? 'selected' : ''}>${escapeHtml(site)}</option>`;
+                        }).join('')}
                             </select>
                         </td>
                         <td>
@@ -3984,7 +4015,8 @@
                             </button>
                         </td>
                     </tr>
-                    `).join('');
+                    `;
+                    }).join('');
                 }
 
                 // ==================== API Functions ====================
@@ -4647,6 +4679,26 @@
                     div.textContent = text;
                     return div.innerHTML;
                 }
+
+                // Génère une couleur unique par site basée sur son nom
+                function getSiteColor(siteName) {
+                    if (!siteName) return { bg: 'rgba(0, 0, 0, 0.3)', text: '#e4e4e4', badge: 'rgba(102, 126, 234, 0.2)' };
+
+                    let hash = 0;
+                    for (let i = 0; i < siteName.length; i++) {
+                        hash = siteName.charCodeAt(i) + ((hash << 5) - hash);
+                    }
+
+                    const hue = Math.abs(hash % 360);
+
+                    return {
+                        bg: `hsla(${hue}, 60%, 25%, 0.4)`,
+                        text: `hsl(${hue}, 70%, 65%)`,
+                        badge: `hsla(${hue}, 70%, 50%, 0.25)`,
+                        border: `hsla(${hue}, 60%, 50%, 0.3)`
+                    };
+                }
+
 
                 function getLatencyClass(latence) {
                     if (!latence || latence === '-') return 'offline';
