@@ -197,8 +197,12 @@ class AsyncPingWorker(QThread):
 
         latency = 500.0  # Valeur par défaut (Timeout/Erreur)
         
+        # Log pour debug: voir toutes les IPs/URLs traitées
+        logger.info(f"[PING] Traitement de: {ip}")
+        
         # Détecter si c'est un site web (URL) au lieu d'une IP
         is_website = self._is_url(ip)
+        logger.info(f"[PING] {ip} → is_website={is_website}, HTTP_AVAILABLE={HTTP_CHECKER_AVAILABLE}, http_checker={http_checker is not None}")
         
         if is_website and HTTP_CHECKER_AVAILABLE and http_checker:
             # Mode site web: utiliser HTTP checker
