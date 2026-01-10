@@ -6,12 +6,15 @@ import src.var as var
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
 
+# Initialize logger first
+logger = get_logger(__name__)
+
 # Import HTTP Checker pour la surveillance de sites web
 try:
     from src.utils.http_checker import http_checker
     HTTP_CHECKER_AVAILABLE = True
+    logger.info("HTTP Checker chargé avec succès pour la surveillance de sites web")
 except ImportError as e:
-    logger = get_logger(__name__)
     logger.warning(f"HTTP checker non disponible: {e}")
     http_checker = None
     HTTP_CHECKER_AVAILABLE = False
@@ -199,19 +202,21 @@ class AsyncPingWorker(QThread):
         
         if is_website and HTTP_CHECKER_AVAILABLE and http_checker:
             # Mode site web: utiliser HTTP checker
+            logger.info(f"Détection site web pour: {ip}, HTTP_CHECKER_AVAILABLE={HTTP_CHECKER_AVAILABLE}")
             try:
                 result = await http_checker.check_website(ip)
+                logger.info(f"Résultat HTTP check pour {ip}: {result}")
                 
                 if result['success']:
                     # Site accessible, utiliser le temps de réponse
                     latency = result['response_time_ms']  # Déjà en ms
-                    logger.debug(f"Site web {ip}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
+                    logger.info(f"✓ Site web {ip}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
                 else:
                     # Site inaccessible
                     latency = 500.0
-                    logger.debug(f"Site web {ip} inaccessible: {result.get('error', 'Unknown')}")
+                    logger.warning(f"✗ Site web {ip} inaccessible: {result.get('error', 'Unknown')}")
             except Exception as e:
-                logger.error(f"Erreur check HTTP {ip}: {e}")
+                logger.error(f"Erreur check HTTP {ip}: {e}", exc_info=True)
                 latency = 500.0
         else:
             # Mode ICMP classique pour les IP
