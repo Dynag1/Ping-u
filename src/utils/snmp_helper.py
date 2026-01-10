@@ -1128,6 +1128,184 @@ class SNMPHelper:
             self._working_oids.clear()
             logger.debug("Cache SNMP vidé")
     
+    async def get_all_interfaces(self, ip, filter_inactive=True):
+        """
+        Récupère la liste de toutes les interfaces réseau d'un équipement via SNMP.
+        
+        Args:
+            ip: Adresse IP de l'équipement
+            filter_inactive: Si True, filtre les interfaces down et virtuelles (loopback, VLAN, etc.)
+            
+        Returns:
+            List[dict]: Liste des interfaces avec leurs propriétés
+                [{'index': int, 'name': str, 'status': str, 'speed_mbps': float, 'type': int}, ...]
+                ou None si échec
+        """
+        if not SNMP_AVAILABLE:
+            return None
+        
+        # Test préalable : SNMP est-il activé ?
+        snmp_enabled = await self.is_snmp_enabled(ip)
+        if not snmp_enabled:
+            return None
+        
+        interfaces = []
+        snmp_engine = None
+        
+        try:
+            from pysnmp.hlapi.asyncio import nextCmd, ObjectIdentity, ObjectType
+            
+            snmp_engine = SnmpEngine()
+            
+            # OIDs à récupérer pour chaque interface
+            oid_ifDescr = '1.3.6.1.2.1.2.2.1.2'
+            oid_ifOperStatus = '1.3.6.1.2.1.2.2.1.8'
+            oid_ifHighSpeed = '1.3.6.1.2.1.31.1.1.1.15'
+            oid_ifSpeed = '1.3.6.1.2.1.2.2.1.5'
+            oid_ifType = '1.3.6.1.2.1.2.2.1.3'
+            
+            # Interroger les interfaces de 1 à 64 (couvre la plupart des switches)
+            # Cette approche évite les problèmes avec nextCmd et les async generators
+            for interface_index in range(1, 65):
+                try:
+                    # Récupérer les infos pour cette interface
+                    name = await self._query_oid(ip, f'{oid_ifDescr}.{interface_index}', return_type='string')
+                    if not name or name == 'No Such Instance':
+                        continue  # Interface n'existe pas
+                    
+                    oper_status_val = await self._query_oid(ip, f'{oid_ifOperStatus}.{interface_index}', return_type='numeric')
+                    if_type = await self._query_oid(ip, f'{oid_ifType}.{interface_index}', return_type='numeric')
+                    speed_mbps = await self._query_oid(ip, f'{oid_ifHighSpeed}.{interface_index}', return_type='numeric')
+                    
+                    # Si ifHighSpeed n'est pas disponible, essayer ifSpeed
+                    if not speed_mbps or speed_mbps == 0:
+                        speed_bps = await self._query_oid(ip, f'{oid_ifSpeed}.{interface_index}', return_type='numeric')
+                        if speed_bps:
+                            speed_mbps = float(speed_bps) / 1_000_000
+                        else:
+                            speed_mbps = 0.0
+                    
+                    # Conversion du statut
+                    status = 'up' if oper_status_val == 1 else 'down' if oper_status_val == 2 else 'unknown'
+                    
+                    # Filtrage optionnel
+                    if filter_inactive:
+                        # Ignorer les interfaces down
+                        if status == 'down':
+                            continue
+                        
+                        # Ignorer les interfaces virtuelles communes
+                        # Type 24 = softwareLoopback, Type 131 = tunnel, Type 136 = l2vlan
+                        if if_type and if_type in [24, 131, 136, 53]:  # 53 = propVirtual
+                            continue
+                        
+                        # Ignorer les noms d'interfaces virtuelles communes
+                        name_lower = name.lower()
+                        if any(x in name_lower for x in ['loopback', 'null', 'vlan', 'tunnel', 'console']):
+                            continue
+                    
+                    interfaces.append({
+                        'index': interface_index,
+                        'name': name,
+                        'status': status,
+                        'speed_mbps': round(float(speed_mbps) if speed_mbps else 0.0, 1),
+                        'type': int(if_type) if if_type else 0
+                    })
+                    
+                except Exception as e:
+                    # Interface non disponible ou erreur, continuer avec la suivante
+                    continue
+
+            
+            if interfaces:
+                logger.debug(f"Récupéré {len(interfaces)} interface(s) pour {ip}")
+                return interfaces
+            else:
+                logger.debug(f"Aucune interface trouvée pour {ip}")
+                return []
+                
+        except Exception as e:
+            logger.debug(f"Erreur récupération interfaces pour {ip}: {e}")
+            return None
+        finally:
+            # Fermeture propre du SnmpEngine
+            if snmp_engine is not None:
+                try:
+                    if snmp_engine.transportDispatcher:
+                        snmp_engine.transportDispatcher.closeDispatcher()
+                        try:
+                            for transport_domain in list(snmp_engine.transportDispatcher.transports.keys()):
+                                snmp_engine.transportDispatcher.unregisterTransport(transport_domain)
+                        except:
+                            pass
+                except Exception:
+                    pass
+    
+    async def get_all_ports_bandwidth(self, ip, interface_indices=None):
+        """
+        Récupère les débits de plusieurs interfaces simultanément via SNMP.
+        
+        Args:
+            ip: Adresse IP de l'équipement
+            interface_indices: Liste des index d'interfaces à interroger, ou None pour toutes les interfaces actives
+            
+        Returns:
+            dict: Débits par interface {interface_index: {'in_mbps': float, 'out_mbps': float, 'timestamp': float}}
+                  ou None si échec
+        """
+        if not SNMP_AVAILABLE:
+            return None
+        
+        # Test préalable : SNMP est-il activé ?
+        snmp_enabled = await self.is_snmp_enabled(ip)
+        if not snmp_enabled:
+            return None
+        
+        # Si aucune interface spécifiée, récupérer toutes les interfaces actives
+        if interface_indices is None:
+            interfaces = await self.get_all_interfaces(ip, filter_inactive=True)
+            if not interfaces:
+                return None
+            interface_indices = [iface['index'] for iface in interfaces]
+        
+        if not interface_indices:
+            return None
+        
+        results = {}
+        import time
+        timestamp = time.time()
+        
+        try:
+            # Pour chaque interface, récupérer les compteurs IN/OUT
+            for idx in interface_indices:
+                # Essayer d'abord les compteurs 64 bits (High Capacity)
+                oid_in_hc = f'1.3.6.1.2.1.31.1.1.1.6.{idx}'   # ifHCInOctets
+                oid_out_hc = f'1.3.6.1.2.1.31.1.1.1.10.{idx}'  # ifHCOutOctets
+                
+                octets_in = await self._query_oid(ip, oid_in_hc, return_type='numeric')
+                octets_out = await self._query_oid(ip, oid_out_hc, return_type='numeric')
+                
+                # Si échec, essayer les compteurs 32 bits standards
+                if octets_in is None or octets_out is None:
+                    oid_in = f'1.3.6.1.2.1.2.2.1.10.{idx}'   # ifInOctets
+                    oid_out = f'1.3.6.1.2.1.2.2.1.16.{idx}'  # ifOutOctets
+                    octets_in = await self._query_oid(ip, oid_in, return_type='numeric')
+                    octets_out = await self._query_oid(ip, oid_out, return_type='numeric')
+                
+                if octets_in is not None and octets_out is not None:
+                    results[idx] = {
+                        'in': int(octets_in),
+                        'out': int(octets_out),
+                        'timestamp': timestamp
+                    }
+            
+            logger.debug(f"Récupéré les débits de {len(results)} interface(s) pour {ip}")
+            return results if results else None
+            
+        except Exception as e:
+            logger.debug(f"Erreur récupération débits multi-ports pour {ip}: {e}")
+            return None
+    
     def get_cache_stats(self):
         """Retourne des statistiques sur le cache SNMP (utile pour le debug)"""
         return {

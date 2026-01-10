@@ -441,32 +441,51 @@
             background: #ef4444;
             opacity: 0.8;
             min-width: 2px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
         }
 
         .timeline-bar:hover {
             opacity: 1;
             z-index: 10;
+            transform: scaleY(1.1);
         }
 
-        .timeline-bar::after {
-            content: attr(data-tooltip);
+        /* Tooltip for timeline bars */
+        .timeline-tooltip {
             position: absolute;
-            bottom: 100%;
+            bottom: calc(100% + 12px);
             left: 50%;
             transform: translateX(-50%);
-            background: #1f2937;
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
             white-space: nowrap;
-            opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 1000;
+            font-weight: 600;
+            display: none;
         }
 
-        .timeline-bar:hover::after {
-            opacity: 1;
+        .timeline-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #1f2937;
+        }
+
+        .timeline-bar:hover .timeline-tooltip {
+            display: block;
         }
 
         .timeline-legend {
@@ -634,6 +653,23 @@
             </div>
         </div>
     </div>
+
+    <!-- Global Tooltip for Timeline -->
+    <div id="global-tooltip" style="
+        position: fixed;
+        display: none;
+        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        z-index: 10000;
+        pointer-events: none;
+    "></div>
 
     <script>
         // State
@@ -885,7 +921,48 @@
             }
 
             container.innerHTML = html;
+
+            // Setup tooltips for timeline bars after rendering
+            setupTimelineTooltips();
         }
+
+        function setupTimelineTooltips() {
+            const tooltip = document.getElementById('global-tooltip');
+            const timeline = document.querySelector('.timeline-chart');
+
+            if (!timeline) return;
+
+            const bars = timeline.querySelectorAll('.timeline-bar');
+
+            bars.forEach(bar => {
+                bar.addEventListener('mouseenter', (e) => {
+                    const duration = bar.dataset.duration;
+                    const date = bar.dataset.date;
+                    const time = bar.dataset.time;
+
+                    tooltip.innerHTML = `⏱️ Durée: <strong>${duration}</strong> | 🔻 ${date} ${time}`;
+                    tooltip.style.display = 'block';
+
+                    // Position tooltip above the bar
+                    const rect = bar.getBoundingClientRect();
+                    tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+                    tooltip.style.top = (rect.top - 10) + 'px';
+                    tooltip.style.transform = 'translate(-50%, -100%)';
+                });
+
+                bar.addEventListener('mouseleave', () => {
+                    tooltip.style.display = 'none';
+                });
+
+                bar.addEventListener('mousemove', (e) => {
+                    // Update position as mouse moves (for better UX)
+                    const rect = bar.getBoundingClientRect();
+                    tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+                    tooltip.style.top = (rect.top - 10) + 'px';
+                });
+            });
+        }
+
 
         function renderTimeline(events, days) {
             const now = new Date();
@@ -923,8 +1000,13 @@
 
                     if (startPos < 100 && endPos > 0) {
                         const duration = Math.round((reconnectTime - disconnectTime) / 1000);
-                        const tooltip = `${disconnectTime.toLocaleString('fr-FR')} - ${formatDuration(duration)}`;
-                        bars += `<div class="timeline-bar" style="left: ${startPos}%; width: ${width}%;" data-tooltip="${tooltip}"></div>`;
+                        const durationStr = formatDuration(duration);
+                        const startTimeStr = disconnectTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                        const startDateStr = disconnectTime.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+
+                        // Tooltip avec durée mise en évidence
+                        const tooltip = `⏱️ Durée: ${durationStr} | 🔻 ${startDateStr} ${startTimeStr}`;
+                        bars += `<div class="timeline-bar" style="left: ${startPos}%; width: ${width}%;" data-duration="${durationStr}" data-date="${startDateStr}" data-time="${startTimeStr}"></div>`;
                     }
                 }
             }
