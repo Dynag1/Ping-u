@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 try:
     from src.utils.http_checker import http_checker
     HTTP_CHECKER_AVAILABLE = True
-    logger.info("HTTP Checker chargé avec succès pour la surveillance de sites web")
+    logger.debug("HTTP Checker chargé avec succès pour la surveillance de sites web")
 except ImportError as e:
     logger.warning(f"HTTP checker non disponible: {e}")
     http_checker = None
@@ -197,30 +197,24 @@ class AsyncPingWorker(QThread):
 
         latency = 500.0  # Valeur par défaut (Timeout/Erreur)
         
-        # Log pour debug: voir toutes les IPs/URLs traitées
-        logger.info(f"[PING] Traitement de: {ip}")
-        
         # Détecter si c'est un site web (URL) au lieu d'une IP
         is_website = self._is_url(ip)
-        logger.info(f"[PING] {ip} → is_website={is_website}, HTTP_AVAILABLE={HTTP_CHECKER_AVAILABLE}, http_checker={http_checker is not None}")
         
         if is_website and HTTP_CHECKER_AVAILABLE and http_checker:
             # Mode site web: utiliser HTTP checker
-            logger.info(f"Détection site web pour: {ip}, HTTP_CHECKER_AVAILABLE={HTTP_CHECKER_AVAILABLE}")
             try:
                 result = await http_checker.check_website(ip)
-                logger.info(f"Résultat HTTP check pour {ip}: {result}")
                 
                 if result['success']:
                     # Site accessible, utiliser le temps de réponse
                     latency = result['response_time_ms']  # Déjà en ms
-                    logger.info(f"✓ Site web {ip}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
+                    logger.debug(f"Site web {ip}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
                 else:
                     # Site inaccessible
                     latency = 500.0
-                    logger.warning(f"✗ Site web {ip} inaccessible: {result.get('error', 'Unknown')}")
+                    logger.debug(f"Site web {ip} inaccessible: {result.get('error', 'Unknown')}")
             except Exception as e:
-                logger.error(f"Erreur check HTTP {ip}: {e}", exc_info=True)
+                logger.error(f"Erreur check HTTP {ip}: {e}")
                 latency = 500.0
         else:
             # Mode ICMP classique pour les IP

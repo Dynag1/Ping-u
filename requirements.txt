@@ -13,6 +13,7 @@ requests>=2.31.0
 cryptography>=41.0.0
 urllib3>=2.0.0
 bcrypt>=4.0.0  # Sécurité: hachage mots de passe
+aiohttp>=3.8.0  # Surveillance HTTP/HTTPS de sites web
 
 # --- Excel / XML ---
 openpyxl>=3.1.0

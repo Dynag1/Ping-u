@@ -307,7 +307,7 @@
         .host-card {
             background: rgba(45, 55, 72, 0.95);
             border-radius: 15px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             border-left: 5px solid #10b981;
@@ -349,23 +349,30 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .host-name {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #e4e4e4;
             word-break: break-word;
             flex: 1;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .host-name:hover {
+            color: #667eea;
+            text-decoration: underline;
         }
 
         .host-status {
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             white-space: nowrap;
@@ -398,19 +405,15 @@
         }
 
         .host-ip {
-            font-size: 20px;
-            color: #667eea;
-            font-weight: bold;
-            margin-bottom: 15px;
-            font-family: 'Courier New', monospace;
+            display: none;
         }
 
         .host-details {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
             background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
         }
 
@@ -422,7 +425,7 @@
 
         .detail-label {
             color: #a0aec0;
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 600;
@@ -430,7 +433,7 @@
 
         .detail-value {
             color: #e4e4e4;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             word-break: break-all;
         }
@@ -491,6 +494,77 @@
             font-size: 14px;
         }
 
+        /* ==================== Barre de filtre des sites ==================== */
+        .sites-filter-bar {
+            background: rgba(45, 55, 72, 0.95);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sites-filter-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sites-chips-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .site-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #e4e4e4;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .site-chip:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .site-chip.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .site-chip.all {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-color: #10b981;
+            color: white;
+        }
+
+        .site-chip.all:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .site-chip-icon {
+            font-size: 16px;
+        }
+
         @media (max-width: 768px) {
             .hosts-grid {
                 grid-template-columns: 1fr;
@@ -507,6 +581,19 @@
 
             .host-metrics {
                 grid-template-columns: 1fr;
+            }
+
+            .sites-filter-bar {
+                padding: 12px 15px;
+            }
+
+            .sites-chips-container {
+                gap: 8px;
+            }
+
+            .site-chip {
+                font-size: 13px;
+                padding: 6px 12px;
             }
         }
 
@@ -1097,6 +1184,14 @@
             </div>
         </div>
 
+        <!-- Barre de filtre rapide des sites -->
+        <div class="sites-filter-bar" id="sites-filter-bar" style="display: none;">
+            <div class="sites-filter-title">🏢 Filtrer par site</div>
+            <div class="sites-chips-container" id="sites-chips-container">
+                <!-- Les chips seront ajoutées dynamiquement par JavaScript -->
+            </div>
+        </div>
+
         <div id="hosts-container">
             <div class="loading" data-i18n="loading">Chargement des hôtes</div>
         </div>
@@ -1303,7 +1398,7 @@
         let sitesList = [];
         let selectedSitesFilter = []; // Filtre local pour la page monitoring
 
-        // Charger la liste des sites
+        // ChargerFunction la liste des sites
         async function loadSitesList() {
             try {
                 const response = await fetch('/api/get_sites');
@@ -1312,6 +1407,7 @@
                 if (data.success) {
                     sitesList = data.sites || [];
                     updateSiteFilterSelect();
+                    updateSiteChipsBar(); // Mettre à jour la barre horizontale
                 }
             } catch (error) {
                 console.error('Erreur chargement sites:', error);
@@ -1327,9 +1423,86 @@
             ).join('');
         }
 
+        // Mettre à jour la barre horizontale de chips de sites
+        function updateSiteChipsBar() {
+            const container = document.getElementById('sites-chips-container');
+            const bar = document.getElementById('sites-filter-bar');
+
+            if (!container || !bar) return;
+
+            // Afficher la barre seulement s'il y a des sites
+            if (sitesList.length === 0) {
+                bar.style.display = 'none';
+                return;
+            }
+
+            bar.style.display = 'block';
+
+            // Créer le chip "Tous"
+            let html = `
+                <div class="site-chip all ${selectedSitesFilter.length === 0 ? 'active' : ''}" onclick="selectAllSites()">
+                    <span class="site-chip-icon">🌐</span>
+                    <span>Tous les sites</span>
+                </div>
+            `;
+
+            // Créer un chip pour chaque site
+            sitesList.forEach(site => {
+                const isActive = selectedSitesFilter.includes(site);
+                html += `
+                    <div class="site-chip ${isActive ? 'active' : ''}" onclick="toggleSiteFilter('${escapeHtml(site).replace(/'/g, "\\'")}')">
+                        <span class="site-chip-icon">🏢</span>
+                        <span>${escapeHtml(site)}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Sélectionner tous les sites (réinitialiser le filtre)
+        function selectAllSites() {
+            selectedSitesFilter = [];
+            updateSiteChipsBar();
+
+            // Synchroniser avec le select du menu
+            const select = document.getElementById('site-filter-select');
+            if (select) {
+                Array.from(select.options).forEach(opt => opt.selected = false);
+            }
+
+            renderHosts(hostsData);
+        }
+
+        // Basculer le filtre d'un site spécifique
+        function toggleSiteFilter(site) {
+            const index = selectedSitesFilter.indexOf(site);
+
+            if (index > -1) {
+                // Déjà sélectionné, on le retire
+                selectedSitesFilter.splice(index, 1);
+            } else {
+                // Pas sélectionné, on l'ajoute
+                selectedSitesFilter.push(site);
+            }
+
+            updateSiteChipsBar();
+
+            // Synchroniser avec le select du menu
+            const select = document.getElementById('site-filter-select');
+            if (select) {
+                Array.from(select.options).forEach(opt => {
+                    opt.selected = selectedSitesFilter.includes(opt.value);
+                });
+            }
+
+            renderHosts(hostsData);
+        }
+
         function applySiteFilterLocal() {
             const select = document.getElementById('site-filter-select');
             selectedSitesFilter = Array.from(select.selectedOptions).map(opt => opt.value);
+            updateSiteChipsBar(); // Mettre à jour les chips
             renderHosts(hostsData);
         }
 
@@ -1339,6 +1512,7 @@
             if (select) {
                 Array.from(select.options).forEach(opt => opt.selected = false);
             }
+            updateSiteChipsBar(); // Mettre à jour les chips
             renderHosts(hostsData);
         }
 
@@ -1677,6 +1851,9 @@
             const debitIn = host.debit_in || 'N/A';
             const debitOut = host.debit_out || 'N/A';
 
+            // Helper pour détecter les valeurs vides
+            const hasValue = (val) => val && val !== 'N/A' && val !== '-' && val.trim() !== '';
+
             let tempClass = 'detail-value';
             let tempDisplay = temperature;
             if (tempLevel === 'critical') {
@@ -1692,7 +1869,7 @@
 
             card.innerHTML = `
                 <div class="host-header">
-                    <div class="host-name">${escapeHtml(displayName)}</div>
+                    <div class="host-name" onclick="goToHostStats('${escapeHtml(host.ip)}')" title="Voir les statistiques">${escapeHtml(displayName)}</div>
                     <div class="host-status ${statusClass}">${statusText}</div>
                 </div>
                 <div class="host-ip">${escapeHtml(host.ip)}</div>
@@ -1701,15 +1878,15 @@
                         <div class="detail-label">${t('mac')}</div>
                         <div class="detail-value">${escapeHtml(host.mac) || '-'}</div>
                     </div>
-                    <div class="detail-item">
+                    <div class="detail-item" style="display: ${(temperature !== '-' && temperature) ? 'flex' : 'none'}">
                         <div class="detail-label">🌡️ ${t('temperature')}</div>
                         <div class="${tempClass}">${escapeHtml(tempDisplay)}</div>
                     </div>
-                    <div class="detail-item">
+                    <div class="detail-item" style="display: ${hasValue(debitIn) ? 'flex' : 'none'}">
                         <div class="detail-label">📥 ${t('bandwidth_in')}</div>
                         <div class="detail-value">${escapeHtml(debitIn)}</div>
                     </div>
-                    <div class="detail-item">
+                    <div class="detail-item" style="display: ${hasValue(debitOut) ? 'flex' : 'none'}">
                         <div class="detail-label">📤 ${t('bandwidth_out')}</div>
                         <div class="detail-value">${escapeHtml(debitOut)}</div>
                     </div>
@@ -1767,42 +1944,73 @@
             }
 
             // Mettre à jour les valeurs détaillées
-            const details = card.querySelectorAll('.detail-value');
-            if (details.length >= 4) {
-                // MAC (index 0)
-                if (details[0].textContent !== (host.mac || '-')) {
-                    details[0].textContent = host.mac || '-';
-                }
-                // Température (index 1) - avec indicateur d'alerte
-                let tempDisplay = temperature;
-                let tempClass = 'detail-value';
+            const detailItems = card.querySelectorAll('.detail-item');
 
-                if (tempLevel === 'critical') {
-                    tempDisplay += ' ⚠️';
-                    tempClass = 'detail-value temp-critical';
-                } else if (tempLevel === 'warning') {
-                    tempClass = 'detail-value temp-warning';
+            // MAC (toujours affiché)
+            if (detailItems[0]) {
+                const macValue = detailItems[0].querySelector('.detail-value');
+                if (macValue && macValue.textContent !== (host.mac || '-')) {
+                    macValue.textContent = host.mac || '-';
                 }
+            }
 
-                details[1].className = tempClass;
-                if (details[1].textContent !== tempDisplay) {
-                    details[1].textContent = tempDisplay;
-                }
-                // Débit IN (index 2)
-                if (details[2].textContent !== debitIn) {
-                    details[2].textContent = debitIn;
-                }
-                // Débit OUT (index 3)
-                if (details[3].textContent !== debitOut) {
-                    details[3].textContent = debitOut;
-                }
+            // Température - masquer si vide
+            if (detailItems[1]) {
+                const shouldShow = temperature !== '-' && temperature;
+                detailItems[1].style.display = shouldShow ? 'flex' : 'none';
 
-                // Commentaire (index 4) - seulement si pas focalisé
-                const commentInput = card.querySelector('.comment-input');
-                if (commentInput && document.activeElement !== commentInput) {
-                    if (commentInput.value !== (host.commentaire || '')) {
-                        commentInput.value = host.commentaire || '';
+                if (shouldShow) {
+                    let tempDisplay = temperature;
+                    let tempClass = 'detail-value';
+
+                    if (tempLevel === 'critical') {
+                        tempDisplay += ' ⚠️';
+                        tempClass = 'detail-value temp-critical';
+                    } else if (tempLevel === 'warning') {
+                        tempClass = 'detail-value temp-warning';
                     }
+
+                    const tempValue = detailItems[1].querySelector('.detail-value, .temp-critical, .temp-warning');
+                    if (tempValue) {
+                        tempValue.className = tempClass;
+                        if (tempValue.textContent !== tempDisplay) {
+                            tempValue.textContent = tempDisplay;
+                        }
+                    }
+                }
+            }
+
+            // Débit IN - masquer si vide/N/A
+            if (detailItems[2]) {
+                const shouldShow = debitIn && debitIn !== 'N/A' && debitIn !== '-' && debitIn.trim() !== '';
+                detailItems[2].style.display = shouldShow ? 'flex' : 'none';
+
+                if (shouldShow) {
+                    const debitInValue = detailItems[2].querySelector('.detail-value');
+                    if (debitInValue && debitInValue.textContent !== debitIn) {
+                        debitInValue.textContent = debitIn;
+                    }
+                }
+            }
+
+            // Débit OUT - masquer si vide/N/A
+            if (detailItems[3]) {
+                const shouldShow = debitOut && debitOut !== 'N/A' && debitOut !== '-' && debitOut.trim() !== '';
+                detailItems[3].style.display = shouldShow ? 'flex' : 'none';
+
+                if (shouldShow) {
+                    const debitOutValue = detailItems[3].querySelector('.detail-value');
+                    if (debitOutValue && debitOutValue.textContent !== debitOut) {
+                        debitOutValue.textContent = debitOut;
+                    }
+                }
+            }
+
+            // Commentaire (toujours affiché) - seulement si pas focalisé
+            const commentInput = card.querySelector('.comment-input');
+            if (commentInput && document.activeElement !== commentInput) {
+                if (commentInput.value !== (host.commentaire || '')) {
+                    commentInput.value = host.commentaire || '';
                 }
             }
         }
@@ -1839,6 +2047,11 @@
             const locale = currentLang === 'fr' ? 'fr-FR' : 'en-US';
             const timeString = now.toLocaleTimeString(locale);
             document.getElementById('last-update-time').textContent = timeString;
+        }
+
+        function goToHostStats(ip) {
+            // Naviguer vers la page statistics avec l'IP en paramètre
+            window.location.href = `/statistics?ip=${encodeURIComponent(ip)}`;
         }
 
         function escapeHtml(text) {

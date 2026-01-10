@@ -237,6 +237,46 @@
             color: #6b7280;
         }
 
+        /* Collapsible sections */
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .collapsible-header:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .collapsible-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .collapse-icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+            font-size: 0.8em;
+        }
+
+        .collapse-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .collapsible-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+            opacity: 1;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding: 0 !important;
+        }
+
         /* Host select */
         .host-select-container {
             margin-bottom: 20px;
@@ -571,11 +611,11 @@
 
         <!-- Main Grid -->
         <div class="main-grid">
-            <div class="card">
-                <div class="card-header">
-                    <h2>🏆 Top Déconnecteurs</h2>
+            <div class="card collapsible-card">
+                <div class="card-header collapsible-header" onclick="toggleSection('top-disconnectors')">
+                    <h2><span class="collapse-icon" id="top-disconnectors-icon">▶</span> 🏆 Top Déconnecteurs</h2>
                 </div>
-                <div class="card-body">
+                <div class="card-body collapsible-content collapsed" id="top-disconnectors-content">
                     <table class="data-table" id="top-disconnectors-table">
                         <thead>
                             <tr>
@@ -595,11 +635,11 @@
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>📋 Événements Récents</h2>
+            <div class="card collapsible-card">
+                <div class="card-header collapsible-header" onclick="toggleSection('recent-events')">
+                    <h2><span class="collapse-icon" id="recent-events-icon">▶</span> 📋 Événements Récents</h2>
                 </div>
-                <div class="card-body">
+                <div class="card-body collapsible-content collapsed" id="recent-events-content">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -677,6 +717,17 @@
         let currentSiteFilter = '';
         let allSites = new Set();
 
+        // Toggle collapsible sections
+        function toggleSection(sectionId) {
+            const content = document.getElementById(`${sectionId}-content`);
+            const icon = document.getElementById(`${sectionId}-icon`);
+
+            if (content && icon) {
+                content.classList.toggle('collapsed');
+                icon.classList.toggle('expanded');
+            }
+        }
+
         // Utility functions
         function formatDuration(seconds) {
             if (!seconds || seconds === 0) return '-';
@@ -736,20 +787,65 @@
         }
 
         async function fetchHosts() {
+            console.log('[DEBUG] fetchHosts called');
             try {
                 const response = await fetch('/api/stats/hosts');
+                console.log('[DEBUG] fetchHosts response received');
                 const data = await response.json();
+                console.log('[DEBUG] fetchHosts data:', data);
+
                 if (data.success) {
+                    console.log('[DEBUG] Calling populateHostSelect with', data.data.length, 'hosts');
                     populateHostSelect(data.data);
+                    // Après avoir peuplé le select, vérifier s'il y a un paramètre IP dans l'URL
+                    console.log('[DEBUG] About to call checkAndSelectHostFromURL');
+                    checkAndSelectHostFromURL();
+                } else {
+                    console.error('[DEBUG] fetchHosts failed:', data);
                 }
             } catch (err) {
                 console.error('Erreur fetch hosts:', err);
             }
         }
 
+        function checkAndSelectHostFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ipParam = urlParams.get('ip');
+
+            console.log('[DEBUG] checkAndSelectHostFromURL called, ipParam:', ipParam);
+
+            if (ipParam) {
+                const hostSelect = document.getElementById('host-select');
+                console.log('[DEBUG] hostSelect found:', hostSelect !== null);
+
+                if (hostSelect) {
+                    console.log('[DEBUG] hostSelect options count:', hostSelect.options.length);
+
+                    // Chercher l'option correspondant à l'IP
+                    let found = false;
+                    for (let option of hostSelect.options) {
+                        if (option.value === ipParam) {
+                            option.selected = true;
+                            found = true;
+                            console.log('[DEBUG] IP found and selected:', ipParam);
+
+                            // Déclencher l'affichage des détails
+                            console.log('[DEBUG] Calling fetchHostStats with IP:', ipParam);
+                            fetchHostStats(ipParam);
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        console.warn('[DEBUG] IP not found in options:', ipParam);
+                    }
+                }
+            }
+        }
+
         async function fetchHostStats(ip) {
             try {
-                const response = await fetch(`/api/stats/host/${encodeURIComponent(ip)}`);
+                const response = await fetch(`/api/stats/host/${encodeURIComponent(ip)}?days=${currentPeriod}`);
                 const data = await response.json();
                 if (data.success) {
                     displayHostDetails(data.data);
@@ -1047,6 +1143,12 @@
                 btn.classList.add('active');
                 currentPeriod = parseInt(btn.dataset.days);
                 refreshAll();
+
+                // Recharger les détails de l'hôte si un hôte est sélectionné
+                const hostSelect = document.getElementById('host-select');
+                if (hostSelect && hostSelect.value) {
+                    fetchHostStats(hostSelect.value);
+                }
             });
         });
 
@@ -1071,7 +1173,7 @@
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             refreshAll();
-            fetchHosts();
+            fetchHosts(); // fetchHosts appellera automatiquement checkAndSelectHostFromURL
 
             // Auto-refresh every 30 seconds
             setInterval(refreshAll, 30000);
