@@ -250,6 +250,112 @@
             color: #888;
         }
 
+        /* View Mode Selector */
+        .view-mode-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .view-mode-btn {
+            padding: 10px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .view-mode-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .view-mode-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: white;
+        }
+
+        /* Switch Ports Grid */
+        .ports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .port-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .port-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .port-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #e4e4e4;
+        }
+
+        .port-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+        }
+
+        .port-status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .port-status-indicator.up {
+            background: #4ecdc4;
+            box-shadow: 0 0 8px #4ecdc4;
+        }
+
+        .port-status-indicator.down {
+            background: #f97e7e;
+        }
+
+        .port-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .port-stat {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .port-stat-label {
+            color: #888;
+            font-size: 0.75rem;
+            margin-bottom: 3px;
+        }
+
+        .port-stat-value {
+            color: #e4e4e4;
+            font-weight: 600;
+        }
+
+        .port-chart {
+            height: 150px;
+            margin-top: 10px;
+        }
+
         @media (max-width: 768px) {
             .controls {
                 flex-direction: column;
@@ -258,6 +364,10 @@
             .chart-header {
                 flex-direction: column;
                 gap: 15px;
+            }
+
+            .ports-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -278,12 +388,36 @@
         </div>
 
         <div class="controls">
+            <!-- Sélection du mode de vue -->
             <div class="control-group">
-                <label>Hôte</label>
-                <select id="host-select">
-                    <option value="">-- Sélectionner un hôte --</option>
-                </select>
+                <label>Mode d'affichage</label>
+                <div class="view-mode-btns">
+                    <button class="view-mode-btn active" data-mode="host">📊 Hôte unique</button>
+                    <button class="view-mode-btn" data-mode="switch">🔌 Ports de switch</button>
+                </div>
             </div>
+
+            <!-- Vue hôte unique -->
+            <div id="host-view-controls" class="view-controls">
+                <div class="control-group">
+                    <label>Hôte</label>
+                    <select id="host-select">
+                        <option value="">-- Sélectionner un hôte --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Vue ports de switch -->
+            <div id="switch-view-controls" class="view-controls" style="display: none;">
+                <div class="control-group">
+                    <label>Switch</label>
+                    <select id="switch-select">
+                        <option value="">-- Sélectionner un switch --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Période (commune aux deux vues) -->
             <div class="control-group">
                 <label>Période</label>
                 <div class="period-btns">
@@ -297,7 +431,7 @@
         </div>
 
         <!-- Graphique Température -->
-        <div class="charts-grid">
+        <div class="charts-grid" id="host-view-charts">
             <div class="chart-card" id="temp-card">
                 <div class="chart-header">
                     <div class="chart-title">🌡️ Température</div>
@@ -369,20 +503,53 @@
                 </div>
             </div>
         </div>
+
+        <!-- Vue Ports de Switch -->
+        <div id="switch-view-container" style="display: none;">
+            <div class="ports-grid" id="ports-grid">
+                <!-- Les ports seront ajoutés dynamiquement ici -->
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let currentHost = '';
+        let currentSwitch = '';
         let currentPeriod = 24;
+        let currentViewMode = 'host';  // 'host' ou 'switch'
         let tempChart = null;
         let bwChart = null;
+        let portCharts = {};  // Graphiques des ports de switch
+        let switchInterfaces = [];  // Interfaces du switch sélectionné
+        let switchBandwidthInterval = null;  // Intervalle pour mise à jour des débits
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', () => {
             fetchHosts();
             setupEventListeners();
+            setupViewModeListeners();
         });
+
+        function setupViewModeListeners() {
+            // Basculer entre les modes de vue
+            document.querySelectorAll('.view-mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentViewMode = btn.dataset.mode;
+                    switchView(currentViewMode);
+                });
+            });
+
+            // Sélection switch
+            document.getElementById('switch-select').addEventListener('change', (e) => {
+                currentSwitch = e.target.value;
+                if (currentSwitch) {
+                    loadSwitchPorts();
+                }
+            });
+        }
 
         function setupEventListeners() {
             // Sélection hôte
@@ -399,11 +566,38 @@
                     document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentPeriod = parseInt(btn.dataset.hours);
-                    if (currentHost) {
+                    if (currentViewMode === 'host' && currentHost) {
                         refreshCharts();
+                    } else if (currentViewMode === 'switch' && currentSwitch) {
+                        loadSwitchPorts();  // Recharger avec nouvelle période
                     }
                 });
             });
+        }
+
+        function switchView(mode) {
+            if (mode === 'host') {
+                document.getElementById('host-view-controls').style.display = 'block';
+                document.getElementById('switch-view-controls').style.display = 'none';
+                document.getElementById('host-view-charts').style.display = 'grid';
+                document.getElementById('switch-view-container').style.display = 'none';
+
+                // Arrêter l'auto-refresh des ports
+                if (switchBandwidthInterval) {
+                    clearInterval(switchBandwidthInterval);
+                    switchBandwidthInterval = null;
+                }
+            } else if (mode === 'switch') {
+                document.getElementById('host-view-controls').style.display = 'none';
+                document.getElementById('switch-view-controls').style.display = 'block';
+                document.getElementById('host-view-charts').style.display = 'none';
+                document.getElementById('switch-view-container').style.display = 'block';
+
+                // Peupler la liste des switches
+                if (document.getElementById('switch-select').options.length === 1) {
+                    fetchHosts();  // Réutiliser la liste des hôtes pour les switches
+                }
+            }
         }
 
         async function fetchHosts() {
@@ -420,9 +614,13 @@
 
         function populateHostSelect(hosts) {
             const select = document.getElementById('host-select');
+            const switchSelect = document.getElementById('switch-select');
+
             select.innerHTML = '<option value="">-- Sélectionner un hôte --</option>';
+            switchSelect.innerHTML = '<option value="">-- Sélectionner un switch --</option>';
 
             hosts.forEach(host => {
+                // Ajouter à la liste des hôtes
                 const option = document.createElement('option');
                 option.value = host.ip;
                 let label = host.hostname || host.ip;
@@ -431,6 +629,14 @@
                 if (host.has_bandwidth) badges.push('📶');
                 option.textContent = `${label} (${host.ip}) ${badges.join(' ')}`;
                 select.appendChild(option);
+
+                // Ajouter aussi à la liste des switches (tous les hôtes SNMP peuvent être des switches)
+                if (host.has_bandwidth) {
+                    const switchOption = document.createElement('option');
+                    switchOption.value = host.ip;
+                    switchOption.textContent = `${label} (${host.ip})`;
+                    switchSelect.appendChild(switchOption);
+                }
             });
         }
 
@@ -616,6 +822,113 @@
                 return (mbps * 1000).toFixed(0) + ' Kbps';
             }
             return mbps.toFixed(1) + ' Mbps';
+        }
+
+        // ============= Fonctions pour la vue Switch Ports =============
+
+        async function loadSwitchPorts() {
+            try {
+                // Récupérer la liste des interfaces
+                const resp = await fetch(`/api/monitoring/switch/${currentSwitch}/interfaces?filter_inactive=true`);
+                const data = await resp.json();
+
+                if (!data.success) {
+                    alert('Erreur: ' + (data.error || 'Impossible de récupérer les interfaces'));
+                    return;
+                }
+
+                switchInterfaces = data.data;
+
+                if (switchInterfaces.length === 0) {
+                    document.getElementById('ports-grid').innerHTML = '<div class="no-data"><div class="icon">⚠️</div><div>Aucune interface active trouvée</div></div>';
+                    return;
+                }
+
+                // Afficher les ports
+                renderSwitchPorts();
+
+                // Démarrer l'auto-refresh des débits
+                if (switchBandwidthInterval) {
+                    clearInterval(switchBandwidthInterval);
+                }
+                updatePortsBandwidth();  // Première mise à jour immédiate
+                switchBandwidthInterval = setInterval(updatePortsBandwidth, 5000);  // Puis toutes les 5 secondes
+
+            } catch (err) {
+                console.error('Erreur chargement ports:', err);
+                alert('Erreur lors du chargement des ports');
+            }
+        }
+
+        function renderSwitchPorts() {
+            const grid = document.getElementById('ports-grid');
+            grid.innerHTML = '';
+
+            switchInterfaces.forEach(iface => {
+                const card = document.createElement('div');
+                card.className = 'port-card';
+                card.id = `port-card-${iface.index}`;
+
+                const statusClass = iface.status === 'up' ? 'up' : 'down';
+
+                card.innerHTML = `
+                    <div class="port-header">
+                        <div class="port-name">${iface.name}</div>
+                        <div class="port-status">
+                            <div class="port-status-indicator ${statusClass}"></div>
+                            <span>${iface.status}</span>
+                        </div>
+                    </div>
+                    <div class="port-stats">
+                        <div class="port-stat">
+                            <div class="port-stat-label">📥 Débit IN</div>
+                            <div class="port-stat-value" id="port-${iface.index}-in">--</div>
+                        </div>
+                        <div class="port-stat">
+                            <div class="port-stat-label">📤 Débit OUT</div>
+                            <div class="port-stat-value" id="port-${iface.index}-out">--</div>
+                        </div>
+                        <div class="port-stat">
+                            <div class="port-stat-label">⚡ Vitesse max</div>
+                            <div class="port-stat-value">${iface.speed_mbps} Mbps</div>
+                        </div>
+                        <div class="port-stat">
+                            <div class="port-stat-label">🔍 Interface</div>
+                            <div class="port-stat-value">#${iface.index}</div>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function updatePortsBandwidth() {
+            try {
+                const resp = await fetch(`/api/monitoring/switch/${currentSwitch}/ports_bandwidth`);
+                const data = await resp.json();
+
+                if (!data.success) {
+                    console.error('Erreur récupération débits:', data.error);
+                    return;
+                }
+
+                const bandwidthData = data.data;
+
+                // Mettre à jour chaque port
+                for (const [ifaceIndex, bandwidth] of Object.entries(bandwidthData)) {
+                    const inElem = document.getElementById(`port-${ifaceIndex}-in`);
+                    const outElem = document.getElementById(`port-${ifaceIndex}-out`);
+
+                    if (inElem && outElem) {
+                        inElem.textContent = formatBandwidth(bandwidth.in_mbps);
+                        outElem.textContent = formatBandwidth(bandwidth.out_mbps);
+                    }
+                }
+
+            } catch (err) {
+                console.error('Erreur mise à jour débits:', err);
+            }
         }
     </script>
 </body>

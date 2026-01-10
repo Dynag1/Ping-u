@@ -480,16 +480,32 @@ class WebServer(QObject):
                 scan_type = data.get('scan_type', 'alive')
                 site = data.get('site', '')  # Site à assigner aux hôtes scannés
                 
-                # SÉCURITÉ: Validation stricte de l'IP
-                try:
-                    from src import secure_config
-                    if not secure_config.validate_ip(ip):
-                        return jsonify({'success': False, 'error': 'Adresse IP invalide'}), 400
-                except ImportError:
-                    # Fallback de validation basique
-                    import re
-                    if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
-                        return jsonify({'success': False, 'error': 'Adresse IP invalide'}), 400
+                # SÉCURITÉ: Validation de l'IP ou de l'URL
+                is_valid = False
+                is_url = False
+                
+                # Vérifier si c'est une URL (site web)
+                if ip.startswith('http://') or ip.startswith('https://') or any(c.isalpha() for c in ip):
+                    # C'est probablement une URL/domaine
+                    # Validation basique: pas vide et contient au moins un point ou commence par http
+                    if ip and (('.' in ip) or ip.startswith('http')):
+                        is_valid = True
+                        is_url = True
+                        logger.info(f"URL/Domaine détecté pour monitoring: {ip}")
+                else:
+                    # C'est probablement une IP, valider strictement
+                    try:
+                        from src import secure_config
+                        if secure_config.validate_ip(ip):
+                            is_valid = True
+                    except ImportError:
+                        # Fallback de validation basique pour IP
+                        import re
+                        if re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
+                            is_valid = True
+                
+                if not is_valid:
+                    return jsonify({'success': False, 'error': 'Adresse IP ou URL invalide'}), 400
                 
                 # Validation du nombre d'hôtes
                 try:
@@ -1810,6 +1826,153 @@ Ping ü - Monitoring Réseau
             except Exception as e:
                 logger.error(f"Erreur historique débit {ip}: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
+        
+        # ============= Monitoring Switch Ports (Multi-interfaces) =============
+        
+        @self.app.route('/api/monitoring/switch/<ip>/interfaces')
+        @WebAuth.login_required
+        def monitoring_switch_interfaces(ip):
+            """Liste toutes les interfaces d'un switch/équipement réseau"""
+            try:
+                if not SNMP_AVAILABLE or not snmp_helper:
+                    return jsonify({'success': False, 'error': 'SNMP non disponible'}), 500
+                
+                # Paramètre pour filtrer les interfaces inactives
+                filter_inactive = request.args.get('filter_inactive', 'true').lower() == 'true'
+                
+                # Appel asynchrone via run_until_complete
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    interfaces = loop.run_until_complete(
+                        snmp_helper.get_all_interfaces(ip, filter_inactive)
+                    )
+                finally:
+                    loop.close()
+                
+                if interfaces is None:
+                    return jsonify({'success': False, 'error': 'Impossible de récupérer les interfaces (SNMP désactivé?)'}), 500
+                
+                return jsonify({'success': True, 'data': interfaces})
+            except Exception as e:
+                logger.error(f"Erreur récupération interfaces switch {ip}: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/monitoring/switch/<ip>/ports_bandwidth')
+        @WebAuth.login_required
+        def monitoring_switch_ports_bandwidth(ip):
+            """Récupère les débits de tous les ports d'un switch en temps réel"""
+            try:
+                if not SNMP_AVAILABLE or not snmp_helper:
+                    return jsonify({'success': False, 'error': 'SNMP non disponible'}), 500
+                
+                # Paramètre optionnel pour filtrer les interfaces
+                interfaces_param = request.args.get('interfaces', '')
+                interface_indices = None
+                if interfaces_param:
+                    try:
+                        interface_indices = [int(x.strip()) for x in interfaces_param.split(',') if x.strip()]
+                    except ValueError:
+                        return jsonify({'success': False, 'error': 'Format invalide pour le paramètre interfaces'}), 400
+                
+                # Appel asynchrone
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    bandwidth_data = loop.run_until_complete(
+                        snmp_helper.get_all_ports_bandwidth(ip, interface_indices)
+                    )
+                finally:
+                    loop.close()
+                
+                if bandwidth_data is None:
+                    return jsonify({'success': False, 'error': 'Impossible de récupérer les débits (SNMP désactivé ou aucune interface active)'}), 500
+                
+                # Calculer les débits en Mbps si on a des données précédentes
+                import src.var as var
+                results = {}
+                
+                for iface_idx, current_data in bandwidth_data.items():
+                    # Clé de cache unique pour chaque interface
+                    cache_key = f"{ip}_{iface_idx}"
+                    previous_data = var.traffic_cache.get(cache_key)
+                    
+                    if previous_data:
+                        # Calculer le débit
+                        bandwidth = snmp_helper.calculate_bandwidth_sync(current_data, previous_data)
+                        if bandwidth:
+                            results[str(iface_idx)] = {
+                                'in_mbps': bandwidth['in_mbps'],
+                                'out_mbps': bandwidth['out_mbps']
+                            }
+                        else:
+                            results[str(iface_idx)] = {'in_mbps': 0.0, 'out_mbps': 0.0}
+                    else:
+                        # Première mesure, pas de débit calculable
+                        results[str(iface_idx)] = {'in_mbps': 0.0, 'out_mbps': 0.0}
+                    
+                    # Sauvegarder pour le prochain calcul
+                    var.traffic_cache[cache_key] = current_data
+                
+                return jsonify({'success': True, 'data': results})
+            except Exception as e:
+                logger.error(f"Erreur récupération débits ports switch {ip}: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
+        @self.app.route('/api/monitoring/switch/<ip>/ports_history')
+        @WebAuth.login_required
+        def monitoring_switch_ports_history(ip):
+            """Historique des débits des ports d'un switch"""
+            try:
+                from src.monitoring_history import get_monitoring_manager
+                manager = get_monitoring_manager()
+                
+                hours = request.args.get('hours', 24, type=int)
+                
+                # Paramètre pour filtrer les interfaces
+                interfaces_param = request.args.get('interfaces', '')
+                interface_indices = None
+                if interfaces_param:
+                    try:
+                        interface_indices = [int(x.strip()) for x in interfaces_param.split(',') if x.strip()]
+                    except ValueError:
+                        return jsonify({'success': False, 'error': 'Format invalide pour le paramètre interfaces'}), 400
+                
+                # Récupérer l'historique pour chaque interface
+                # Note: Cette fonctionnalité nécessite que monitoring_history soit étendu
+                # Pour l'instant, on retourne une structure vide
+                # TODO: Implémenter get_ports_bandwidth_history dans monitoring_history.py
+                
+                # Structure de retour attendue:
+                # {
+                #   '1': [{'timestamp': ..., 'in_mbps': ..., 'out_mbps': ...}, ...],
+                #   '2': [{'timestamp': ..., 'in_mbps': ..., 'out_mbps': ...}, ...],
+                # }
+                
+                result = {}
+                if hasattr(manager, 'get_port_bandwidth_history'):
+                    if interface_indices:
+                        for idx in interface_indices:
+                            data = manager.get_port_bandwidth_history(ip, idx, hours)
+                            if data:
+                                result[str(idx)] = data
+                    else:
+                        # Récupérer toutes les interfaces
+                        result = manager.get_all_ports_bandwidth_history(ip, hours)
+                else:
+                    # Fallback: utiliser l'historique de l'interface principale
+                    logger.warning("get_port_bandwidth_history non implémenté, utilisation de l'historique simple")
+                    data = manager.get_bandwidth_history(ip, hours)
+                    if data:
+                        result['1'] = data  # Interface 1 par défaut
+                
+                return jsonify({'success': True, 'data': result})
+            except Exception as e:
+                logger.error(f"Erreur historique ports switch {ip}: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+
 
     
     def _on_device_discovered(self, device):

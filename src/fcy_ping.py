@@ -6,6 +6,16 @@ import src.var as var
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
 
+# Import HTTP Checker pour la surveillance de sites web
+try:
+    from src.utils.http_checker import http_checker
+    HTTP_CHECKER_AVAILABLE = True
+except ImportError as e:
+    logger = get_logger(__name__)
+    logger.warning(f"HTTP checker non disponible: {e}")
+    http_checker = None
+    HTTP_CHECKER_AVAILABLE = False
+
 # Imports PySide6 conditionnels
 try:
     from PySide6.QtCore import QObject, Signal, QThread, Qt, QTimer
@@ -178,82 +188,103 @@ class AsyncPingWorker(QThread):
             await asyncio.gather(*tasks)
 
     async def ping_host(self, ip):
-        """Ping un hôte spécifique de manière asynchrone via le système."""
+        """Ping un hôte spécifique de manière asynchrone via le système ou HTTP pour les sites web."""
         if not self.is_running:
             return
 
         latency = 500.0  # Valeur par défaut (Timeout/Erreur)
         
-        try:
-            # Commande selon l'OS
-            if self.system == "windows":
-                # -n 2 : deux pings pour confirmer la perte et éviter les faux positifs
-                # -w 2000 : timeout 2000ms
-                cmd = ["ping", "-n", "2", "-w", "2000", ip]
-            else:
-                # -c 2 : deux pings
-                # -W 2 : timeout 2s
-                # Utiliser le chemin complet de ping pour éviter les problèmes de permissions
-                cmd = ["/bin/ping", "-c", "2", "-W", "2", ip]
-
-            # Création du sous-processus
-            # Sur Windows, masquer la fenêtre CMD
-            if self.system == "windows":
-                import subprocess
-                process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
-            else:
-                process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-
-            stdout, stderr = await process.communicate()
-            
-            # Décoder la sortie avec l'encodage approprié pour Windows français
+        # Détecter si c'est un site web (URL) au lieu d'une IP
+        is_website = self._is_url(ip)
+        
+        if is_website and HTTP_CHECKER_AVAILABLE and http_checker:
+            # Mode site web: utiliser HTTP checker
             try:
-                # Windows français utilise souvent cp850 ou cp1252
-                if self.system == "windows":
-                    output = stdout.decode('cp850', errors='ignore')
+                result = await http_checker.check_website(ip)
+                
+                if result['success']:
+                    # Site accessible, utiliser le temps de réponse
+                    latency = result['response_time_ms']  # Déjà en ms
+                    logger.debug(f"Site web {ip}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
                 else:
-                    output = stdout.decode('utf-8', errors='ignore')
-            except:
-                output = stdout.decode('utf-8', errors='ignore')
-            
-            # Analyse robuste du résultat
-            # On considère le ping réussi si :
-            # 1. Le code de retour est 0 (standard)
-            # 2. OU si on trouve "TTL=" dans la sortie (même si le code est != 0, ça arrive)
-            # 3. ET qu'on n'a pas 100% de perte de paquets
-            
-            has_ttl = "TTL=" in output.upper() or "ttl=" in output.lower()
-            
-            # Recherche de perte de paquets (100% perte = HS)
-            # Supporte français ("100% perte"), anglais ("100% packet loss"), etc.
-            loss_match = re.search(r"(\d+)% [^,\n]*?(perte|loss)", output, re.IGNORECASE)
-            is_100_percent_loss = False
-            if loss_match and loss_match.group(1) == "100":
-                is_100_percent_loss = True
-
-            if (process.returncode == 0 or has_ttl) and not is_100_percent_loss:
-                latency = self.parse_latency(output)
-                # Si le ping a réussi (TTL présent) mais parsing latence échoué (retourne 500)
-                if latency >= 500 and has_ttl:
-                    # On force une latence "vivante" pour ne pas déclarer HS un hôte qui répond
-                    latency = 10.0 
-                    logger.debug(f"Ping OK (TTL présent) mais latence illisible pour {ip}. Forcé à 10ms.")
-            else:
+                    # Site inaccessible
+                    latency = 500.0
+                    logger.debug(f"Site web {ip} inaccessible: {result.get('error', 'Unknown')}")
+            except Exception as e:
+                logger.error(f"Erreur check HTTP {ip}: {e}")
                 latency = 500.0
-                # logger.debug(f"Ping échoué pour {ip}")
+        else:
+            # Mode ICMP classique pour les IP
+            try:
+                # Commande selon l'OS
+                if self.system == "windows":
+                    # -n 2 : deux pings pour confirmer la perte et éviter les faux positifs
+                    # -w 2000 : timeout 2000ms
+                    cmd = ["ping", "-n", "2", "-w", "2000", ip]
+                else:
+                    # -c 2 : deux pings
+                    # -W 2 : timeout 2s
+                    # Utiliser le chemin complet de ping pour éviter les problèmes de permissions
+                    cmd = ["/bin/ping", "-c", "2", "-W", "2", ip]
 
-        except Exception as e:
-            logger.debug(f"Erreur ping {ip}: {e}")
-            latency = 500.0
+                # Création du sous-processus
+                # Sur Windows, masquer la fenêtre CMD
+                if self.system == "windows":
+                    import subprocess
+                    process = await asyncio.create_subprocess_exec(
+                        *cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
+                else:
+                    process = await asyncio.create_subprocess_exec(
+                        *cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE
+                    )
+
+                stdout, stderr = await process.communicate()
+                
+                # Décoder la sortie avec l'encodage approprié pour Windows français
+                try:
+                    # Windows français utilise souvent cp850 ou cp1252
+                    if self.system == "windows":
+                        output = stdout.decode('cp850', errors='ignore')
+                    else:
+                        output = stdout.decode('utf-8', errors='ignore')
+                except:
+                    output = stdout.decode('utf-8', errors='ignore')
+                
+                # Analyse robuste du résultat
+                # On considère le ping réussi si :
+                # 1. Le code de retour est 0 (standard)
+                # 2. OU si on trouve "TTL=" dans la sortie (même si le code est != 0, ça arrive)
+                # 3. ET qu'on n'a pas 100% de perte de paquets
+                
+                has_ttl = "TTL=" in output.upper() or "ttl=" in output.lower()
+                
+                # Recherche de perte de paquets (100% perte = HS)
+                # Supporte français ("100% perte"), anglais ("100% packet loss"), etc.
+                loss_match = re.search(r"(\d+)% [^,\n]*?(perte|loss)", output, re.IGNORECASE)
+                is_100_percent_loss = False
+                if loss_match and loss_match.group(1) == "100":
+                    is_100_percent_loss = True
+
+                if (process.returncode == 0 or has_ttl) and not is_100_percent_loss:
+                    latency = self.parse_latency(output)
+                    # Si le ping a réussi (TTL présent) mais parsing latence échoué (retourne 500)
+                    if latency >= 500 and has_ttl:
+                        # On force une latence "vivante" pour ne pas déclarer HS un hôte qui répond
+                        latency = 10.0 
+                        logger.debug(f"Ping OK (TTL présent) mais latence illisible pour {ip}. Forcé à 10ms.")
+                else:
+                    latency = 500.0
+                    # logger.debug(f"Ping échoué pour {ip}")
+
+            except Exception as e:
+                logger.debug(f"Erreur ping {ip}: {e}")
+                latency = 500.0
 
         # Interrogation SNMP pour la température uniquement (optimisé pour beaucoup d'équipements)
         # Les débits sont récupérés par le serveur web à la demande (non-bloquant)
@@ -264,6 +295,24 @@ class AsyncPingWorker(QThread):
         # Emission du résultat
         color = AppColors.get_latency_color(latency)
         self.result_signal.emit(ip, latency, color, temperature, bandwidth)
+    
+    def _is_url(self, host):
+        """Détecte si la chaîne est une URL/domaine plutôt qu'une adresse IP."""
+        # Vérifier si c'est explicitement une URL avec protocole
+        if host.startswith('http://') or host.startswith('https://'):
+            return True
+        
+        # Vérifier si c'est un nom de domaine (contient des lettres)
+        # Les IPs contiennent uniquement des chiffres et des points
+        # Pattern pour IPv4: \d+\.\d+\.\d+\.\d+
+        ip_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+        if re.match(ip_pattern, host):
+            # C'est une IP valide, pas une URL
+            return False
+        
+        # Si ce n'est pas une IP et contient des lettres, c'est probablement un domaine/URL
+        return bool(re.search(r'[a-zA-Z]', host))
+
 
     def parse_latency(self, output):
         """Extrait la latence de la sortie du ping."""
