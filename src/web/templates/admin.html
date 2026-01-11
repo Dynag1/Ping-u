@@ -1968,8 +1968,10 @@
                 <span class="hamburger-line"></span>
             </button>
             <h1 class="main-title">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Ping ü"
-                    style="height: 40px; width: auto; vertical-align: middle;">
+                <a href="/" style="text-decoration: none; display: inline-flex; align-items: center;">
+                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Ping ü"
+                        style="height: 40px; width: auto; vertical-align: middle; cursor: pointer;">
+                </a>
                 <span data-i18n="admin_title">Administration - Ping ü</span>
             </h1>
             <!-- Mini statut visible dans le header -->
@@ -2094,7 +2096,7 @@
             </div>
             <div class="stat-card monitoring">
                 <div class="value" id="stat-delai">0</div>
-                <div class="label" data-i18n="delay_sec">Délai (sec)</div>
+                <div class="label" data-i18n="delay_sec">Délai</div>
             </div>
         </div>
 
@@ -2953,7 +2955,7 @@
                         total_hosts: "Total Hôtes",
                         online: "En ligne",
                         offline: "Hors ligne",
-                        delay_sec: "Délai (sec)",
+                        delay_sec: "Délai",
                         add_hosts: "Ajout d'Hôtes",
                         add_hosts_desc: "Scanner et ajouter des hôtes",
                         monitoring_desc: "Démarrer/arrêter et configurer",
@@ -4022,6 +4024,40 @@
                     }).join('');
                 }
 
+                // ==================== Utility Functions ====================
+                /**
+                 * Formate le délai de manière intelligente
+                 * < 60s : affiche en secondes
+                 * 60s - 3600s : affiche en minutes
+                 * > 3600s : affiche en heures et minutes
+                 */
+                function formatDelay(seconds) {
+                    const sec = parseInt(seconds);
+
+                    if (sec < 60) {
+                        // Moins d'une minute : afficher en secondes
+                        return `${sec}s`;
+                    } else if (sec < 3600) {
+                        // Moins d'une heure : afficher en minutes
+                        const minutes = Math.floor(sec / 60);
+                        const remainingSeconds = sec % 60;
+                        if (remainingSeconds === 0) {
+                            return `${minutes}min`;
+                        } else {
+                            return `${minutes}min ${remainingSeconds}s`;
+                        }
+                    } else {
+                        // Plus d'une heure : afficher en heures et minutes
+                        const hours = Math.floor(sec / 3600);
+                        const minutes = Math.floor((sec % 3600) / 60);
+                        if (minutes === 0) {
+                            return `${hours}h`;
+                        } else {
+                            return `${hours}h ${minutes}min`;
+                        }
+                    }
+                }
+
                 // ==================== API Functions ====================
                 async function apiCall(endpoint, method = 'GET', data = null) {
                     try {
@@ -4510,7 +4546,7 @@
 
                         if (result.delai) {
                             document.getElementById('input-delai').value = result.delai;
-                            document.getElementById('stat-delai').textContent = result.delai;
+                            document.getElementById('stat-delai').textContent = formatDelay(result.delai);
                         }
                         if (result.nb_hs) {
                             document.getElementById('input-nb-hs').value = result.nb_hs;
