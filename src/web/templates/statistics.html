@@ -582,6 +582,9 @@
                     <button class="period-btn" data-days="7">7 jours</button>
                     <button class="period-btn active" data-days="30">30 jours</button>
                 </div>
+                <button id="reset-stats-btn" class="btn btn-danger"
+                    style="background: linear-gradient(135deg, #f97e7e, #d63031); margin-right: 10px;">🗑️
+                    Réinitialiser</button>
                 <a href="/admin" class="btn btn-secondary">⚙️ Admin</a>
                 <a href="/" class="btn btn-secondary">📊 Monitoring</a>
             </div>
@@ -1195,6 +1198,36 @@
                 refreshAll();
                 fetchHosts(); // Refresh host list to get updated status
             }, 30000);
+
+            // Reset statistics button
+            document.getElementById('reset-stats-btn').addEventListener('click', async () => {
+                if (!confirm('⚠️ Êtes-vous sûr de vouloir réinitialiser TOUTES les statistiques ?\n\nCette action est irréversible et supprimera tous les événements de déconnexion/reconnexion enregistrés.')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/stats/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        alert(`✅ Statistiques réinitialisées avec succès!\n\n${result.deleted_count} événements supprimés.`);
+                        // Rafraîchir toutes les données
+                        refreshAll();
+                        fetchHosts();
+                    } else {
+                        alert(`❌ Erreur: ${result.error}`);
+                    }
+                } catch (error) {
+                    console.error('Erreur réinitialisation:', error);
+                    alert('❌ Erreur lors de la réinitialisation des statistiques');
+                }
+            });
         });
     </script>
 </body>

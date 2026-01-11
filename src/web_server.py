@@ -1718,6 +1718,24 @@ Ping ü - Monitoring Réseau
                 logger.error(f"Erreur events récents: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
         
+        @self.app.route('/api/stats/reset', methods=['POST'])
+        @WebAuth.login_required
+        def stats_reset():
+            """Réinitialise toutes les statistiques"""
+            try:
+                from src.connection_stats import stats_manager
+                deleted_count = stats_manager.reset_all_stats()
+                return jsonify({
+                    'success': True, 
+                    'message': f'{deleted_count} événements supprimés',
+                    'deleted_count': deleted_count
+                })
+            except ImportError:
+                return jsonify({'success': False, 'error': 'Module de statistiques non disponible'}), 500
+            except Exception as e:
+                logger.error(f"Erreur réinitialisation stats: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+        
         @self.app.route('/api/stats/hosts')
         @WebAuth.login_required
         def stats_all_hosts():

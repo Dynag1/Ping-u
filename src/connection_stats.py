@@ -358,6 +358,20 @@ class ConnectionStatsManager:
         except Exception as e:
             logger.error(f"Erreur récupération liste hôtes: {e}")
             return []
+    
+    def reset_all_stats(self):
+        """Supprime toutes les statistiques de la base de données."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM connection_events')
+                conn.commit()
+                deleted_count = cursor.rowcount
+                logger.info(f"[STATS] Toutes les statistiques ont été réinitialisées ({deleted_count} événements supprimés)")
+                return deleted_count
+        except Exception as e:
+            logger.error(f"Erreur réinitialisation statistiques: {e}")
+            return 0
 
 
 # Instance singleton
