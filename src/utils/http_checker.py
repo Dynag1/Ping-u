@@ -150,10 +150,21 @@ class HTTPChecker:
                     except aiohttp.ClientSSLError as e:
                         # Si erreur SSL avec HTTPS, essayer HTTP
                         last_error = f'Erreur SSL: {str(e)}'
-                        logger.debug(f"SSL error for {try_url}, trying next URL if available")
+                        logger.info(f"SSL error for {try_url}, trying next URL if available: {e}")
+                        continue
+                    except aiohttp.ClientConnectorError as e:
+                        # Erreur de connexion (DNS, réseau, etc.)
+                        last_error = f'Erreur de connexion: {str(e)}'
+                        logger.info(f"Connection error for {try_url}: {e}")
+                        continue
+                    except aiohttp.ClientError as e:
+                        # Autres erreurs client (timeout, etc.)
+                        last_error = f'Erreur client: {str(e)}'
+                        logger.info(f"Client error for {try_url}: {e}")
                         continue
                     except Exception as e:
-                        last_error = str(e)
+                        last_error = f'Erreur inattendue: {str(e)}'
+                        logger.warning(f"Unexpected error for {try_url}: {e}")
                         continue
                 
                 # Si aucune URL n'a fonctionné
@@ -188,7 +199,8 @@ class HTTPChecker:
 
 
 # Instance globale par défaut
-http_checker = HTTPChecker(timeout=5, follow_redirects=True, verify_ssl=False)
+# Timeout augmenté à 10s pour éviter les faux positifs sur les sites lents
+http_checker = HTTPChecker(timeout=10, follow_redirects=True, verify_ssl=False)
 
 
 # Fonction helper pour usage synchrone

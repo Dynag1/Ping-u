@@ -203,18 +203,21 @@ class AsyncPingWorker(QThread):
         if is_website and HTTP_CHECKER_AVAILABLE and http_checker:
             # Mode site web: utiliser HTTP checker
             try:
+                logger.info(f"[HTTP] Vérification du site web: {ip}")
                 result = await http_checker.check_website(ip)
+                
+                logger.info(f"[HTTP] {ip} - Résultat: success={result['success']}, status={result.get('status_code')}, time={result.get('response_time_ms')}ms, error={result.get('error')}")
                 
                 if result['success']:
                     # Site accessible, utiliser le temps de réponse
                     latency = result['response_time_ms']  # Déjà en ms
-                    logger.debug(f"Site web {ip}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
+                    logger.info(f"[HTTP] ✓ Site web {ip}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
                 else:
                     # Site inaccessible
                     latency = 500.0
-                    logger.debug(f"Site web {ip} inaccessible: {result.get('error', 'Unknown')}")
+                    logger.warning(f"[HTTP] ✗ Site web {ip} inaccessible: {result.get('error', 'Unknown')} (status: {result.get('status_code', 'N/A')})")
             except Exception as e:
-                logger.error(f"Erreur check HTTP {ip}: {e}")
+                logger.error(f"[HTTP] Exception lors de la vérification de {ip}: {e}", exc_info=True)
                 latency = 500.0
         else:
             # Mode ICMP classique pour les IP
@@ -520,22 +523,40 @@ class PingManager(QObject):
         # Protection contre les IPs vides ou None
         if not ip or ip.strip() == "":
             return
+        
+        # Détecter si c'est un site web (URL)
+        is_url = self._is_url(ip)
+        host_type = "URL" if is_url else "IP"
             
         if ip in liste:
             current_count = int(liste[ip])
             # Ne jamais incrémenter les états spéciaux (10 = alerte envoyée, 20 = retour OK détecté)
             if current_count >= 10:
+                if log:
+                    logger.debug(f"[PING] {host_type} {ip}: état spécial {current_count}, pas d'incrémentation")
                 return
             # Incrémenter seulement si on n'a pas atteint le seuil
             target_hs = int(var.nbrHs)
             if current_count < target_hs:
                 liste[ip] += 1
                 if log:
-                    logger.debug(f"[PING] {ip}: compteur {current_count} -> {liste[ip]}/{target_hs}")
+                    logger.info(f"[PING] {host_type} {ip}: compteur {current_count} -> {liste[ip]}/{target_hs}")
+            else:
+                if log:
+                    logger.warning(f"[PING] {host_type} {ip}: compteur déjà au seuil {current_count}/{target_hs}, pas d'incrémentation")
         else:
+            # IMPORTANT: Toujours initialiser à 1 pour le premier échec
+            # Ne JAMAIS initialiser à nbrHs directement
             liste[ip] = 1
             if log:
-                logger.debug(f"[PING] {ip}: premier échec 1/{int(var.nbrHs)}")
+                logger.info(f"[PING] {host_type} {ip}: premier échec 1/{int(var.nbrHs)}")
+        
+        # Vérification de sécurité: s'assurer que le compteur n'est jamais > nbrHs (sauf états spéciaux >= 10)
+        if ip in liste:
+            current_value = int(liste[ip])
+            if current_value < 10 and current_value > int(var.nbrHs):
+                logger.error(f"[PING] {host_type} {ip}: ERREUR - compteur {current_value} > nbrHs {var.nbrHs}, réinitialisation à {var.nbrHs}")
+                liste[ip] = int(var.nbrHs)
 
     def list_ok(self, liste, ip):
         if ip in liste:
