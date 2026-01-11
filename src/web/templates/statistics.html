@@ -952,10 +952,23 @@
         function populateHostSelect(hosts) {
             const select = document.getElementById('host-select');
             select.innerHTML = '<option value="">-- Sélectionner un hôte --</option>';
-            hosts.forEach(host => {
+
+            // Sort: offline hosts first (more urgent), then by hostname
+            const sortedHosts = [...hosts].sort((a, b) => {
+                // Offline hosts come first
+                if (a.status !== b.status) {
+                    return a.status === 'offline' ? -1 : 1;
+                }
+                // Then sort alphabetically by hostname
+                return (a.hostname || a.ip).localeCompare(b.hostname || b.ip);
+            });
+
+            sortedHosts.forEach(host => {
                 const option = document.createElement('option');
                 option.value = host.ip;
-                option.textContent = `${host.hostname || host.ip} (${host.ip})`;
+                // Add status indicator: green dot for online, red dot for offline
+                const statusIcon = host.status === 'online' ? '🟢' : '🔴';
+                option.textContent = `${statusIcon} ${host.hostname || host.ip} (${host.ip})`;
                 select.appendChild(option);
             });
         }

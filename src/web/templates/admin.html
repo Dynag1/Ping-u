@@ -2568,9 +2568,9 @@
                                             <input type="time" id="recap-heure" value="08:00">
                                         </div>
                                         <div
-                                            style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                            style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
                                             <label
-                                                style="display: block; margin-bottom: 10px; font-weight: 600; color: #374151;"
+                                                style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-primary);"
                                                 data-i18n="send_days">Jours d'envoi</label>
                                             <div
                                                 style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
@@ -2652,26 +2652,28 @@
                                 </div>
                                 <div class="accordion-content" id="content-license">
                                     <div
-                                        style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                        style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
                                         <div
                                             style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                                             <span style="font-size: 24px;" id="license-icon">❌</span>
                                             <div>
-                                                <div style="font-weight: 600; color: #374151;" id="license-status"
-                                                    data-i18n="no_license">Pas de licence active</div>
-                                                <div style="font-size: 13px; color: #6b7280;" id="license-days">
+                                                <div style="font-weight: 600; color: var(--text-primary);"
+                                                    id="license-status" data-i18n="no_license">Pas de licence active
+                                                </div>
+                                                <div style="font-size: 13px; color: var(--text-secondary);"
+                                                    id="license-days">
                                                 </div>
                                             </div>
                                         </div>
                                         <div
-                                            style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
-                                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 5px;"
+                                            style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 10px;">
+                                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;"
                                                 data-i18n="activation_code_label">Code d'activation (Hardware ID) à
                                                 envoyer :
                                             </div>
                                             <div style="display: flex; gap: 10px;">
                                                 <input type="text" id="activation-code" readonly
-                                                    style="background: #e5e7eb; color: #374151; font-family: monospace; font-size: 14px;"
+                                                    style="background: rgba(0, 0, 0, 0.3); color: var(--text-primary); font-family: monospace; font-size: 14px; border: 1px solid rgba(255, 255, 255, 0.1);"
                                                     onclick="this.select()">
                                                 <button class="btn btn-secondary btn-small"
                                                     onclick="navigator.clipboard.writeText(document.getElementById('activation-code').value); showNotification(t('copied'), 'success')">📋</button>
@@ -2698,7 +2700,8 @@
                                     <span class="accordion-icon" id="icon-system">▼</span>
                                 </div>
                                 <div class="accordion-content" id="content-system">
-                                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
+                                    <div
+                                        style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
                                         <div style="margin-bottom: 10px;">
                                             <strong>Version:</strong> <span id="system-version">-</span>
                                         </div>
