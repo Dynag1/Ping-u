@@ -496,7 +496,8 @@ class PingManager(QObject):
 
             # TOUJOURS mettre à jour liste_stats (même pour les hôtes exclus)
             # Les alertes sont bloquées pour les exclus, mais pas les statistiques
-            if latency == 500:
+            # FIX: Utiliser >= 500 au lieu de == 500 pour capturer tous les cas d'échec
+            if latency >= 500:
                 # Stats toujours mises à jour
                 self.list_increment(var.liste_stats, ip, log=False)
                 # Alertes uniquement pour les non-exclus
@@ -539,7 +540,7 @@ class PingManager(QObject):
     def list_ok(self, liste, ip):
         if ip in liste:
             current_value = int(liste[ip])
-            logger.debug(f"[PING] list_ok({ip}): valeur actuelle={current_value}")
+            logger.debug(f"[PING] list_ok({ip}): valeur actuelle={current_value}, liste={liste.__class__.__name__}")
             if current_value == 10:
                 # Alerte HS envoyée, marquer pour notification de retour
                 liste[ip] = 20
@@ -551,6 +552,8 @@ class PingManager(QObject):
                 # Compteur en cours (< nbrHs), supprimer car l'hôte répond à nouveau
                 logger.debug(f"[PING] {ip}: supprimé de la liste (compteur était {current_value})")
                 liste.pop(ip, None)
+        else:
+            logger.debug(f"[PING] list_ok({ip}): IP non présente dans la liste")
 
     def handle_ups_alert(self, ip, message):
         """Gère les alertes UPS et envoie les notifications."""
