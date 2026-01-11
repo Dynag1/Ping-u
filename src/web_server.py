@@ -1738,10 +1738,13 @@ Ping ü - Monitoring Réseau
                     if ip_item:
                         ip = ip_item.text()
                         hostname = name_item.text() if name_item else ip
+                        # Récupérer le statut actuel de l'hôte
+                        status = self._get_row_status(model, row)
                         all_hosts.append({
                             'ip': ip,
                             'hostname': hostname,
-                            'has_events': ip in tracked_ips
+                            'has_events': ip in tracked_ips,
+                            'status': status  # Ajout du statut actuel
                         })
                 
                 return jsonify({'success': True, 'data': all_hosts})
