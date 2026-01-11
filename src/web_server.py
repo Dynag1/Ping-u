@@ -1738,13 +1738,13 @@ Ping ü - Monitoring Réseau
                     if ip_item:
                         ip = ip_item.text()
                         hostname = name_item.text() if name_item else ip
-                        # Récupérer le statut actuel de l'hôte
-                        status = self._get_row_status(model, row)
+                        # FIX: Récupérer le statut en temps réel depuis le ping manager
+                        status = self._get_realtime_host_status(ip, model, row)
                         all_hosts.append({
                             'ip': ip,
                             'hostname': hostname,
                             'has_events': ip in tracked_ips,
-                            'status': status  # Ajout du statut actuel
+                            'status': status  # Statut en temps réel
                         })
                 
                 return jsonify({'success': True, 'data': all_hosts})
@@ -2204,6 +2204,36 @@ Ping ü - Monitoring Réseau
             pass
         # Par défaut, considérer comme en ligne
         return 'online'
+    
+    def _get_realtime_host_status(self, ip, model, row):
+        """
+        Détermine le statut en temps réel d'un hôte.
+        Vérifie d'abord le ping manager pour l'état actuel,
+        puis se rabat sur la colonne latence du modèle.
+        """
+        try:
+            # Vérifier si le monitoring est actif et récupérer l'état réel
+            if hasattr(self.main_window, 'main_controller') and \
+               self.main_window.main_controller and \
+               hasattr(self.main_window.main_controller, 'ping_manager') and \
+               self.main_window.main_controller.ping_manager:
+                
+                ping_manager = self.main_window.main_controller.ping_manager
+                
+                # Vérifier si l'IP est dans les hôtes suivis
+                if hasattr(ping_manager, 'host_states') and ip in ping_manager.host_states:
+                    # Récupérer l'état réel depuis le ping manager
+                    host_state = ping_manager.host_states[ip]
+                    # Si le dernier ping a réussi, l'hôte est online
+                    if host_state.get('is_alive', False):
+                        return 'online'
+                    else:
+                        return 'offline'
+        except Exception as e:
+            logger.debug(f"Erreur récupération statut temps réel pour {ip}: {e}")
+        
+        # Fallback: utiliser la méthode existante basée sur la colonne latence
+        return self._get_row_status(model, row)
     
     def _get_latency_color(self, latence_text):
         """

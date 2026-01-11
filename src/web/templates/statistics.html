@@ -1188,8 +1188,11 @@
             refreshAll();
             fetchHosts(); // fetchHosts appellera automatiquement checkAndSelectHostFromURL
 
-            // Auto-refresh every 30 seconds
-            setInterval(refreshAll, 30000);
+            // Auto-refresh every 30 seconds - INCLUDING host list
+            setInterval(() => {
+                refreshAll();
+                fetchHosts(); // Refresh host list to get updated status
+            }, 30000);
         });
     </script>
 </body>
