@@ -133,6 +133,28 @@ except ImportError:
 
 logger = get_logger(__name__)
 
+# Fonction utilitaire pour détecter les URLs
+def _is_url(host):
+    """Détecte si la chaîne est une URL/domaine plutôt qu'une adresse IP."""
+    if not host:
+        return False
+    
+    # Vérifier si c'est explicitement une URL avec protocole
+    if host.startswith('http://') or host.startswith('https://'):
+        return True
+    
+    # Vérifier si c'est un nom de domaine (contient des lettres)
+    # Les IPs contiennent uniquement des chiffres et des points
+    # Pattern pour IPv4: \d+\.\d+\.\d+\.\d+
+    ip_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+    if re.match(ip_pattern, host):
+        # C'est une IP valide, pas une URL
+        return False
+    
+    # Si ce n'est pas une IP et contient des lettres, c'est probablement un domaine/URL
+    return bool(re.search(r'[a-zA-Z]', host))
+
+
 # Import optionnel de SNMP (peut échouer dans l'exécutable PyInstaller)
 try:
     from src.utils.snmp_helper import snmp_helper
@@ -304,20 +326,8 @@ class AsyncPingWorker(QThread):
     
     def _is_url(self, host):
         """Détecte si la chaîne est une URL/domaine plutôt qu'une adresse IP."""
-        # Vérifier si c'est explicitement une URL avec protocole
-        if host.startswith('http://') or host.startswith('https://'):
-            return True
-        
-        # Vérifier si c'est un nom de domaine (contient des lettres)
-        # Les IPs contiennent uniquement des chiffres et des points
-        # Pattern pour IPv4: \d+\.\d+\.\d+\.\d+
-        ip_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
-        if re.match(ip_pattern, host):
-            # C'est une IP valide, pas une URL
-            return False
-        
-        # Si ce n'est pas une IP et contient des lettres, c'est probablement un domaine/URL
-        return bool(re.search(r'[a-zA-Z]', host))
+        return _is_url(host)
+
 
 
     def parse_latency(self, output):
@@ -525,7 +535,7 @@ class PingManager(QObject):
             return
         
         # Détecter si c'est un site web (URL)
-        is_url = self._is_url(ip)
+        is_url = _is_url(ip)
         host_type = "URL" if is_url else "IP"
             
         if ip in liste:
