@@ -254,15 +254,40 @@ class AsyncPingWorker(QThread):
         self.is_running = False
 
     async def ping_all(self, ips):
-        """Lance les pings par lots de 20 pour maximiser la stabilité avec SNMP."""
-        batch_size = 20  # Réduit pour garantir la stabilité avec requêtes SNMP
-        for i in range(0, len(ips), batch_size):
-            if not self.is_running:
-                break
-            batch = ips[i:i + batch_size]
-            # Lance les pings en parallèle
-            tasks = [self.ping_host(ip) for ip in batch]
-            await asyncio.gather(*tasks)
+        """
+        Lance les pings de manière optimisée :
+        - Sites web (URLs) : testés séquentiellement pour éviter les pertes
+        - Adresses IP : testées en parallèle par lots de 20 pour la performance
+        """
+        # Séparer les sites web des adresses IP
+        websites = []
+        ip_addresses = []
+        
+        for ip in ips:
+            if self._is_url(ip):
+                websites.append(ip)
+            else:
+                ip_addresses.append(ip)
+        
+        # 1. Tester les sites web de manière SÉQUENTIELLE (un par un)
+        if websites:
+            logger.info(f"Test séquentiel de {len(websites)} site(s) web...")
+            for website in websites:
+                if not self.is_running:
+                    break
+                await self.ping_host(website)
+        
+        # 2. Tester les adresses IP en PARALLÈLE par lots (comme avant)
+        if ip_addresses:
+            logger.debug(f"Test parallèle de {len(ip_addresses)} adresse(s) IP...")
+            batch_size = 20  # Réduit pour garantir la stabilité avec requêtes SNMP
+            for i in range(0, len(ip_addresses), batch_size):
+                if not self.is_running:
+                    break
+                batch = ip_addresses[i:i + batch_size]
+                # Lance les pings en parallèle
+                tasks = [self.ping_host(ip) for ip in batch]
+                await asyncio.gather(*tasks)
 
     async def ping_host(self, ip):
         """Ping un hôte spécifique de manière asynchrone via le système ou HTTP pour les sites web."""
