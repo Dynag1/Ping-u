@@ -2222,7 +2222,15 @@
                                         <form id="form-add-hosts">
                                             <div class="form-group">
                                                 <label for="input-ip" data-i18n="base_ip">Adresse IP de base</label>
-                                                <input type="text" id="input-ip" placeholder="192.168.1.1" required>
+                                                <input type="text" id="input-ip"
+                                                    placeholder="192.168.1.1 ou https://site.com:8443" required>
+                                                <small
+                                                    style="color: #a0aec0; font-size: 12px; margin-top: 5px; display: block;">
+                                                    💡 Formats supportés: <code
+                                                        style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">192.168.1.1:8080</code>,
+                                                    <code
+                                                        style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">https://example.com:8443</code>
+                                                </small>
                                             </div>
                                             <div class="form-row">
                                                 <div class="form-group">

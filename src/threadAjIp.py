@@ -134,9 +134,17 @@ def main(self, comm, model, ip, hote, tout, port, mac, site=""):
     for t in threads:
         t.join()
     if tout != self.tr("Site"):
-        # Détecter si c'est une URL (site web) ou une IP
-        is_url = (ip.startswith('http://') or ip.startswith('https://') or 
-                  any(c.isalpha() for c in ip))
+        # Importer le parser d'URL pour gérer les ports
+        try:
+            from src.utils.url_parser import parse_host_port
+            parsed = parse_host_port(ip)
+            # Si un port est spécifié ou si c'est une URL, traiter comme une URL
+            is_url = (ip.startswith('http://') or ip.startswith('https://') or 
+                      parsed['has_port'] or any(c.isalpha() for c in parsed['host']))
+        except ImportError:
+            # Fallback si le parser n'est pas disponible
+            is_url = (ip.startswith('http://') or ip.startswith('https://') or 
+                      any(c.isalpha() for c in ip))
         
         if is_url:
             # Mode URL/Site web : ajouter directement sans validation IP

@@ -62,6 +62,7 @@ class HTTPChecker:
         """
         Normalise une URL en ajoutant le protocole si manquant.
         Essaie HTTPS en premier, puis HTTP en fallback.
+        Préserve les ports personnalisés s'ils sont spécifiés.
         
         Args:
             url: URL ou domaine à normaliser
@@ -74,12 +75,14 @@ class HTTPChecker:
         
         url = url.strip()
         
-        # Si déjà un protocole, retourner tel quel
+        # Si déjà un protocole, retourner tel quel (préserve le port)
         if url.startswith('http://') or url.startswith('https://'):
             return url
         
         # Sinon, ajouter https:// par défaut (le plus courant)
+        # Préserve le port s'il est présent (ex: example.com:8443 -> https://example.com:8443)
         return f'https://{url}'
+
     
     async def check_website(self, url, timeout=None):
         """
