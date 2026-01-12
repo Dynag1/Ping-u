@@ -1874,10 +1874,6 @@
                 </div>
                 <div class="host-ip">${escapeHtml(host.ip)}</div>
                 <div class="host-details">
-                    <div class="detail-item">
-                        <div class="detail-label">${t('mac')}</div>
-                        <div class="detail-value">${escapeHtml(host.mac) || '-'}</div>
-                    </div>
                     <div class="detail-item" style="display: ${(temperature !== '-' && temperature) ? 'flex' : 'none'}">
                         <div class="detail-label">🌡️ ${t('temperature')}</div>
                         <div class="${tempClass}">${escapeHtml(tempDisplay)}</div>
@@ -1946,18 +1942,10 @@
             // Mettre à jour les valeurs détaillées
             const detailItems = card.querySelectorAll('.detail-item');
 
-            // MAC (toujours affiché)
+            // Température - masquer si vide (index 0)
             if (detailItems[0]) {
-                const macValue = detailItems[0].querySelector('.detail-value');
-                if (macValue && macValue.textContent !== (host.mac || '-')) {
-                    macValue.textContent = host.mac || '-';
-                }
-            }
-
-            // Température - masquer si vide
-            if (detailItems[1]) {
                 const shouldShow = temperature !== '-' && temperature;
-                detailItems[1].style.display = shouldShow ? 'flex' : 'none';
+                detailItems[0].style.display = shouldShow ? 'flex' : 'none';
 
                 if (shouldShow) {
                     let tempDisplay = temperature;
@@ -1970,7 +1958,7 @@
                         tempClass = 'detail-value temp-warning';
                     }
 
-                    const tempValue = detailItems[1].querySelector('.detail-value, .temp-critical, .temp-warning');
+                    const tempValue = detailItems[0].querySelector('.detail-value, .temp-critical, .temp-warning');
                     if (tempValue) {
                         tempValue.className = tempClass;
                         if (tempValue.textContent !== tempDisplay) {
@@ -1980,26 +1968,26 @@
                 }
             }
 
-            // Débit IN - masquer si vide/N/A
-            if (detailItems[2]) {
+            // Débit IN - masquer si vide/N/A (index 1)
+            if (detailItems[1]) {
                 const shouldShow = debitIn && debitIn !== 'N/A' && debitIn !== '-' && debitIn.trim() !== '';
-                detailItems[2].style.display = shouldShow ? 'flex' : 'none';
+                detailItems[1].style.display = shouldShow ? 'flex' : 'none';
 
                 if (shouldShow) {
-                    const debitInValue = detailItems[2].querySelector('.detail-value');
+                    const debitInValue = detailItems[1].querySelector('.detail-value');
                     if (debitInValue && debitInValue.textContent !== debitIn) {
                         debitInValue.textContent = debitIn;
                     }
                 }
             }
 
-            // Débit OUT - masquer si vide/N/A
-            if (detailItems[3]) {
+            // Débit OUT - masquer si vide/N/A (index 2)
+            if (detailItems[2]) {
                 const shouldShow = debitOut && debitOut !== 'N/A' && debitOut !== '-' && debitOut.trim() !== '';
-                detailItems[3].style.display = shouldShow ? 'flex' : 'none';
+                detailItems[2].style.display = shouldShow ? 'flex' : 'none';
 
                 if (shouldShow) {
-                    const debitOutValue = detailItems[3].querySelector('.detail-value');
+                    const debitOutValue = detailItems[2].querySelector('.detail-value');
                     if (debitOutValue && debitOutValue.textContent !== debitOut) {
                         debitOutValue.textContent = debitOut;
                     }
