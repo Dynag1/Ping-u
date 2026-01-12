@@ -5,6 +5,17 @@
 
 ---
 
+### v99.03.10 (2026-01-12)
+- **Ajout: Gestion des ports personnalisés dans les suivis**
+  * Support des formats `192.168.1.1:8080`, `http://site.com:8080`, `https://site.com:8443`
+  * Vérification TCP pour les adresses IP avec port personnalisé
+  * Vérification HTTP/HTTPS pour les URLs avec port personnalisé
+  * Nouveau module `url_parser.py` pour parser et normaliser les adresses avec ports
+  * Interface web mise à jour avec exemples de formats supportés
+  * Détection automatique du type de surveillance selon le format (ICMP, TCP, HTTP)
+
+---
+
 ### v99.03.05 (2025-12-31)
 - Ajout: Dictionnaire complet `BANDWIDTH_OIDS` pour le monitoring de la bande passante via SNMP.
 *   Support de tous les équipements : Linux, Windows, Raspberry Pi, NAS (Synology, QNAP), switches (Cisco, HP, Dell, Ubiquiti, MikroTik, Netgear, D-Link, TP-Link, Zyxel), box internet (Freebox, Livebox, Bbox, SFR Box), et serveurs (Dell iDRAC, HP iLO, Supermicro IPMI).

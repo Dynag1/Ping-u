@@ -133,6 +133,14 @@ except ImportError:
 
 logger = get_logger(__name__)
 
+# Import du parser d'URL pour gérer les ports
+try:
+    from src.utils.url_parser import parse_host_port
+    URL_PARSER_AVAILABLE = True
+except ImportError:
+    URL_PARSER_AVAILABLE = False
+    logger.warning("URL parser non disponible")
+
 # Fonction utilitaire pour détecter les URLs
 def _is_url(host):
     """Détecte si la chaîne est une URL/domaine plutôt qu'une adresse IP."""
@@ -142,6 +150,11 @@ def _is_url(host):
     # Vérifier si c'est explicitement une URL avec protocole
     if host.startswith('http://') or host.startswith('https://'):
         return True
+    
+    # Si un port est spécifié, parser pour extraire l'hôte
+    if ':' in host and URL_PARSER_AVAILABLE:
+        parsed = parse_host_port(host)
+        host = parsed['host']
     
     # Vérifier si c'est un nom de domaine (contient des lettres)
     # Les IPs contiennent uniquement des chiffres et des points
@@ -153,6 +166,45 @@ def _is_url(host):
     
     # Si ce n'est pas une IP et contient des lettres, c'est probablement un domaine/URL
     return bool(re.search(r'[a-zA-Z]', host))
+
+
+async def check_tcp_port(host, port, timeout=2):
+    """
+    Vérifie la connectivité TCP sur un port spécifique.
+    
+    Args:
+        host: Adresse IP ou nom d'hôte
+        port: Port à tester
+        timeout: Timeout en secondes
+        
+    Returns:
+        float: Temps de réponse en ms si succès, 500.0 si échec
+    """
+    import time
+    start_time = time.time()
+    
+    try:
+        # Tenter une connexion TCP
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, port),
+            timeout=timeout
+        )
+        
+        # Fermer la connexion proprement
+        writer.close()
+        await writer.wait_closed()
+        
+        # Calculer le temps de réponse
+        response_time = (time.time() - start_time) * 1000
+        return round(response_time, 2)
+        
+    except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as e:
+        logger.debug(f"TCP check failed for {host}:{port}: {e}")
+        return 500.0
+    except Exception as e:
+        logger.warning(f"Unexpected error in TCP check for {host}:{port}: {e}")
+        return 500.0
+
 
 
 # Import optionnel de SNMP (peut échouer dans l'exécutable PyInstaller)
@@ -218,29 +270,59 @@ class AsyncPingWorker(QThread):
             return
 
         latency = 500.0  # Valeur par défaut (Timeout/Erreur)
+        original_address = ip
+        
+        # Parser l'adresse pour extraire l'hôte et le port si présent
+        parsed = None
+        if URL_PARSER_AVAILABLE:
+            parsed = parse_host_port(ip)
+            host = parsed['host']
+            port = parsed['port']
+            has_custom_port = parsed['has_port']
+        else:
+            host = ip
+            port = None
+            has_custom_port = False
         
         # Détecter si c'est un site web (URL) au lieu d'une IP
-        is_website = self._is_url(ip)
+        is_website = self._is_url(original_address)
         
+        # Cas 1: URL avec protocole (http:// ou https://) -> HTTP checker
         if is_website and HTTP_CHECKER_AVAILABLE and http_checker:
             # Mode site web: utiliser HTTP checker
             try:
-                logger.info(f"[HTTP] Vérification du site web: {ip}")
-                result = await http_checker.check_website(ip)
+                logger.info(f"[HTTP] Vérification du site web: {original_address}")
+                result = await http_checker.check_website(original_address)
                 
-                logger.info(f"[HTTP] {ip} - Résultat: success={result['success']}, status={result.get('status_code')}, time={result.get('response_time_ms')}ms, error={result.get('error')}")
+                logger.info(f"[HTTP] {original_address} - Résultat: success={result['success']}, status={result.get('status_code')}, time={result.get('response_time_ms')}ms, error={result.get('error')}")
                 
                 if result['success']:
                     # Site accessible, utiliser le temps de réponse
                     latency = result['response_time_ms']  # Déjà en ms
-                    logger.info(f"[HTTP] ✓ Site web {ip}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
+                    logger.info(f"[HTTP] ✓ Site web {original_address}: HTTP {result.get('status_code', 'OK')} - {latency:.1f} ms")
                 else:
                     # Site inaccessible
                     latency = 500.0
-                    logger.warning(f"[HTTP] ✗ Site web {ip} inaccessible: {result.get('error', 'Unknown')} (status: {result.get('status_code', 'N/A')})")
+                    logger.warning(f"[HTTP] ✗ Site web {original_address} inaccessible: {result.get('error', 'Unknown')} (status: {result.get('status_code', 'N/A')})")
             except Exception as e:
-                logger.error(f"[HTTP] Exception lors de la vérification de {ip}: {e}", exc_info=True)
+                logger.error(f"[HTTP] Exception lors de la vérification de {original_address}: {e}", exc_info=True)
                 latency = 500.0
+        
+        # Cas 2: IP ou domaine avec port personnalisé -> TCP check
+        elif has_custom_port and port:
+            try:
+                logger.info(f"[TCP] Vérification TCP sur {host}:{port}")
+                latency = await check_tcp_port(host, port, timeout=2)
+                
+                if latency < 500:
+                    logger.info(f"[TCP] ✓ Port {port} ouvert sur {host} - {latency:.1f} ms")
+                else:
+                    logger.warning(f"[TCP] ✗ Port {port} fermé/inaccessible sur {host}")
+            except Exception as e:
+                logger.error(f"[TCP] Exception lors de la vérification de {host}:{port}: {e}", exc_info=True)
+                latency = 500.0
+        
+        # Cas 3: IP ou domaine sans port -> ICMP ping classique
         else:
             # Mode ICMP classique pour les IP
             try:
@@ -248,12 +330,12 @@ class AsyncPingWorker(QThread):
                 if self.system == "windows":
                     # -n 2 : deux pings pour confirmer la perte et éviter les faux positifs
                     # -w 2000 : timeout 2000ms
-                    cmd = ["ping", "-n", "2", "-w", "2000", ip]
+                    cmd = ["ping", "-n", "2", "-w", "2000", host]
                 else:
                     # -c 2 : deux pings
                     # -W 2 : timeout 2s
                     # Utiliser le chemin complet de ping pour éviter les problèmes de permissions
-                    cmd = ["/bin/ping", "-c", "2", "-W", "2", ip]
+                    cmd = ["/bin/ping", "-c", "2", "-W", "2", host]
 
                 # Création du sous-processus
                 # Sur Windows, masquer la fenêtre CMD
@@ -305,13 +387,13 @@ class AsyncPingWorker(QThread):
                     if latency >= 500 and has_ttl:
                         # On force une latence "vivante" pour ne pas déclarer HS un hôte qui répond
                         latency = 10.0 
-                        logger.debug(f"Ping OK (TTL présent) mais latence illisible pour {ip}. Forcé à 10ms.")
+                        logger.debug(f"Ping OK (TTL présent) mais latence illisible pour {host}. Forcé à 10ms.")
                 else:
                     latency = 500.0
-                    # logger.debug(f"Ping échoué pour {ip}")
+                    # logger.debug(f"Ping échoué pour {host}")
 
             except Exception as e:
-                logger.debug(f"Erreur ping {ip}: {e}")
+                logger.debug(f"Erreur ping {host}: {e}")
                 latency = 500.0
 
         # Interrogation SNMP pour la température uniquement (optimisé pour beaucoup d'équipements)
