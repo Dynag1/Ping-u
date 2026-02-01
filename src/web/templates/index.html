@@ -1114,9 +1114,32 @@
             </button>
         </div>
 
-        <!-- Section statistiques -->
+        <!-- Section Navigation -->
         <div class="menu-section">
-            <div class="menu-section-title">📈 <span data-i18n="statistics">Statistiques</span></div>
+            <div class="menu-section-title">🧭 <span data-i18n="navigation">Navigation</span></div>
+            <div class="menu-user-actions">
+                <a href="/" class="admin-link"
+                    style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white;">
+                    📊 <span data-i18n="dashboard">Tableau de bord</span>
+                </a>
+                <a href="/synoptic" class="admin-link"
+                    style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white;">
+                    🗺️ <span data-i18n="synoptic">Synoptique</span>
+                </a>
+                <a href="/statistics" class="admin-link"
+                    style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                    📈 <span data-i18n="statistics">Statistiques</span>
+                </a>
+                <a href="/monitoring" class="admin-link"
+                    style="background: linear-gradient(135deg, #4ecdc4, #44a08d); color: white;">
+                    〽️ <span data-i18n="monitoring">Monitoring</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Section statistiques (Résumé) -->
+        <div class="menu-section">
+            <div class="menu-section-title">📝 <span data-i18n="summary">Résumé</span></div>
             <div class="stats-menu">
                 <div class="stat-card-menu total">
                     <span class="label" data-i18n="total">Total:</span>
@@ -1142,16 +1165,6 @@
                     <span class="label" data-i18n="high_temp"></span>
                     <span class="value" id="high-temp-hosts">0</span>
                 </div>
-            </div>
-            <div class="menu-user-actions" style="margin-top: 15px;">
-                <a href="/statistics" class="admin-link"
-                    style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
-                    📊 <span data-i18n="statistics">Statistiques</span>
-                </a>
-                <a href="/monitoring" class="admin-link"
-                    style="background: linear-gradient(135deg, #4ecdc4, #44a08d); color: white;">
-                    📈 <span data-i18n="monitoring">Monitoring</span>
-                </a>
             </div>
         </div>
     </div>
@@ -1230,8 +1243,12 @@
                 menu: "Menu",
                 user: "Utilisateur",
                 language: "Langue",
+                navigation: "Navigation",
+                dashboard: "Tableau de bord",
+                summary: "Résumé",
                 status: "Statut",
                 statistics: "Statistiques",
+                synoptic: "Synoptique",
                 connected: "Connecté",
                 disconnected: "Déconnecté",
                 scan_running: "Scan en cours",
@@ -1274,8 +1291,12 @@
                 menu: "Menu",
                 user: "User",
                 language: "Language",
+                navigation: "Navigation",
+                dashboard: "Dashboard",
+                summary: "Summary",
                 status: "Status",
                 statistics: "Statistics",
+                synoptic: "Synoptic View",
                 connected: "Connected",
                 disconnected: "Disconnected",
                 scan_running: "Scan running",

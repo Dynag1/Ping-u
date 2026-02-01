@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synoptique - Ping ü</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        /* Styles copiés de index.html pour cohérence */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e4e4e4;
+        }
+
+        /* En-tête */
+        .header-minimal {
+            background: rgba(45, 55, 72, 0.95);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .main-title {
+            color: #e4e4e4;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            margin: 0;
+        }
+
+        .hamburger-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-line {
+            width: 24px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        /* Zone Principale */
+        .main-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 120px);
+        }
+
+        /* Sidebar pour admin (liste des hôtes) */
+        .tools-sidebar {
+            width: 300px;
+            background: rgba(45, 55, 72, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tools-sidebar h3 {
+            font-size: 16px;
+            color: #a0aec0;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .host-item {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .host-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .host-item.placed {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        /* Map Container */
+        .map-wrapper {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            overflow: hidden;
+            /* Scroll si image trop grande ? ou contain ? */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #map-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            /* L'image définira la taille */
+        }
+
+        #synoptic-img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Host Marker sur la carte */
+        .host-marker {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+            border: 2px solid white;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+
+        .host-marker:hover {
+            transform: translate(-50%, -50%) scale(1.5);
+            z-index: 20;
+        }
+
+        .host-marker.status-ok {
+            background-color: #10b981;
+        }
+
+        .host-marker.status-hs {
+            background-color: #ef4444;
+            animation: pulse 1s infinite;
+        }
+
+        .host-marker .tooltip {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .host-marker:hover .tooltip {
+            opacity: 1;
+        }
+
+        .host-marker-label {
+            position: absolute;
+            top: 20px;
+            /* Just below the marker which is 16px */
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black, 0 0 5px black;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 15;
+            text-align: center;
+        }
+
+        /* Admin Controls */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+        }
+
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* --- Menu Latéral (copié de index.html pour le style) --- */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -340px;
+            width: 320px;
+            height: 100%;
+            background: rgba(30, 41, 59, 0.98);
+            backdrop-filter: blur(20px);
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
+            z-index: 999;
+            transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .side-menu.active {
+            left: 0;
+        }
+
+        .side-menu-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .menu-section {
+            padding: 18px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-section-title {
+            color: #a0aec0;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .menu-links a {
+            display: block;
+            padding: 10px;
+            color: #e4e4e4;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .menu-links a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #667eea;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Menu Hamburger -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="side-menu-header">
+            <h2>Menu</h2>
+            <button class="hamburger-btn" style="width:30px; height:30px; background:none; box-shadow:none;"
+                onclick="toggleMenu()">✕</button>
+        </div>
+        <div class="menu-section">
+            <div class="menu-links">
+                <a href="/">📊 Tableau de bord</a>
+                <a href="/synoptic" style="color: #667eea; font-weight:bold;">🗺️ Synoptique</a>
+                <a href="/statistics.html?ip=all">📈 Statistiques</a>
+                {% if is_admin %}
+                <a href="/admin">⚙️ Administration</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- En-tête -->
+    <div class="header-minimal">
+        <button class="hamburger-btn" onclick="toggleMenu()">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+        </button>
+        <h1 class="main-title">Synoptique Réseau</h1>
+    </div>
+
+    <div class="main-container">
+
+        {% if is_admin %}
+        <div class="tools-sidebar">
+            <h3>Configuration</h3>
+            <div class="file-input-wrapper btn btn-primary">
+                <span>Changer la carte (PNG)</span>
+                <input type="file" id="mapUpload" accept=".png">
+            </div>
+            <button class="btn btn-success" onclick="saveConfiguration()">Sauvegarder Positions</button>
+
+            <h3>Hôtes non placés</h3>
+            <div id="unplaced-hosts-list">
+                <!--peuplé par JS-->
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="map-wrapper" id="mapWrapper">
+            <div id="map-container">
+                <img id="synoptic-img" src="/api/synoptic/image" alt="Carte Synoptique"
+                    onerror="this.onerror=null; this.src=''; this.alt='Aucune carte configurée. Admin: Uploadez une image PNG.';">
+                <!-- markers seront ajoutés ici -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const socket = io();
+        let hostsData = {};
+        let placedHosts = {}; // IP -> {x, y} relative %
+        let draggingIp = null;
+        let isAdmin = {{ 'true' if is_admin else 'false' }};
+
+        // Charger configuration et status
+        async function init() {
+            await loadConfig();
+            fetchHosts();
+
+            // Recharger image pour éviter cache si upload récent
+            document.getElementById('synoptic-img').src = "/api/synoptic/image?" + new Date().getTime();
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/synoptic/config');
+                const data = await response.json();
+                if (data.success && data.config) {
+                    placedHosts = data.config.hosts || {};
+                }
+            } catch (e) {
+                console.error("Erreur loading config", e);
+            }
+        }
+
+        function fetchHosts() {
+            fetch('/api/hosts')
+                .then(res => res.json())
+                .then(data => {
+                    hostsData = data;
+                    render();
+                });
+        }
+
+        // Socket IO updates
+        socket.on('hosts_update', (data) => {
+            // Data is array of hosts
+            hostsData = data;
+            render();
+        });
+
+        socket.on('monitoring_status', (status) => {
+            // Optionnel : afficher si monitoring off
+        });
+
+        function render() {
+            const mapContainer = document.getElementById('map-container');
+            const unplacedContainer = document.getElementById('unplaced-hosts-list');
+
+            // Nettoyer markers existants tout en gardant l'image
+            const img = document.getElementById('synoptic-img');
+            while (mapContainer.lastChild && mapContainer.lastChild !== img) {
+                mapContainer.removeChild(mapContainer.lastChild);
+            }
+
+            if (unplacedContainer) unplacedContainer.innerHTML = '';
+
+            // Handle hostsData as array
+            const hostsArray = Array.isArray(hostsData) ? hostsData : Object.values(hostsData);
+
+            hostsArray.forEach(host => {
+                const ip = host.ip;
+                const name = host.nom || ip; // Fallback to IP if no name
+
+                if (placedHosts[ip]) {
+                    createMarker(ip, host, placedHosts[ip].x, placedHosts[ip].y);
+                } else if (isAdmin && unplacedContainer) {
+                    // List item draggable
+                    const div = document.createElement('div');
+                    div.className = 'host-item';
+                    div.draggable = true;
+                    div.innerHTML = `<span>${name}</span> <small>${ip}</small>`;
+                    div.ondragstart = (e) => {
+                        draggingIp = ip;
+                        e.dataTransfer.setData('text/plain', ip);
+                    };
+                    unplacedContainer.appendChild(div);
+                }
+            });
+        }
+
+        function createMarker(ip, host, x, y) {
+            const mapContainer = document.getElementById('map-container');
+            const div = document.createElement('div');
+            // Check status (alive/dead)
+            const status = host.status === 'alive' ? 'ok' : 'hs'; // Ajuster selon valeurs réelles (souvent 1/0 ou alive/dead)
+            // Dans _get_hosts_data, status vient de _get_row_status. Index.html utilise classe .offline ou .online
+
+            // Correction statut: index.html utilise host.status (alive/dead/unknown)
+            let statusClass = 'status-hs';
+            if (host.status === 'alive' || host.status === 'online' || host.status === 1) statusClass = 'status-ok';
+
+            div.className = `host-marker ${statusClass}`;
+            div.style.left = x + '%';
+            div.style.top = y + '%';
+
+            const name = host.nom || ip;
+            div.title = `${name} (${host.latence || '-'})`;
+
+            div.innerHTML = `
+                <div class="host-marker-label">${name}</div>
+                <div class="tooltip">${name}<br>${ip}</div>
+            `;
+
+            // Navigation onClick
+            div.onclick = (e) => {
+                if (!isAdmin || !e.ctrlKey) {
+                    window.location.href = `/statistics?ip=${ip}`;
+                }
+            };
+
+            // Draggable if Admin
+            if (isAdmin) {
+                div.draggable = true;
+                div.ondragstart = (e) => {
+                    draggingIp = ip;
+                    e.dataTransfer.setData('text/plain', ip);
+                    e.stopPropagation();
+                };
+            }
+
+            mapContainer.appendChild(div);
+        }
+
+        function updateMarkersStatus() {
+            render();
+        }
+
+        // Drop Logic
+        if (isAdmin) {
+            const mapContainer = document.getElementById('map-container');
+
+            mapContainer.ondragover = (e) => {
+                e.preventDefault();
+            };
+
+            mapContainer.ondrop = (e) => {
+                e.preventDefault();
+                if (!draggingIp) return;
+
+                const rect = mapContainer.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Convert to percentage
+                const xPct = (x / rect.width) * 100;
+                const yPct = (y / rect.height) * 100;
+
+                placedHosts[draggingIp] = { x: xPct, y: yPct };
+                draggingIp = null;
+                render();
+            };
+        }
+
+        // Upload Logic
+        const uploadInput = document.getElementById('mapUpload');
+        if (uploadInput) {
+            uploadInput.onchange = async () => {
+                if (uploadInput.files.length === 0) return;
+                const file = uploadInput.files[0];
+                const formData = new FormData();
+                formData.append('map_image', file);
+
+                try {
+                    const res = await fetch('/api/synoptic/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const d = await res.json();
+                    if (d.success) {
+                        alert("Carte uploadée !");
+                        location.reload();
+                    } else {
+                        alert("Erreur: " + d.error);
+                    }
+                } catch (e) {
+                    console.error("Upload error", e);
+                    alert("Erreur upload");
+                }
+            };
+        }
+
+        async function saveConfiguration() {
+            try {
+                const res = await fetch('/api/synoptic/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hosts: placedHosts })
+                });
+                const d = await res.json();
+                if (d.success) alert("Configuration sauvegardée !");
+                else alert("Erreur sauvegarde: " + d.error);
+            } catch (e) {
+                console.error("Save error", e);
+                alert("Erreur lors de la sauvegarde");
+            }
+        }
+
+        // Menu Toggle
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            const overlay = document.getElementById('menuOverlay');
+            if (menu.classList.contains('active')) {
+                menu.classList.remove('active');
+                overlay.classList.remove('active');
+            } else {
+                menu.classList.add('active');
+                overlay.classList.add('active');
+            }
+        }
+        document.getElementById('menuOverlay').onclick = toggleMenu;
+
+        // Init
+        init();
+
+    </script>
+</body>
+
+</html>
