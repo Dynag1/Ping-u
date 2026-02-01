@@ -133,12 +133,21 @@
         #map-container {
             position: relative;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            /* L'image définira la taille */
+            display: inline-block;
+            max-width: 100%;
+            max-height: 80vh;
+            /* Contain height to viewport */
+            line-height: 0;
         }
 
         #synoptic-img {
             display: block;
+            width: auto;
+            /* Let width adjust */
             max-width: 100%;
+            /* But don't overflow width */
+            max-height: 80vh;
+            /* Contain height within viewport */
             height: auto;
         }
 
