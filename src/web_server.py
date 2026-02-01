@@ -10,9 +10,12 @@ import logging
 import threading
 
 try:
-    from flask import Flask, render_template, jsonify, request, send_file, session, redirect, url_for
+    from flask import Flask, render_template, jsonify, request, send_file, session, redirect, url_for, send_from_directory
     from flask_socketio import SocketIO, emit
     from flask_cors import CORS
+    import json
+    import shutil
+    import os
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
@@ -1652,13 +1655,13 @@ Ping ü - Monitoring Réseau
         # ==================== Statistiques de Connexion ====================
         
         @self.app.route('/statistics')
-        @WebAuth.login_required
+        @WebAuth.any_login_required
         def statistics_page():
             """Page des statistiques de connexion (admin only)"""
             return render_template('statistics.html')
         
         @self.app.route('/api/stats/overview')
-        @WebAuth.login_required
+        @WebAuth.any_login_required
         def stats_overview():
             """Retourne les statistiques globales de connexion"""
             try:
@@ -1673,7 +1676,7 @@ Ping ü - Monitoring Réseau
                 return jsonify({'success': False, 'error': str(e)}), 500
         
         @self.app.route('/api/stats/top')
-        @WebAuth.login_required
+        @WebAuth.any_login_required
         def stats_top_disconnectors():
             """Retourne les hôtes avec le plus de déconnexions"""
             try:
@@ -1689,7 +1692,7 @@ Ping ü - Monitoring Réseau
                 return jsonify({'success': False, 'error': str(e)}), 500
         
         @self.app.route('/api/stats/host/<path:ip>')
-        @WebAuth.login_required
+        @WebAuth.any_login_required
         def stats_host(ip):
             """Retourne les statistiques d'un hôte spécifique"""
             try:
@@ -1994,8 +1997,97 @@ Ping ü - Monitoring Réseau
                 logger.error(f"Erreur historique ports switch {ip}: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': str(e)}), 500
 
+        @self.app.route('/synoptic')
+        @WebAuth.any_login_required
+        def synoptic():
+            try:
+                is_admin = session.get('role') == 'admin'
+                username = session.get('username', '')
+                return render_template('synoptic.html', is_admin=is_admin, username=username)
+            except Exception as e:
+                logger.error(f"Erreur rendu synoptic: {e}", exc_info=True)
+                return jsonify({'error': 'Template introuvable', 'message': str(e)}), 500
 
-    
+        @self.app.route('/api/synoptic/upload', methods=['POST'])
+        @WebAuth.login_required
+        def upload_synoptic_map():
+            try:
+                if 'map_image' not in request.files:
+                    return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+                
+                file = request.files['map_image']
+                if file.filename == '':
+                    return jsonify({'success': False, 'error': 'Aucun fichier sélectionné'}), 400
+                
+                # Vérifier l'extension (PNG uniquement comme demandé)
+                if not file.filename.lower().endswith('.png'):
+                    return jsonify({'success': False, 'error': 'Format de fichier non supporté. Utilisez .png'}), 400
+
+                # Sauvegarder dans bd/synoptic.png
+                # Utiliser chemin relatif 'bd' si existant, sinon créer
+                bd_dir = "bd"
+                if not os.path.exists(bd_dir):
+                    os.makedirs(bd_dir, exist_ok=True)
+                
+                dest_path = os.path.join(bd_dir, "synoptic.png")
+                file.save(dest_path)
+                
+                logger.info(f"Image synoptique uploadée: {dest_path}")
+                return jsonify({'success': True, 'message': 'Image uploadée avec succès'})
+            except Exception as e:
+                logger.error(f"Erreur upload synoptic: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/synoptic/config', methods=['GET', 'POST'])
+        @WebAuth.any_login_required
+        def synoptic_config():
+            bd_dir = "bd"
+            config_path = os.path.join(bd_dir, "synoptic.json")
+            
+            try:
+                if request.method == 'POST':
+                    # Seul admin peut sauvegarder
+                    if session.get('role') != 'admin':
+                        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+                        
+                    data = request.get_json()
+                    
+                    if not os.path.exists(bd_dir):
+                        os.makedirs(bd_dir, exist_ok=True)
+                        
+                    with open(config_path, 'w') as f:
+                        json.dump(data, f, indent=4)
+                        
+                    logger.info("Configuration synoptique sauvegardée")
+                    return jsonify({'success': True, 'message': 'Configuration sauvegardée'})
+                
+                else: # GET
+                    if os.path.exists(config_path):
+                        with open(config_path, 'r') as f:
+                            data = json.load(f)
+                        return jsonify({'success': True, 'config': data})
+                    else:
+                        return jsonify({'success': True, 'config': {}})
+                        
+            except Exception as e:
+                logger.error(f"Erreur config synoptic: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/synoptic/image')
+        @WebAuth.any_login_required
+        def get_synoptic_image():
+            try:
+                bd_dir = os.path.abspath("bd")
+                image_path = os.path.join(bd_dir, "synoptic.png")
+                
+                if os.path.exists(image_path):
+                    return send_file(image_path, mimetype='image/png')
+                else:
+                    return jsonify({'error': 'Image non trouvée'}), 404
+            except Exception as e:
+                logger.error(f"Erreur image synoptic: {e}", exc_info=True)
+                return jsonify({'error': str(e)}), 500
+
     def _on_device_discovered(self, device):
         """Callback appelé quand un périphérique est découvert"""
         try:
