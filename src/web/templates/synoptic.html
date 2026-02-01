@@ -151,6 +151,31 @@
             height: auto;
         }
 
+        /* Bandwidth Marker */
+        .bandwidth-marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            padding: 2px 5px;
+            color: #fff;
+            font-size: 10px;
+            font-family: monospace;
+            white-space: nowrap;
+            z-index: 5;
+            /* Below host markers */
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .bandwidth-marker:hover {
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #fff;
+        }
+
         /* Host Marker sur la carte */
         .host-marker {
             position: absolute;
@@ -179,25 +204,44 @@
             animation: pulse 1s infinite;
         }
 
+        .host-marker.status-temp-warning {
+            background-color: #f59e0b;
+            /* Orange */
+            animation: pulse-warning 2s infinite;
+        }
+
+        .host-marker.status-temp-critical {
+            background-color: #ea580c;
+            /* Dark Orange */
+            animation: pulse-warning 1s infinite;
+        }
+
         .host-marker .tooltip {
             position: absolute;
-            bottom: 20px;
+            top: 35px;
+            /* Below the label which is at top: 20px */
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 5px 10px;
+            padding: 4px 8px;
+            /* Slightly more padding */
             border-radius: 4px;
             white-space: nowrap;
-            font-size: 12px;
+            font-size: 10px;
+            /* Smaller font */
+            line-height: 1.2;
+            /* Ensure good line height */
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s;
+            z-index: 25;
         }
 
         .host-marker:hover .tooltip {
             opacity: 1;
         }
+
 
         .host-marker-label {
             position: absolute;
@@ -265,8 +309,19 @@
                 box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
             }
 
+        }
+
+        @keyframes pulse-warning {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+            }
+
             100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
             }
         }
 
@@ -421,6 +476,38 @@
             document.getElementById('synoptic-img').src = "/api/synoptic/image?" + new Date().getTime();
         }
 
+        let tempSeuil = 70;
+        let tempSeuilWarning = 60;
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/get_settings');
+                const result = await response.json();
+                if (result.success && result.settings) {
+                    // Update globals if settings provided
+                    // Note: backend might return full settings object or specific fields.
+                    // Assuming similar structure to index.html usage if available.
+                    // For now just fetching to be consistent, but since get_settings might not return thresholds directly unless updated
+                    // we will rely on defaults or what is available. 
+                    // Actually index.html logic suggests thresholds are hardcoded or managed elsewhere? 
+                    // Wait, index.html line 1416 defines them but doesn't seem to update them from `loadSettings` result directly in the snippet I saw.
+                    // I will stick to the default values for now as per index.html snippet.
+                }
+            } catch (e) {
+                console.error("Erreur settings", e);
+            }
+        }
+
+        function getTempAlertLevel(tempValue) {
+            if (!tempValue || tempValue === '-') return 'none';
+            // Handle numeric or string with unit
+            const temp = parseFloat(String(tempValue).replace('°C', '').replace('°', '').trim());
+            if (isNaN(temp)) return 'none';
+            if (temp >= tempSeuil) return 'critical';
+            if (temp >= tempSeuilWarning) return 'warning';
+            return 'none';
+        }
+
         async function loadConfig() {
             try {
                 const response = await fetch('/api/synoptic/config');
@@ -472,65 +559,126 @@
                 const ip = host.ip;
                 const name = host.nom || ip; // Fallback to IP if no name
 
+                // 1. Regular Host Marker
                 if (placedHosts[ip]) {
                     createMarker(ip, host, placedHosts[ip].x, placedHosts[ip].y);
                 } else if (isAdmin && unplacedContainer) {
-                    // List item draggable
-                    const div = document.createElement('div');
-                    div.className = 'host-item';
-                    div.draggable = true;
-                    div.innerHTML = `<span>${name}</span> <small>${ip}</small>`;
-                    div.ondragstart = (e) => {
-                        draggingIp = ip;
-                        e.dataTransfer.setData('text/plain', ip);
-                    };
-                    unplacedContainer.appendChild(div);
+                    createUnplacedItem(ip, name, ip, unplacedContainer);
+                }
+
+                // 2. Bandwidth Marker (Duplicate)
+                // Check if host has valid bandwidth data
+                const hasBandwidth = (host.debit_in && host.debit_in !== '-' && host.debit_in !== '') ||
+                    (host.debit_out && host.debit_out !== '-' && host.debit_out !== '');
+
+                if (hasBandwidth) {
+                    const bwKey = ip + '_bw';
+                    if (placedHosts[bwKey]) {
+                        createMarker(bwKey, host, placedHosts[bwKey].x, placedHosts[bwKey].y, 'bandwidth');
+                    } else if (isAdmin && unplacedContainer) {
+                        createUnplacedItem(bwKey, `Débit - ${name}`, ip, unplacedContainer);
+                    }
                 }
             });
         }
 
-        function createMarker(ip, host, x, y) {
+        function createUnplacedItem(key, label, ip, container) {
+            const div = document.createElement('div');
+            div.className = 'host-item';
+            div.draggable = true;
+            div.innerHTML = `<span>${label}</span> <small>${ip}</small>`;
+            div.ondragstart = (e) => {
+                draggingIp = key; // Use the key (ip or ip_bw)
+                e.dataTransfer.setData('text/plain', key);
+            };
+            container.appendChild(div);
+        }
+
+        // Modified createMarker to accept type
+        function createMarker(key, host, x, y, type = 'host') {
             const mapContainer = document.getElementById('map-container');
             const div = document.createElement('div');
-            // Check status (alive/dead)
-            const status = host.status === 'alive' ? 'ok' : 'hs'; // Ajuster selon valeurs réelles (souvent 1/0 ou alive/dead)
-            // Dans _get_hosts_data, status vient de _get_row_status. Index.html utilise classe .offline ou .online
+            const ip = host.ip;
 
-            // Correction statut: index.html utilise host.status (alive/dead/unknown)
-            let statusClass = 'status-hs';
-            if (host.status === 'alive' || host.status === 'online' || host.status === 1) statusClass = 'status-ok';
-
-            div.className = `host-marker ${statusClass}`;
+            // Common positioning
             div.style.left = x + '%';
             div.style.top = y + '%';
 
-            const name = host.nom || ip;
-            div.title = `${name} (${host.latence || '-'})`;
+            if (type === 'bandwidth') {
+                div.className = 'bandwidth-marker';
+                const din = host.debit_in || '-';
+                const dout = host.debit_out || '-';
+                // HTML arrow entities: down (IN), up (OUT)
+                div.innerHTML = `
+                    <div style="color:#4ade80;">&#9660; ${din}</div>
+                    <div style="color:#60a5fa;">&#9650; ${dout}</div>
+                `;
+            } else {
+                // ... Existing Host Marker Logic ...
 
-            div.innerHTML = `
-                <div class="host-marker-label">${name}</div>
-                <div class="tooltip">${name}<br>${ip}</div>
-            `;
-
-            // Navigation onClick
-            div.onclick = (e) => {
-                if (!isAdmin || !e.ctrlKey) {
-                    window.location.href = `/statistics?ip=${ip}`;
+                // Correction statut
+                let statusClass = 'status-hs';
+                if (host.status === 'alive' || host.status === 'online' || host.status === 1) {
+                    statusClass = 'status-ok';
+                    const tempLevel = getTempAlertLevel(host.temp);
+                    if (tempLevel === 'warning') statusClass = 'status-temp-warning';
+                    else if (tempLevel === 'critical') statusClass = 'status-temp-critical';
                 }
-            };
 
-            // Draggable if Admin
+                div.className = `host-marker ${statusClass}`;
+
+                const name = host.nom || ip;
+                const latency = host.latence || '-';
+                let tempDisplay = '';
+                if (host.temp && host.temp !== '-') {
+                    tempDisplay = ` | ${host.temp}`;
+                }
+
+                div.innerHTML = `
+                    <div class="host-marker-label">${name}</div>
+                    <div class="tooltip">${latency}${tempDisplay}</div>
+                `;
+
+                // Navigation onClick
+                div.onclick = (e) => {
+                    if (!isAdmin || !e.ctrlKey) {
+                        window.location.href = `/statistics?ip=${ip}`;
+                    }
+                };
+            }
+
+            // Draggable if Admin (Common)
             if (isAdmin) {
                 div.draggable = true;
                 div.ondragstart = (e) => {
-                    draggingIp = ip;
-                    e.dataTransfer.setData('text/plain', ip);
+                    draggingIp = key;
+                    e.dataTransfer.setData('text/plain', key);
                     e.stopPropagation();
+                };
+
+                // Right-click to remove
+                div.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (confirm(`Retirer ${host.nom || ip} du synoptique ?`)) {
+                        delete placedHosts[key];
+                        render();
+                        // Optional: auto-save or let user click save
+                        // User usually expects auto-save for simple actions or manual save.
+                        // Given 'savePlacement' saves everything, maybe safe to just update state and let user click 'Save Config' button?
+                        // But dragging updates state and requires manual save? 
+                        // Wait, looking at onDrop line 688: it updates placedHosts and calls render. It does NOT call saveConfiguration() automatically.
+                        // So I should follow the same pattern: update state, render. User must click "Sauvegarder Configuration".
+
+                        // However, for better UX on "Remove", maybe nice to remind them?
+                        // I'll stuck to just updating state and re-rendering.
+                    }
                 };
             }
 
             mapContainer.appendChild(div);
         }
+
 
         function updateMarkersStatus() {
             render();
