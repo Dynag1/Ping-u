@@ -380,6 +380,10 @@
             background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
         }
 
+        .collapsible-icon.backup {
+            background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
+        }
+
         .collapsible-icon.advanced {
             background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
         }
@@ -1870,96 +1874,56 @@
             <button class="close-menu-btn" onclick="toggleMenu()">✕</button>
         </div>
 
-        <!-- Section Langue -->
-        <div class="menu-section">
-            <div class="menu-section-title">🌍 <span data-i18n="language">Langue</span></div>
-            <div class="lang-selector">
-                <select id="lang-select" onchange="changeLanguage(this.value)">
-                    <option value="fr">Français</option>
-                    <option value="en">English</option>
-                </select>
-            </div>
-        </div>
 
-        <!-- Section Statut -->
-        <div class="menu-section">
-            <div class="menu-section-title">📊 <span data-i18n="status">Statut</span></div>
-            <div class="status-indicator" id="monitoring-status">
-                <span class="status-dot stopped"></span>
-                <span data-i18n="status_stopped">Arrêté</span>
-            </div>
-        </div>
 
-        <!-- Section Actions principales -->
+        <!-- Section Utilisateur -->
         <div class="menu-section">
-            <div class="menu-section-title">🎛️ <span data-i18n="actions">Actions</span></div>
+            <div class="menu-section-title">👤 <span data-i18n="menu_user_section">Utilisateur</span></div>
             <div class="menu-actions">
                 <div class="menu-actions">
                     <button id="btn-change-password" class="btn btn-info">🔑 <span
                             data-i18n="change_credentials">Changer
                             identifiants</span></button>
-                </div>
-            </div>
-
-            <!-- Section Pages (ancienne sidebar) -->
-            <div class="menu-section">
-                <div class="menu-section-title">📑 <span data-i18n="sections">Sections</span></div>
-                <nav class="menu-nav">
-                    <div class="menu-nav-item active" data-section="accueil" onclick="switchSection('accueil')">
-                        <span class="icon">🏠</span>
-                        <span data-i18n="menu_home">Accueil</span>
-                    </div>
-                    <div class="menu-nav-item" data-section="ajout" onclick="switchSection('ajout')">
-                        <span class="icon">📍</span>
-                        <span data-i18n="menu_add">Ajout</span>
-                    </div>
-                    <div class="menu-nav-item" data-section="sites" onclick="switchSection('sites')">
-                        <span class="icon">🏢</span>
-                        <span data-i18n="menu_sites">Gestion des sites</span>
-                    </div>
-                    <div class="menu-nav-item" data-section="advanced" onclick="switchSection('advanced')">
-                        <span class="icon">⚙️</span>
-                        <span data-i18n="menu_advanced">Paramètres avancés</span>
-                    </div>
-                    <div class="menu-nav-item" data-section="configuration" onclick="switchSection('configuration')">
-                        <span class="icon">🎛️</span>
-                        <span data-i18n="menu_config">Configuration</span>
-                    </div>
-                    <div class="menu-nav-item" data-section="users" onclick="switchSection('users')">
-                        <span class="icon">👥</span>
-                        <span data-i18n="menu_users">Utilisateurs</span>
-                    </div>
-                    <div class="menu-nav-item" onclick="window.location.href='/statistics'">
-                        <span class="icon">📊</span>
-                        <span data-i18n="menu_statistics">Statistiques</span>
-                    </div>
-                    <div class="menu-nav-item" onclick="window.location.href='/synoptic'">
-                        <span class="icon">🗺️</span>
-                        <span data-i18n="menu_synoptic">Synoptique</span>
-                    </div>
-                    <div class="menu-nav-item" onclick="window.location.href='/monitoring'">
-                        <span class="icon">📈</span>
-                        <span data-i18n="menu_monitoring">Monitoring Graphiques</span>
-                    </div>
-                </nav>
-            </div>
-
-            <!-- Section Navigation -->
-            <div class="menu-section">
-                <div class="menu-section-title">🔗 <span data-i18n="navigation">Navigation</span></div>
-                <div class="menu-actions">
-                    <a href="/" class="btn btn-secondary">🖥️ <span data-i18n="monitoring_view">Vue
-                            Monitoring</span></a>
-                    <a href="/statistics" class="btn btn-info">📊 <span
-                            data-i18n="menu_statistics">Statistiques</span></a>
-                    <a href="/monitoring" class="btn btn-info"
-                        style="background: linear-gradient(135deg, #4ecdc4, #44a08d);">📈 <span
-                            data-i18n="menu_monitoring">Graphiques</span></a>
-                    <button id="btn-logout" class="btn btn-danger">🚪 <span
+                    <button id="btn-logout" class="btn btn-danger" style="margin-top: 10px;">🚪 <span
                             data-i18n="logout">Déconnexion</span></button>
                 </div>
             </div>
         </div>
+
+        <!-- Section Paramètres -->
+
+        <div class="menu-section">
+            <div class="menu-section-title">⚙️ <span data-i18n="menu_parameters">Paramètres</span></div>
+            <nav class="menu-nav">
+                <div class="menu-nav-item" data-section="ajout" onclick="switchSection('ajout')">
+                    <span class="icon">📍</span>
+                    <span data-i18n="menu_add">Ajout</span>
+                </div>
+                <div class="menu-nav-item" data-section="sites" onclick="switchSection('sites')">
+                    <span class="icon">🏢</span>
+                    <span data-i18n="menu_sites">Gestion des sites</span>
+                </div>
+                <div class="menu-nav-item" data-section="backup" onclick="switchSection('backup')">
+                    <span class="icon">💾</span>
+                    <span data-i18n="menu_backup">Sauvegarde</span>
+                </div>
+                <div class="menu-nav-item" data-section="advanced" onclick="switchSection('advanced')">
+                    <span class="icon">⚙️</span>
+                    <span data-i18n="menu_advanced">Paramètres avancés</span>
+                </div>
+                <div class="menu-nav-item" data-section="configuration" onclick="switchSection('configuration')">
+                    <span class="icon">🎛️</span>
+                    <span data-i18n="menu_config">Configuration</span>
+                </div>
+                <div class="menu-nav-item" data-section="users" onclick="switchSection('users')">
+                    <span class="icon">👥</span>
+                    <span data-i18n="menu_users">Utilisateurs</span>
+                </div>
+            </nav>
+        </div>
+
+
+    </div>
     </div>
 
     <!-- Main Content Container -->
@@ -1984,6 +1948,14 @@
                     <a href="/" class="btn btn-secondary"
                         style="text-decoration: none; display: flex; align-items: center; gap: 5px;">
                         📊 <span class="hide-mobile" data-i18n="monitoring_view">Vue Monitoring</span>
+                    </a>
+                    <a href="/synoptic" class="btn btn-info"
+                        style="text-decoration: none; display: flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #a855f7, #9333ea); border: none;">
+                        🗺️ <span class="hide-mobile" data-i18n="menu_synoptic">Synoptique</span>
+                    </a>
+                    <a href="/monitoring" class="btn btn-info"
+                        style="text-decoration: none; display: flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #4ecdc4, #44a08d); border: none;">
+                        📈 <span class="hide-mobile" data-i18n="menu_monitoring">Graphiques</span>
                     </a>
                     <button id="btn-start-monitoring" class="btn btn-primary"
                         style="display: flex; align-items: center; gap: 5px;">
@@ -2198,6 +2170,63 @@
                     </div><!-- Fin collapsible-content -->
                 </div><!-- Fin collapsible-section sites -->
             </div><!-- Fin content-sites -->
+
+            <!-- Section: Sauvegarde & Restauration -->
+            <div id="content-backup" class="content-section">
+                <!-- Sauvegarde & Restauration Collapsible -->
+                <div class="collapsible-section open" id="section-backup">
+                    <div class="collapsible-header" onclick="toggleSection('section-backup')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon backup">💾</div>
+                            <div>
+                                <h2 data-i18n="backup_restore_title">Sauvegarde & Restauration</h2>
+                                <p data-i18n="backup_restore_desc">Gérez les sauvegardes de votre configuration compléte
+                                </p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="main-grid">
+                            <!-- Sauvegarde -->
+                            <div class="card">
+                                <h2 data-i18n="backup_title">Sauvegarder</h2>
+                                <p style="margin-bottom: 20px; color: #a0aec0;" data-i18n="backup_desc">
+                                    Téléchargez une archive complète (.pingu) contenant :<br>
+                                    - Configuration des sites<br>
+                                    - Liste des hôtes<br>
+                                    - Paramètres de l'application<br>
+                                    - Configuration synoptique<br>
+                                    - Utilisateurs
+                                </p>
+                                <a href="/api/admin/backup" class="btn btn-primary"
+                                    style="width: 100%; justify-content: center;">
+                                    💾 <span data-i18n="download_backup">Télécharger la sauvegarde</span>
+                                </a>
+                            </div>
+
+                            <!-- Restauration -->
+                            <div class="card">
+                                <h2 data-i18n="restore_title">Restaurer</h2>
+                                <p style="margin-bottom: 20px; color: #a0aec0;" data-i18n="restore_desc">
+                                    Restaurez une configuration depuis un fichier .pingu.<br>
+                                    ⚠️ Cela écrasera la configuration actuelle.
+                                </p>
+                                <form id="restoreForm" onsubmit="handleRestore(event)">
+                                    <div class="form-group">
+                                        <input type="file" id="backupFile" accept=".pingu" required
+                                            style="padding: 8px;">
+                                    </div>
+                                    <button type="submit" class="btn btn-danger"
+                                        style="width: 100%; justify-content: center;">
+                                        ♻️ <span data-i18n="restore_btn">Restaurer la sauvegarde</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Section: Ajout (Modal) -->
             <div id="modal-ajout" class="section-modal">
@@ -2941,6 +2970,10 @@
                         actions: "Actions",
                         sections: "Sections",
                         menu_home: "Accueil",
+                        menu_synoptic: "Synoptique",
+                        menu_monitoring: "Graphiques",
+                        menu_user_section: "Utilisateur",
+                        menu_parameters: "Paramètres",
                         welcome_title: "Bienvenue dans l'administration",
                         welcome_desc: "Gérez vos hôtes, configurez les alertes et supervisez votre réseau depuis cette interface.",
                         quick_actions: "Actions rapides",
@@ -2971,6 +3004,14 @@
                         add_hosts: "Ajout d'Hôtes",
                         add_hosts_desc: "Scanner et ajouter des hôtes",
                         monitoring_desc: "Démarrer/arrêter et configurer",
+                        backup_restore_title: "Sauvegarde & Restauration",
+                        backup_restore_desc: "Gérez les sauvegardes de votre configuration compléte",
+                        backup_title: "Sauvegarder",
+                        backup_desc: "Téléchargez une archive complète (.pingu) contenant :",
+                        download_backup: "Télécharger la sauvegarde",
+                        restore_title: "Restaurer",
+                        restore_desc: "Restaurez une configuration depuis un fichier .pingu.",
+                        restore_btn: "Restaurer la sauvegarde",
                         alerts_desc: "Email, Telegram, popup",
                         actions_desc: "Import, export, nettoyage",
                         base_ip: "Adresse IP de base",
@@ -3150,6 +3191,8 @@
                         navigation: "Navigation",
                         sections: "Sections",
                         menu_home: "Home",
+                        menu_user_section: "User",
+                        menu_parameters: "Parameters",
                         welcome_title: "Welcome to Administration",
                         welcome_desc: "Manage your hosts, configure alerts and supervise your network from this interface.",
                         quick_actions: "Quick Actions",
@@ -3178,6 +3221,14 @@
                         delay_sec: "Delay (sec)",
                         add_hosts: "Add Hosts",
                         add_hosts_desc: "Scan and add hosts",
+                        backup_restore_title: "Backup & Restore",
+                        backup_restore_desc: "Manage full configuration backups",
+                        backup_title: "Backup",
+                        backup_desc: "Download a full archive (.pingu) containing:",
+                        download_backup: "Download backup",
+                        restore_title: "Restore",
+                        restore_desc: "Restore configuration from a .pingu file.",
+                        restore_btn: "Restore backup",
                         monitoring_desc: "Start/stop and configure",
                         alerts_desc: "Email, Telegram, popup",
                         actions_desc: "Import, export, cleanup",
@@ -3363,7 +3414,10 @@
                     } else {
                         currentLang = detectBrowserLanguage();
                     }
-                    document.getElementById('lang-select').value = currentLang;
+                    const langSelect = document.getElementById('lang-select');
+                    if (langSelect) {
+                        langSelect.value = currentLang;
+                    }
                     applyTranslations();
                 }
 
@@ -3909,50 +3963,46 @@
                 function updateMonitoringStatus(running) {
                     const statusEl = document.getElementById('monitoring-status');
                     const statusMiniEl = document.getElementById('monitoring-status-mini');
-                    const dot = statusEl.querySelector('.status-dot');
-                    const text = statusEl.querySelector('span[data-i18n]');
+
+                    // Helper to safely update status elements
+                    const updateStatusElement = (el, isRunning) => {
+                        if (!el) return;
+                        const dot = el.querySelector('.status-dot');
+                        const text = el.querySelector('span[data-i18n]');
+
+                        if (isRunning) {
+                            el.className = 'status-indicator running';
+                            if (dot) dot.className = 'status-dot running';
+                            if (text) {
+                                text.textContent = t('status_running');
+                                text.setAttribute('data-i18n', 'status_running');
+                            }
+                        } else {
+                            el.className = 'status-indicator stopped';
+                            if (dot) dot.className = 'status-dot stopped';
+                            if (text) {
+                                text.textContent = t('status_stopped');
+                                text.setAttribute('data-i18n', 'status_stopped');
+                            }
+                        }
+                    };
+
+                    updateStatusElement(statusEl, running);
+                    updateStatusElement(statusMiniEl, running);
 
                     // Update Header Buttons
                     const btnStart = document.getElementById('btn-start-monitoring');
                     const btnStop = document.getElementById('btn-stop-monitoring');
 
                     if (running) {
-                        statusEl.className = 'status-indicator running';
-                        dot.className = 'status-dot running';
-                        text.textContent = t('status_running');
-                        text.setAttribute('data-i18n', 'status_running');
-
-                        // Show Stop, Hide Start
                         if (btnStart) btnStart.style.display = 'none';
                         if (btnStop) btnStop.style.display = 'flex';
                     } else {
-                        statusEl.className = 'status-indicator stopped';
-                        dot.className = 'status-dot stopped';
-                        text.textContent = t('status_stopped');
-                        text.setAttribute('data-i18n', 'status_stopped');
-
-                        // Show Start, Hide Stop
                         if (btnStart) btnStart.style.display = 'flex';
                         if (btnStop) btnStop.style.display = 'none';
                     }
-
-                    // Mise à jour du mini statut dans le header
-                    if (statusMiniEl) {
-                        const dotMini = statusMiniEl.querySelector('.status-dot');
-                        const textMini = statusMiniEl.querySelector('span[data-i18n]');
-                        if (running) {
-                            statusMiniEl.className = 'status-indicator running';
-                            dotMini.className = 'status-dot running';
-                            textMini.textContent = t('status_running');
-                            textMini.setAttribute('data-i18n', 'status_running');
-                        } else {
-                            statusMiniEl.className = 'status-indicator stopped';
-                            dotMini.className = 'status-dot stopped';
-                            textMini.textContent = t('status_stopped');
-                            textMini.setAttribute('data-i18n', 'status_stopped');
-                        }
-                    }
                 }
+
 
                 function updateHostsTable(hosts) {
                     const tbody = document.getElementById('hosts-table-body');
@@ -4145,6 +4195,46 @@
 
                 // Bouton toggle unique dans le header qui change selon l'état
 
+
+                async function handleRestore(event) {
+                    event.preventDefault();
+
+                    const fileInput = document.getElementById('backupFile');
+                    const file = fileInput.files[0];
+                    if (!file) {
+                        showNotification('Veuillez sélectionner un fichier', 'error');
+                        return;
+                    }
+
+                    if (!confirm(`${t('restore_desc')} ${t('confirm_restore') || 'Voulez-vous continuer ?'}`)) {
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('backup_file', file);
+
+                    try {
+                        const response = await fetch('/api/admin/restore', {
+                            method: 'POST',
+                            body: formData // Pas de Content-Type header, le navigateur le mettra (multipart/form-data)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showNotification(data.message, 'success');
+                            setTimeout(() => {
+                                alert(data.message);
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            showNotification(data.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Erreur restauration:', error);
+                        showNotification('Erreur lors de la restauration', 'error');
+                    }
+                }
 
                 document.getElementById('btn-save-alerts').addEventListener('click', async function () {
                     const alerts = {
@@ -5286,7 +5376,7 @@
                         }, 300);
                     });
 
-                    // Gérer le menu actif (facultatif si on veut garder l'état)
+                    // Gérer le menu actif
                     document.querySelectorAll('.menu-nav-item').forEach(item => {
                         item.classList.remove('active');
                         if (item.dataset.section === section) {
@@ -5294,18 +5384,23 @@
                         }
                     });
 
-                    // Si c'est l'accueil ou sites, on ferme tout et on s'assure que le menu latéral se ferme sur mobile
-                    if (section === 'accueil' || section === 'sites') {
-                        // Gestion de l'affichage inline
-                        if (section === 'accueil') {
-                            document.getElementById('content-accueil').classList.add('active');
-                            document.getElementById('content-sites').classList.remove('active');
-                        } else if (section === 'sites') {
-                            document.getElementById('content-accueil').classList.remove('active');
-                            document.getElementById('content-sites').classList.add('active');
-                            // Chargement des données sites
-                            loadSites();
-                        }
+                    // Liste des sections 'inline' (non-modales)
+                    const inlineSections = ['accueil', 'sites', 'backup', 'users'];
+
+                    if (inlineSections.includes(section)) {
+                        // Masquer toutes les sections inline
+                        ['content-accueil', 'content-sites', 'content-backup', 'content-users'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) el.classList.remove('active');
+                        });
+
+                        // Afficher la section demandée
+                        const target = document.getElementById('content-' + section);
+                        if (target) target.classList.add('active');
+
+                        // Logique spécifique
+                        if (section === 'sites') loadSites();
+                        if (section === 'users') loadUsersList();
 
                         closeMenu();
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5325,12 +5420,7 @@
                     // Fermer le menu latéral sur mobile
                     closeMenu();
 
-                    // Charger les données spécifiques à la section
-                    if (section === 'users') {
-                        loadUsersList();
-                    }
-
-                    // Scroll to top of content (of the modal body)
+                    // Scroll to top of content
                     const modalBody = modal ? modal.querySelector('.section-modal-body') : null;
                     if (modalBody) {
                         modalBody.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5347,9 +5437,14 @@
                             modal.style.display = 'none';
                         }, 300);
                     }
-                    // Réactiver l'item accueil ou sites dans le menu selon ce qui est visible
-                    const isSitesVisible = document.getElementById('content-sites').classList.contains('active');
-                    const targetSection = isSitesVisible ? 'sites' : 'accueil';
+                    // Réactiver l'item de la section inline visible dans le menu
+                    let targetSection = 'accueil';
+                    ['sites', 'backup', 'users'].forEach(s => {
+                        const el = document.getElementById('content-' + s);
+                        if (el && el.classList.contains('active')) {
+                            targetSection = s;
+                        }
+                    });
 
                     document.querySelectorAll('.menu-nav-item').forEach(item => {
                         item.classList.remove('active');
