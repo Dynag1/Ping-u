@@ -794,6 +794,21 @@
             transition: all 0.2s ease;
         }
 
+        /* Navigation List */
+        .menu-navigation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .menu-navigation-list .admin-link {
+            width: 100%;
+            justify-content: center;
+            padding: 12px;
+            font-size: 14px;
+        }
+
         .menu-select:focus {
             outline: none;
             border-color: #667eea;
@@ -1045,6 +1060,29 @@
             <button class="close-menu-btn" onclick="toggleMenu()">✕</button>
         </div>
 
+        <!-- Section Navigation -->
+        <div class="menu-section">
+            <div class="menu-section-title">🧭 <span data-i18n="navigation">Navigation</span></div>
+            <div class="menu-navigation-list">
+                <a href="/" class="admin-link"
+                    style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white;">
+                    📊 <span data-i18n="dashboard">Tableau de bord</span>
+                </a>
+                <a href="/synoptic" class="admin-link"
+                    style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white;">
+                    🗺️ <span data-i18n="synoptic">Synoptique</span>
+                </a>
+                <a href="/statistics" class="admin-link"
+                    style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                    📈 <span data-i18n="statistics">Statistiques</span>
+                </a>
+                <a href="/monitoring" class="admin-link"
+                    style="background: linear-gradient(135deg, #4ecdc4, #44a08d); color: white;">
+                    〽️ <span data-i18n="monitoring">Monitoring</span>
+                </a>
+            </div>
+        </div>
+
         <!-- Section utilisateur -->
         <div class="menu-section">
             <div class="menu-section-title">👤 <span data-i18n="user">Utilisateur</span></div>
@@ -1075,20 +1113,7 @@
             </div>
         </div>
 
-        <!-- Section statut -->
-        <div class="menu-section">
-            <div class="menu-section-title">📊 <span data-i18n="status">Statut</span></div>
-            <div class="badges-container-menu">
-                <span class="status-badge" id="connection-badge">
-                    <span class="status-dot"></span>
-                    <span data-i18n="connected">Connecté</span>
-                </span>
-                <span class="scan-badge" id="scan-badge">
-                    <span class="status-dot"></span>
-                    <span data-i18n="scan_stopped">Scan arrêté</span>
-                </span>
-            </div>
-        </div>
+
 
         <!-- Section tri -->
         <div class="menu-section">
@@ -1103,70 +1128,11 @@
             </select>
         </div>
 
-        <!-- Section filtre par site -->
-        <div class="menu-section">
-            <div class="menu-section-title">🏢 <span data-i18n="filter_site">Filtrer par site</span></div>
-            <select id="site-filter-select" multiple onchange="applySiteFilterLocal()"
-                class="menu-select site-filter-select">
-            </select>
-            <button onclick="clearSiteFilterLocal()" class="site-filter-reset-btn">
-                <span data-i18n="all_sites">Tous</span>
-            </button>
-        </div>
 
-        <!-- Section Navigation -->
-        <div class="menu-section">
-            <div class="menu-section-title">🧭 <span data-i18n="navigation">Navigation</span></div>
-            <div class="menu-user-actions">
-                <a href="/" class="admin-link"
-                    style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white;">
-                    📊 <span data-i18n="dashboard">Tableau de bord</span>
-                </a>
-                <a href="/synoptic" class="admin-link"
-                    style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white;">
-                    🗺️ <span data-i18n="synoptic">Synoptique</span>
-                </a>
-                <a href="/statistics" class="admin-link"
-                    style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
-                    📈 <span data-i18n="statistics">Statistiques</span>
-                </a>
-                <a href="/monitoring" class="admin-link"
-                    style="background: linear-gradient(135deg, #4ecdc4, #44a08d); color: white;">
-                    〽️ <span data-i18n="monitoring">Monitoring</span>
-                </a>
-            </div>
-        </div>
 
-        <!-- Section statistiques (Résumé) -->
-        <div class="menu-section">
-            <div class="menu-section-title">📝 <span data-i18n="summary">Résumé</span></div>
-            <div class="stats-menu">
-                <div class="stat-card-menu total">
-                    <span class="label" data-i18n="total">Total:</span>
-                    <span class="value" id="total-hosts">0</span>
-                </div>
-                <div class="stat-card-menu online">
-                    <span class="icon">🟢</span>
-                    <span class="label" data-i18n="online">En ligne:</span>
-                    <span class="value" id="online-hosts">0</span>
-                </div>
-                <div class="stat-card-menu offline">
-                    <span class="icon">🔴</span>
-                    <span class="label" data-i18n="offline">Hors ligne:</span>
-                    <span class="value" id="offline-hosts">0</span>
-                </div>
-                <div class="stat-card-menu warning-temp">
-                    <span class="icon">🌡️</span>
-                    <span class="label" data-i18n="warning_temp"></span>
-                    <span class="value" id="warning-temp-hosts">0</span>
-                </div>
-                <div class="stat-card-menu high-temp">
-                    <span class="icon">🔥</span>
-                    <span class="label" data-i18n="high_temp"></span>
-                    <span class="value" id="high-temp-hosts">0</span>
-                </div>
-            </div>
-        </div>
+
+
+
     </div>
 
     <div class="container">
@@ -1729,51 +1695,59 @@
 
         function updateStatusBadge(connected) {
             const badge = document.getElementById('connection-badge');
-            const badgeText = badge.querySelector('span[data-i18n]');
-
-            if (connected) {
-                badge.classList.remove('disconnected');
-                badge.style.background = '#10b981';
-                badgeText.textContent = t('connected');
-                badgeText.setAttribute('data-i18n', 'connected');
-            } else {
-                badge.classList.add('disconnected');
-                badge.style.background = '#ef4444';
-                badgeText.textContent = t('disconnected');
-                badgeText.setAttribute('data-i18n', 'disconnected');
+            if (badge) {
+                const badgeText = badge.querySelector('span[data-i18n]');
+                if (connected) {
+                    badge.classList.remove('disconnected');
+                    badge.style.background = '#10b981';
+                    if (badgeText) {
+                        badgeText.textContent = t('connected');
+                        badgeText.setAttribute('data-i18n', 'connected');
+                    }
+                } else {
+                    badge.classList.add('disconnected');
+                    badge.style.background = '#ef4444';
+                    if (badgeText) {
+                        badgeText.textContent = t('disconnected');
+                        badgeText.setAttribute('data-i18n', 'disconnected');
+                    }
+                }
             }
         }
 
         function updateScanBadge(running) {
             scanRunning = running;
             const badge = document.getElementById('scan-badge');
-            const badgeText = badge.querySelector('span[data-i18n]');
 
-            if (running) {
-                badge.classList.add('running');
-                badgeText.textContent = t('scan_running');
-                badgeText.setAttribute('data-i18n', 'scan_running');
+            if (badge) {
+                const badgeText = badge.querySelector('span[data-i18n]');
+                if (running) {
+                    badge.classList.add('running');
+                    if (badgeText) {
+                        badgeText.textContent = t('scan_running');
+                        badgeText.setAttribute('data-i18n', 'scan_running');
+                    }
+                } else {
+                    badge.classList.remove('running');
+                    if (badgeText) {
+                        badgeText.textContent = t('scan_stopped');
+                        badgeText.setAttribute('data-i18n', 'scan_stopped');
+                    }
+                }
+            }
 
-                // Update header badge
-                const headerBadge = document.getElementById('header-scan-badge');
-                if (headerBadge) {
+            // Update header badge
+            const headerBadge = document.getElementById('header-scan-badge');
+            if (headerBadge) {
+                const headerText = headerBadge.querySelector('span[data-i18n]');
+                if (running) {
                     headerBadge.classList.add('running');
-                    const headerText = headerBadge.querySelector('span[data-i18n]');
                     if (headerText) {
                         headerText.textContent = t('scan_running');
                         headerText.setAttribute('data-i18n', 'scan_running');
                     }
-                }
-            } else {
-                badge.classList.remove('running');
-                badgeText.textContent = t('scan_stopped');
-                badgeText.setAttribute('data-i18n', 'scan_stopped');
-
-                // Update header badge
-                const headerBadge = document.getElementById('header-scan-badge');
-                if (headerBadge) {
+                } else {
                     headerBadge.classList.remove('running');
-                    const headerText = headerBadge.querySelector('span[data-i18n]');
                     if (headerText) {
                         headerText.textContent = t('scan_stopped');
                         headerText.setAttribute('data-i18n', 'scan_stopped');
@@ -2032,10 +2006,18 @@
             const warningTempCount = hosts.filter(h => h.status === 'online' && getTempAlertLevel(h.temp) === 'warning').length;
 
             // Stats dans le menu latéral
-            document.getElementById('total-hosts').textContent = total;
-            document.getElementById('online-hosts').textContent = online;
-            document.getElementById('offline-hosts').textContent = offline;
-            document.getElementById('high-temp-hosts').textContent = highTempCount;
+            const totalEl = document.getElementById('total-hosts');
+            if (totalEl) totalEl.textContent = total;
+
+            const onlineEl = document.getElementById('online-hosts');
+            if (onlineEl) onlineEl.textContent = online;
+
+            const offlineEl = document.getElementById('offline-hosts');
+            if (offlineEl) offlineEl.textContent = offline;
+
+            const highTempEl = document.getElementById('high-temp-hosts');
+            if (highTempEl) highTempEl.textContent = highTempCount;
+
             const warningEl = document.getElementById('warning-temp-hosts');
             if (warningEl) warningEl.textContent = warningTempCount;
 

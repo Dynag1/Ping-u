@@ -397,6 +397,28 @@
             background: rgba(255, 255, 255, 0.1);
             color: #667eea;
         }
+
+        .btn-dashboard {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e4e4e4;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-dashboard:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
     </style>
 </head>
 
@@ -430,6 +452,7 @@
             <div class="hamburger-line"></div>
         </button>
         <h1 class="main-title">Synoptique Réseau</h1>
+        <a href="/" class="btn-dashboard">📊 Dashboard</a>
     </div>
 
     <div class="main-container">

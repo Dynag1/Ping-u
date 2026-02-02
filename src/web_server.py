@@ -16,6 +16,9 @@ try:
     import json
     import shutil
     import os
+    import zipfile
+    import io
+    import datetime
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
@@ -2087,6 +2090,105 @@ Ping ü - Monitoring Réseau
             except Exception as e:
                 logger.error(f"Erreur image synoptic: {e}", exc_info=True)
                 return jsonify({'error': str(e)}), 500
+
+        # ==================== Sauvegarde & Restauration ====================
+
+        @self.app.route('/api/admin/backup')
+        @WebAuth.login_required
+        def admin_backup():
+            """Crée et télécharge une sauvegarde complète (.pingu)"""
+            if session.get('role') != 'admin':
+                return jsonify({'success': False, 'error': 'Accès refusé'}), 403
+            
+            try:
+                # Créer un buffer mémoire pour le ZIP
+                memory_file = io.BytesIO()
+                
+                with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                    # 1. Configuration utilisateurs
+                    if os.path.exists('web_users.json'):
+                        zf.write('web_users.json', 'web_users.json')
+                    
+                    # 2. Configuration sites
+                    if os.path.exists('sites.pkl'):
+                        zf.write('sites.pkl', 'sites.pkl')
+                    
+                    # 3. Dossier bd/tabs/ (Paramètres)
+                    bd_tabs_dir = os.path.join('bd', 'tabs')
+                    if os.path.exists(bd_tabs_dir):
+                        for filename in os.listdir(bd_tabs_dir):
+                            file_path = os.path.join(bd_tabs_dir, filename)
+                            if os.path.isfile(file_path):
+                                zf.write(file_path, os.path.join('bd', 'tabs', filename))
+                    
+                    # 4. Autosave (Hôtes)
+                    autosave_path = os.path.join('bd', 'autosave.pin')
+                    if os.path.exists(autosave_path):
+                        zf.write(autosave_path, os.path.join('bd', 'autosave.pin'))
+                    
+                    # 5. Synoptique (Config et Image)
+                    synoptic_json = os.path.join('bd', 'synoptic.json')
+                    if os.path.exists(synoptic_json):
+                        zf.write(synoptic_json, os.path.join('bd', 'synoptic.json'))
+                        
+                    synoptic_png = os.path.join('bd', 'synoptic.png')
+                    if os.path.exists(synoptic_png):
+                        zf.write(synoptic_png, os.path.join('bd', 'synoptic.png'))
+
+                # Préparer le fichier pour le téléchargement
+                memory_file.seek(0)
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"pingu_backup_{timestamp}.pingu"
+                
+                return send_file(
+                    memory_file,
+                    mimetype='application/zip',
+                    as_attachment=True,
+                    download_name=filename
+                )
+
+            except Exception as e:
+                logger.error(f"Erreur backup: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/admin/restore', methods=['POST'])
+        @WebAuth.login_required
+        def admin_restore():
+            """Restaure une sauvegarde (.pingu)"""
+            if session.get('role') != 'admin':
+                return jsonify({'success': False, 'error': 'Accès refusé'}), 403
+            
+            try:
+                if 'backup_file' not in request.files:
+                    return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+                
+                file = request.files['backup_file']
+                if file.filename == '':
+                    return jsonify({'success': False, 'error': 'Aucun fichier sélectionné'}), 400
+                
+                if not file.filename.endswith('.pingu'):
+                    return jsonify({'success': False, 'error': 'Extension invalide (.pingu requis)'}), 400
+
+                # Lire le fichier ZIP depuis la mémoire
+                with zipfile.ZipFile(file, 'r') as zf:
+                    # Sécurité: vérifier les chemins pour éviter Zip Slip
+                    for member in zf.infolist():
+                        if '..' in member.filename or member.filename.startswith('/'):
+                            raise Exception(f"Chemin de fichier suspect dans l'archive: {member.filename}")
+                    
+                    # Tout extraire (écrasement)
+                    # Note: On extrait dans le répertoire courant (racine de l'app)
+                    zf.extractall('.')
+                
+                logger.info("Restauration effectuée avec succès")
+                return jsonify({
+                    'success': True, 
+                    'message': 'Restauration terminée. Veuillez redémarrer l\'application pour appliquer tous les changements.'
+                })
+
+            except Exception as e:
+                logger.error(f"Erreur restauration: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': str(e)}), 500
 
     def _on_device_discovered(self, device):
         """Callback appelé quand un périphérique est découvert"""
