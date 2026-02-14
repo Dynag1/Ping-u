@@ -1,51 +1,55 @@
-        <!-- Header minimaliste avec bouton hamburger -->
-        <div class="header-minimal">
-            <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMenu()" title="Menu">
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
+<!-- Header minimaliste avec bouton hamburger -->
+<div class="header-minimal">
+    <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMenu()" title="Menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+    <h1 class="main-title">
+        <a href="/" style="text-decoration: none; display: inline-flex; align-items: center;">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Ping ü"
+                style="height: 40px; width: auto; vertical-align: middle; cursor: pointer;">
+        </a>
+        <span data-i18n="admin_title">Administration - Ping ü</span>
+    </h1>
+    <!-- Mini statut visible dans le header -->
+    <div class="header-mini-info">
+        <div class="header-controls">
+            <a href="/" class="btn btn-secondary"
+                style="text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                📊 <span class="hide-mobile" data-i18n="monitoring_view">Vue Monitoring</span>
+            </a>
+            <button class="btn btn-secondary" onclick="toggleTheme()" title="Changer le thème"
+                style="margin-right: 5px;">
+                <span id="theme-icon">🌙</span>
             </button>
-            <h1 class="main-title">
-                <a href="/" style="text-decoration: none; display: inline-flex; align-items: center;">
-                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Ping ü"
-                        style="height: 40px; width: auto; vertical-align: middle; cursor: pointer;">
-                </a>
-                <span data-i18n="admin_title">Administration - Ping ü</span>
-            </h1>
-            <!-- Mini statut visible dans le header -->
-            <div class="header-mini-info">
-                <div class="header-controls">
-                    <a href="/" class="btn btn-secondary"
-                        style="text-decoration: none; display: flex; align-items: center; gap: 5px;">
-                        📊 <span class="hide-mobile" data-i18n="monitoring_view">Vue Monitoring</span>
-                    </a>
-                    <a href="/synoptic" class="btn btn-info"
-                        style="text-decoration: none; display: flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #a855f7, #9333ea); border: none;">
-                        🗺️ <span class="hide-mobile" data-i18n="menu_synoptic">Synoptique</span>
-                    </a>
-                    <a href="/monitoring" class="btn btn-info"
-                        style="text-decoration: none; display: flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #4ecdc4, #44a08d); border: none;">
-                        📈 <span class="hide-mobile" data-i18n="menu_monitoring">Graphiques</span>
-                    </a>
-                    <button class="btn btn-secondary header-nav-btn" data-section="notifications"
-                        onclick="switchSection('notifications')"
-                        style="display: flex; align-items: center; gap: 5px; position: relative;">
-                        🔔 <span class="hide-mobile" data-i18n="menu_notifications">Notifications</span>
-                        <span id="header-notif-badge" class="badge"
-                            style="display:none; background: #ef4444; color: white; border-radius: 50%; padding: 1px 5px; font-size: 10px; position: absolute; top: -5px; right: -5px; border: 2px solid #1a202c;">0</span>
-                    </button>
-                    <button id="btn-start-monitoring" class="btn btn-primary"
-                        style="display: flex; align-items: center; gap: 5px;">
-                        ▶️ <span class="hide-mobile" data-i18n="start">Démarrer</span>
-                    </button>
-                    <button id="btn-stop-monitoring" class="btn btn-danger"
-                        style="display: none; align-items: center; gap: 5px;">
-                        ⏹️ <span class="hide-mobile" data-i18n="stop">Arrêter</span>
-                    </button>
-                </div>
-                <div class="status-indicator" id="monitoring-status-mini">
-                    <span class="status-dot stopped"></span>
-                    <span data-i18n="status_stopped">Arrêté</span>
-                </div>
-            </div>
+            <a href="/synoptic" class="btn btn-info"
+                style="text-decoration: none; display: flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #a855f7, #9333ea); border: none;">
+                🗺️ <span class="hide-mobile" data-i18n="menu_synoptic">Synoptique</span>
+            </a>
+            <a href="/monitoring" class="btn btn-info"
+                style="text-decoration: none; display: flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #4ecdc4, #44a08d); border: none;">
+                📈 <span class="hide-mobile" data-i18n="menu_monitoring">Graphiques</span>
+            </a>
+            <button class="btn btn-secondary header-nav-btn" data-section="notifications"
+                onclick="switchSection('notifications')"
+                style="display: flex; align-items: center; gap: 5px; position: relative;">
+                🔔 <span class="hide-mobile" data-i18n="menu_notifications">Notifications</span>
+                <span id="header-notif-badge" class="badge"
+                    style="display:none; background: #ef4444; color: white; border-radius: 50%; padding: 1px 5px; font-size: 10px; position: absolute; top: -5px; right: -5px; border: 2px solid #1a202c;">0</span>
+            </button>
+            <button id="btn-start-monitoring" class="btn btn-primary"
+                style="display: flex; align-items: center; gap: 5px;">
+                ▶️ <span class="hide-mobile" data-i18n="start">Démarrer</span>
+            </button>
+            <button id="btn-stop-monitoring" class="btn btn-danger"
+                style="display: none; align-items: center; gap: 5px;">
+                ⏹️ <span class="hide-mobile" data-i18n="stop">Arrêter</span>
+            </button>
         </div>
+        <div class="status-indicator" id="monitoring-status-mini">
+            <span class="status-dot stopped"></span>
+            <span data-i18n="status_stopped">Arrêté</span>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,50 @@
+<div id="modal-dashboard" class="section-modal">
+    <div class="section-modal-content" style="max-width: 800px; width: 90%;">
+        <div class="section-modal-header">
+            <h2>📊 <span id="dashboard-modal-title" data-i18n="edit_dashboard">Modifier Tableau de Bord</span></h2>
+            <button class="section-modal-close" onclick="closeSectionModal('dashboard')">✕</button>
+        </div>
+        <div class="section-modal-body">
+            <form id="form-dashboard">
+                <input type="hidden" id="dashboard-id">
+
+                <div class="form-group">
+                    <label for="dashboard-name" data-i18n="name">Nom</label>
+                    <input type="text" id="dashboard-name" required placeholder="Mon Tableau de Bord">
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>🖥️ <span data-i18n="hosts">Hôtes</span></span>
+                        <input type="text" id="dashboard-hosts-search" placeholder="Filtrer..."
+                            style="width: 200px; padding: 5px; font-size: 13px;" onkeyup="filterDashboardHosts()">
+                    </label>
+
+                    <div
+                        style="margin-top: 10px; max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
+                        <table class="hosts-table" style="margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox"
+                                            onchange="toggleAllDashboardHosts(this)"></th>
+                                    <th data-i18n="ip">IP</th>
+                                    <th data-i18n="name">Nom</th>
+                                    <th data-i18n="site">Site</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-hosts-list">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeSectionModal('dashboard')"
+                        data-i18n="cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

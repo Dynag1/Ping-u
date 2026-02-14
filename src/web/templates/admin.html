@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Ping ü</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=fixed">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=fixed">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -32,6 +33,7 @@
             {% include 'admin/sections/notifications.html' %}
 
             {% include 'admin/sections/users_management.html' %}
+            {% include 'admin/sections/dashboards.html' %}
         </div>
     </div>
 
@@ -40,7 +42,10 @@
     {% include 'admin/modals/ajout.html' %}
     {% include 'admin/modals/advanced.html' %}
     {% include 'admin/modals/configuration.html' %}
+    {% include 'admin/modals/host_settings.html' %}
+    {% include 'admin/modals/dashboard_modal.html' %}
 
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 

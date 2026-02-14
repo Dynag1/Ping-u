@@ -1,0 +1,25 @@
+[Unit]
+Description=Ping u - Network Monitoring Service
+After=network.target
+
+[Service]
+# L'utilisateur sous lequel le service va tourner (à adapter lors de l'installation)
+User=USER_PLACEHOLDER
+Group=USER_PLACEHOLDER
+
+# Le répertoire de base de l'application (à adapter)
+WorkingDirectory=DIR_PLACEHOLDER
+
+# La commande de lancement (utiliser l'environnement virtuel si présent)
+ExecStart=PYTHON_PLACEHOLDER Pingu.py --headless
+
+# Redémarrage automatique en cas de plantage
+Restart=always
+RestartSec=10
+
+# Logs dans journalctl
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

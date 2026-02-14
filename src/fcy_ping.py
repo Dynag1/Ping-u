@@ -5,6 +5,7 @@ import sys
 import src.var as var
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
+from src.database import get_host_notification_settings
 
 # Initialize logger first
 logger = get_logger(__name__)
@@ -453,20 +454,35 @@ class PingManager(QObject):
         # Pour rester compatible avec l'architecture, on émet vers l'extérieur
         self.result_signal.emit(ip, -1.0, "", temp, bandwidth) # -1.0 pour indiquer que c'est une MAJ SNMP seulement
 
+
     def update_lists(self, ip, latency):
         # Les listes HS/Mail/Telegram dépendent de l'état d'exclusion.
         # Idéalement, PingManager ne devrait pas avoir à vérifier l'exclusion lui-même.
         # Mais pour l'instant on garde la compatibilité avec src.var.
         
         try:
+            # Récupérer les paramètres de notification (cache ? ou direct DB)
+            # Puisqu'on est dans le thread principal ou GUI, accès DB rapide (SQLite local)
+            settings = get_host_notification_settings(ip)
+            
             # Stats toujours mises à jour
             if latency >= 500:
                 self.list_increment(var.liste_stats, ip, log=False)
                 # On traite tous les échecs comme potentiellement HS ici.
                 # L'exclusion sera gérée visuellement et lors du filtrage initial des IPs.
                 self.list_increment(var.liste_hs, ip, log=True)
-                self.list_increment(var.liste_mail, ip, log=False)
-                self.list_increment(var.liste_telegram, ip, log=False)
+                
+                # Vérifier si notifications activées pour cet hôte
+                if settings.get('email', True):
+                    self.list_increment(var.liste_mail, ip, log=False)
+                else:
+                    # Si désactivé mais présent (changement de config pendant panne), on nettoie
+                    self.list_ok(var.liste_mail, ip)
+                    
+                if settings.get('telegram', True):
+                    self.list_increment(var.liste_telegram, ip, log=False)
+                else:
+                    self.list_ok(var.liste_telegram, ip)
             else:
                 self.list_ok(var.liste_stats, ip)
                 self.list_ok(var.liste_hs, ip)

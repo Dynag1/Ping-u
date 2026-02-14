@@ -1164,6 +1164,14 @@
         </div>
 
         <!-- Barre de filtre rapide des sites -->
+        <!-- Barre de filtre des tableaux de bord -->
+        <div class="sites-filter-bar" id="dashboards-bar" style="display: none; border-left: 3px solid #667eea;">
+            <div class="sites-filter-title">📊 <span data-i18n="dashboards">Tableaux de Bord</span></div>
+            <div class="sites-chips-container" id="dashboards-chips">
+                <!-- Peuplé par JS -->
+            </div>
+        </div>
+
         <div class="sites-filter-bar" id="sites-filter-bar" style="display: none;">
             <div class="sites-filter-title">🏢 Filtrer par site</div>
             <div class="sites-chips-container" id="sites-chips-container">
@@ -1250,7 +1258,9 @@
                 bandwidth_in: "Débit IN",
                 bandwidth_out: "Débit OUT",
                 comment: "Commentaire",
-                monitoring: "Monitoring"
+                monitoring: "Monitoring",
+                all: "Tous",
+                dashboards: "Tableaux de bord"
             },
             en: {
                 title: "Network Monitoring - Ping ü",
@@ -1298,7 +1308,9 @@
                 bandwidth_in: "Bandwidth IN",
                 bandwidth_out: "Bandwidth OUT",
                 comment: "Comment",
-                monitoring: "Monitoring"
+                monitoring: "Monitoring",
+                all: "All",
+                dashboards: "Dashboards"
             }
         };
 
@@ -1384,6 +1396,8 @@
         let scanRunning = false;
         let sitesList = [];
         let selectedSitesFilter = []; // Filtre local pour la page monitoring
+        let selectedDashboard = null; // ID du dashboard sélectionné
+        let dashboardsList = [];
 
         // ChargerFunction la liste des sites
         async function loadSitesList() {
@@ -1413,33 +1427,57 @@
         // Mettre à jour la barre horizontale de chips de sites
         function updateSiteChipsBar() {
             const container = document.getElementById('sites-chips-container');
-            const bar = document.getElementById('sites-filter-bar');
+            if (!container) return;
 
-            if (!container || !bar) return;
-
-            // Afficher la barre seulement s'il y a des sites
-            if (sitesList.length === 0) {
-                bar.style.display = 'none';
+            // Si dashboard sélectionné, masquer le site filter
+            if (selectedDashboard !== null) {
+                document.getElementById('sites-filter-bar').style.display = 'none';
                 return;
+            } else if (sitesList.length > 0) {
+                document.getElementById('sites-filter-bar').style.display = 'flex';
             }
 
-            bar.style.display = 'block';
+            container.innerHTML = `
+                <div class="site-chip ${selectedSitesFilter.length === 0 ? 'active all' : ''}" onclick="selectAllSites()">
+                    <span class="site-chip-icon">🌍</span> ${t('all') || 'Tous'}
+                </div>
+            ` + sitesList.map(site => `
+                <div class="site-chip ${selectedSitesFilter.includes(site) ? 'active' : ''}" onclick="toggleSiteFilter('${escapeHtml(site).replace(/'/g, "\\'")}')">
+                    <span class="site-chip-icon">🏢</span> ${escapeHtml(site)}
+                </div>
+            `).join('');
+        }
 
-            // Créer le chip "Tous"
+        async function loadDashboards() {
+            try {
+                const response = await fetch('/api/dashboards');
+                const result = await response.json();
+                if (result.success && result.dashboards && result.dashboards.length > 0) {
+                    dashboardsList = result.dashboards;
+                    document.getElementById('dashboards-bar').style.display = 'block';
+                    updateDashboardChips();
+                } else {
+                    document.getElementById('dashboards-bar').style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Error loading dashboards', e);
+            }
+        }
+
+        function updateDashboardChips() {
+            const container = document.getElementById('dashboards-chips');
+            if (!container) return;
+
             let html = `
-                <div class="site-chip all ${selectedSitesFilter.length === 0 ? 'active' : ''}" onclick="selectAllSites()">
-                    <span class="site-chip-icon">🌐</span>
-                    <span>Tous les sites</span>
+                <div class="site-chip ${selectedDashboard === null ? 'active all' : ''}" onclick="selectDashboard(null)">
+                    <span class="site-chip-icon">🌍</span> ${t('all') || 'Tous'}
                 </div>
             `;
 
-            // Créer un chip pour chaque site
-            sitesList.forEach(site => {
-                const isActive = selectedSitesFilter.includes(site);
+            dashboardsList.forEach(d => {
                 html += `
-                    <div class="site-chip ${isActive ? 'active' : ''}" onclick="toggleSiteFilter('${escapeHtml(site).replace(/'/g, "\\'")}')">
-                        <span class="site-chip-icon">🏢</span>
-                        <span>${escapeHtml(site)}</span>
+                    <div class="site-chip ${selectedDashboard === d.id ? 'active' : ''}" onclick="selectDashboard(${d.id})">
+                        <span class="site-chip-icon">📊</span> ${escapeHtml(d.name)}
                     </div>
                 `;
             });
@@ -1759,8 +1797,16 @@
         function renderHosts(hosts) {
             const container = document.getElementById('hosts-container');
 
-            // Appliquer le filtre par site
-            const filteredHosts = filterHostsBySite(hosts);
+            // Appliquer le filtre (Dashboard ou Site)
+            let filteredHosts = hosts;
+            if (selectedDashboard !== null) {
+                const dash = dashboardsList.find(d => d.id === selectedDashboard);
+                if (dash && dash.hosts) {
+                    filteredHosts = hosts.filter(h => dash.hosts.includes(h.ip));
+                }
+            } else {
+                filteredHosts = filterHostsBySite(hosts);
+            }
 
             // Mettre à jour les stats avec les hôtes filtrés
             updateStats(filteredHosts);
@@ -2089,6 +2135,7 @@
 
         // Charger la langue et demander les données au chargement
         loadLanguage();
+        loadDashboards();
         socket.emit('request_update');
     </script>
 </body>

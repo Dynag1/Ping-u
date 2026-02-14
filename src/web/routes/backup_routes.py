@@ -19,7 +19,9 @@ def admin_backup():
     try:
         memory_file = io.BytesIO()
         with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-            if os.path.exists('web_users.json'): zf.write('web_users.json', 'web_users.json')
+            if os.path.exists('bd/pingu.db'): zf.write('bd/pingu.db', os.path.join('bd', 'pingu.db'))
+            if os.path.exists('web_users.json'): zf.write('web_users.json', 'web_users.json') # Legacy backup
+            if os.path.exists('web_users.json.bak'): zf.write('web_users.json.bak', 'web_users.json.bak') # Backup of legacy
             if os.path.exists('sites.pkl'): zf.write('sites.pkl', 'sites.pkl')
             bd_tabs_dir = os.path.join('bd', 'tabs')
             if os.path.exists(bd_tabs_dir):

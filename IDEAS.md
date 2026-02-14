@@ -22,7 +22,7 @@ Ajouter un basculement de thème dans l'interface d'administration Web.
 - **Pourquoi ?** L'interface actuelle est "Dark only". Un mode clair améliore l'accessibilité dans les environnements lumineux.
 - **Avantages :** Confort visuel, accessibilité.
 
-## 5. 🗄️ Base de Données Utilisateurs (SQLite)
+## 5. ✅ Base de Données Utilisateurs (SQLite) - COMPLÉTÉ
 Migrer `web_users.json` vers une table dans une base de données SQLite.
 - **Pourquoi ?** Le fichier JSON est basique et moins sécurisé/performant pour la gestion des utilisateurs.
 - **Avantages :** Sécurité, évolutivité, gestion facilitée (CRUD).

@@ -1,0 +1,63 @@
+/* Dark Theme (Default) */
+:root {
+    --bg-body: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    --bg-card: rgba(45, 55, 72, 0.95);
+    --bg-header: rgba(45, 55, 72, 0.95);
+    --bg-sidebar: rgba(30, 41, 59, 0.98);
+    --bg-sidebar-header: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --bg-input: rgba(0, 0, 0, 0.2);
+    --bg-hover: rgba(255, 255, 255, 0.05);
+    --bg-active: rgba(102, 126, 234, 0.15);
+    --bg-modal-overlay: rgba(0, 0, 0, 0.5);
+    --bg-modal-content: rgba(30, 41, 59, 0.98);
+
+    --text-primary: #e4e4e4;
+    --text-secondary: #a0aec0;
+    --text-muted: #718096;
+
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-hover: rgba(102, 126, 234, 0.4);
+
+    --accent-color: #667eea;
+    --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+    --shadow-card: 0 4px 15px rgba(0, 0, 0, 0.3);
+
+    /* Status Colors */
+    --status-online-bg: #d1fae5;
+    --status-online-text: #065f46;
+    --status-offline-bg: #fee2e2;
+    --status-offline-text: #991b1b;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+    --bg-body: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-header: rgba(255, 255, 255, 0.95);
+    --bg-sidebar: rgba(255, 255, 255, 0.98);
+    --bg-sidebar-header: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --bg-input: rgba(0, 0, 0, 0.05);
+    --bg-hover: rgba(0, 0, 0, 0.05);
+    --bg-active: rgba(102, 126, 234, 0.1);
+    --bg-modal-overlay: rgba(0, 0, 0, 0.2);
+    --bg-modal-content: #ffffff;
+
+    --text-primary: #1a202c;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+
+    --border-color: rgba(0, 0, 0, 0.1);
+    --border-hover: rgba(102, 126, 234, 0.6);
+
+    --accent-color: #667eea;
+    --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+    /* Status Colors (Keep same or slightly adjust) */
+    --status-online-bg: #d1fae5;
+    --status-online-text: #065f46;
+    --status-offline-bg: #fee2e2;
+    --status-offline-text: #991b1b;
+}
