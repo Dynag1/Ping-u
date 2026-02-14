@@ -1,0 +1,47 @@
+<div id="modal-host-settings" class="section-modal">
+    <div class="section-modal-content">
+        <div class="section-modal-header">
+            <h2>⚙️ <span data-i18n="host_settings">Paramètres Hôte</span></h2>
+            <button class="section-modal-close" onclick="closeSectionModal('host-settings')">✕</button>
+        </div>
+        <div class="section-modal-body">
+            <h3 id="host-settings-ip" style="margin-bottom: 20px; color: var(--text-primary);">Test</h3>
+
+            <form id="form-host-settings">
+                <input type="hidden" id="host-settings-ip-input">
+
+                <div class="form-group">
+                    <label style="font-weight: 600; margin-bottom: 10px; display: block;">
+                        🔔 <span data-i18n="notifications">Notifications</span>
+                    </label>
+
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <label class="scan-option-card"
+                            style="display: flex; align-items: center; padding: 10px; margin-bottom: 10px; cursor: pointer;">
+                            <input type="checkbox" id="host-setting-email"
+                                style="width: 18px; height: 18px; margin-right: 12px;">
+                            <span>📧 Alerts Email</span>
+                        </label>
+
+                        <label class="scan-option-card"
+                            style="display: flex; align-items: center; padding: 10px; cursor: pointer;">
+                            <input type="checkbox" id="host-setting-telegram"
+                                style="width: 18px; height: 18px; margin-right: 12px;">
+                            <span>📱 Alerts Telegram</span>
+                        </label>
+                    </div>
+                    <p style="font-size: 12px; color: #a0aec0; margin-top: 10px;">
+                        <span data-i18n="host_notif_desc">Activez ou désactivez les alertes spécifiques pour cet
+                            hôte.</span>
+                    </p>
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="closeSectionModal('host-settings')"
+                        data-i18n="cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

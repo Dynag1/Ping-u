@@ -35,6 +35,11 @@ def worker(q, comm):
         finally:
             q.task_done()
 
+try:
+    from src.utils.http_checker import check_website_sync
+except ImportError:
+    check_website_sync = None
+
 def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
     # Vérifie si l'IP existe déjà dans le modèle
     ipexist = False
@@ -61,7 +66,17 @@ def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
 
     if not ipexist:
         # Simule le ping et la récupération des infos
-        result = fct_ip.ipPing(ip)  # "OK" ou autre
+        
+        # Détection URL
+        is_url = ip.startswith('http://') or ip.startswith('https://')
+        
+        if is_url and check_website_sync:
+             # Utiliser le checker HTTP
+             res = check_website_sync(ip, timeout=5)
+             result = "OK" if res['success'] else "HS"
+        else:
+             # Ping classique
+             result = fct_ip.ipPing(ip)  # "OK" ou autre
         nom = ""
         mac = ""
         port_val = port

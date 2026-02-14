@@ -6,10 +6,10 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background: var(--bg-body);
     min-height: 100vh;
     padding: 20px;
-    color: #e4e4e4;
+    color: var(--text-primary);
 }
 
 .container {
@@ -95,21 +95,21 @@ body {
 }
 
 .header {
-    background: rgba(45, 55, 72, 0.95);
+    background: var(--bg-header);
     padding: 25px 30px;
     border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-card);
     margin-bottom: 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
 }
 
 .header h1 {
-    color: #e4e4e4;
+    color: var(--text-primary);
     font-size: 32px;
     display: flex;
     align-items: center;
@@ -128,13 +128,13 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     padding: 6px 12px;
     border-radius: 20px;
 }
 
 .lang-selector label {
-    color: #a0aec0;
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 600;
 }
@@ -159,15 +159,15 @@ body {
 }
 
 .card {
-    background: rgba(45, 55, 72, 0.95);
+    background: var(--bg-card);
     border-radius: 15px;
     padding: 25px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border-color);
 }
 
 .card h2 {
-    color: #e4e4e4;
+    color: var(--text-primary);
     font-size: 20px;
     margin-bottom: 20px;
     display: flex;
@@ -184,16 +184,16 @@ body {
 }
 
 .stat-card {
-    background: rgba(30, 41, 59, 0.7);
+    background: var(--bg-card);
     border-radius: 12px;
     padding: 15px 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-card);
 }
 
 .stat-card:hover {
@@ -220,14 +220,14 @@ body {
 .stat-card .value {
     font-size: 28px;
     font-weight: 800;
-    color: #fff;
+    color: var(--text-primary);
     line-height: 1.2;
     margin-top: 5px;
 }
 
 .stat-card .label {
     font-size: 11px;
-    color: #94a3b8;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     font-weight: 700;
@@ -296,7 +296,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--bg-modal-overlay);
     backdrop-filter: blur(3px);
     z-index: 998;
     opacity: 0;
@@ -316,7 +316,7 @@ body {
     left: -360px;
     width: 340px;
     height: 100%;
-    background: rgba(30, 41, 59, 0.98);
+    background: var(--bg-sidebar);
     backdrop-filter: blur(20px);
     box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
     z-index: 999;
@@ -334,7 +334,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 20px 25px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--bg-sidebar-header);
     color: white;
     position: sticky;
     top: 0;
@@ -370,7 +370,7 @@ body {
 /* Sections du menu */
 .menu-section {
     padding: 18px 25px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .menu-section:last-child {
@@ -380,7 +380,7 @@ body {
 .menu-section-title {
     font-size: 13px;
     font-weight: 700;
-    color: #a0aec0;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 12px;
@@ -421,23 +421,23 @@ body {
     width: 100%;
     padding: 8px 10px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--border-color);
     font-size: 14px;
-    background: rgba(0, 0, 0, 0.3);
-    color: #e4e4e4;
+    background: var(--bg-input);
+    color: var(--text-primary);
 }
 
 .menu-section .lang-selector select option {
-    background: #1a1a2e;
-    color: #e4e4e4;
+    background: var(--bg-card);
+    color: var(--text-primary);
 }
 
 /* Header minimaliste */
 .header-minimal {
-    background: rgba(45, 55, 72, 0.95);
+    background: var(--bg-header);
     padding: 15px 25px;
     border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-card);
     margin-bottom: 25px;
     display: flex;
     align-items: center;
@@ -445,11 +445,11 @@ body {
     width: 100%;
     position: relative;
     z-index: 100;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
 }
 
 .main-title {
-    color: #e4e4e4;
+    color: var(--text-primary);
     font-size: 26px;
     display: flex;
     align-items: center;
@@ -571,18 +571,18 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     border-radius: 10px;
-    color: #a0aec0;
+    color: var(--text-secondary);
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 12px;
     font-size: 14px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bg-input);
 }
 
 .menu-nav-item:hover {
-    background: rgba(102, 126, 234, 0.15);
-    color: #667eea;
+    background: var(--bg-active);
+    color: var(--accent-color);
 }
 
 .menu-nav-item.active {

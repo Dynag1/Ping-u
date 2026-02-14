@@ -3,6 +3,7 @@
 Module d'authentification pour le serveur web
 Support multi-utilisateurs avec rôles (admin, user)
 SÉCURITÉ: Utilise bcrypt pour le hachage des mots de passe
+Stockage: SQLite (via src.database)
 """
 import os
 import json
@@ -10,6 +11,7 @@ import hashlib
 from functools import wraps
 from flask import session, redirect, url_for, request
 from src.utils.logger import get_logger
+from src.database import get_db_connection, init_db
 
 # Essayer d'importer bcrypt pour un hachage sécurisé
 try:
@@ -26,67 +28,91 @@ MAX_LOGIN_ATTEMPTS = 5
 LOGIN_LOCKOUT_TIME = 300  # 5 minutes
 
 class WebAuth:
-    def __init__(self, config_file='web_users.json'):
+    def __init__(self, json_config_file='web_users.json'):
         """Initialise le système d'authentification"""
-        self.config_file = config_file
-        self.ensure_config_exists()
+        self.json_config_file = json_config_file
+        
+        # Initialiser la base de données
+        init_db()
+        
+        # Migrer depuis le JSON si nécessaire
+        self.ensure_users_exist()
     
-    def ensure_config_exists(self):
-        """Crée le fichier de configuration avec les utilisateurs par défaut si nécessaire"""
-        if not os.path.exists(self.config_file):
-            # Créer les utilisateurs par défaut
-            default_users = {
-                'users': [
-                    {
-                        'username': 'admin',
-                        'password': self.hash_password('admin123'),  # Mot de passe par défaut plus fort
-                        'role': 'admin',
-                        'must_change_password': True  # Forcer le changement au premier login
-                    },
-                    {
-                        'username': 'user',
-                        'password': self.hash_password('user123'),
-                        'role': 'user',
-                        'must_change_password': True
-                    }
-                ]
-            }
-            self.save_all_users(default_users)
-            logger.warning("⚠️ SÉCURITÉ: Fichier créé avec mots de passe par défaut (admin/admin123, user/user123) - À CHANGER IMMÉDIATEMENT!")
-        else:
-            # Migration: si ancien format (un seul utilisateur), convertir
-            self._migrate_old_format()
-    
-    def _migrate_old_format(self):
-        """Migre l'ancien format (un utilisateur) vers le nouveau (multi-utilisateurs)"""
+    def ensure_users_exist(self):
+        """Vérifie qu'il y a au moins un utilisateur, sinon crée les par défaut ou migre du JSON"""
+        conn = get_db_connection()
+        if not conn:
+            return
+
         try:
-            with open(self.config_file, 'r', encoding='utf-8') as f:
+            users = conn.execute('SELECT count(*) FROM users').fetchone()[0]
+            
+            if users == 0:
+                # Si la base est vide, vérifier si on a un fichier JSON à migrer
+                if os.path.exists(self.json_config_file):
+                    self._migrate_from_json(conn)
+                else:
+                    self._create_default_users(conn)
+        except Exception as e:
+            logger.error(f"Erreur lors de la vérification des utilisateurs: {e}")
+        finally:
+            conn.close()
+            
+    def _create_default_users(self, conn):
+        """Crée les utilisateurs par défaut"""
+        logger.info("Création des utilisateurs par défaut...")
+        try:
+            default_users = [
+                ('admin', self.hash_password('admin123'), 'admin', 1),
+                ('user', self.hash_password('user123'), 'user', 1)
+            ]
+            conn.executemany('INSERT INTO users (username, password, role, must_change_password) VALUES (?, ?, ?, ?)', default_users)
+            conn.commit()
+            logger.warning("⚠️ SÉCURITÉ: Utilisateurs par défaut créés (admin/admin123, user/user123) - À CHANGER IMMÉDIATEMENT!")
+        except Exception as e:
+            logger.error(f"Erreur lors de la création des utilisateurs par défaut: {e}")
+
+    def _migrate_from_json(self, conn):
+        """Migre les utilisateurs depuis le fichier JSON"""
+        logger.info(f"Migration des utilisateurs depuis {self.json_config_file}...")
+        try:
+            with open(self.json_config_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            # Si c'est l'ancien format (pas de clé 'users')
-            if 'users' not in data and 'username' in data:
-                logger.info("Migration de l'ancien format de credentials...")
-                old_user = {
-                    'username': data['username'],
-                    'password': data['password'],
-                    'role': 'admin'
-                }
-                new_data = {
-                    'users': [
-                        old_user,
-                        {
-                            'username': 'user',
-                            'password': self.hash_password('user123'),
-                            'role': 'user',
-                            'must_change_password': True
-                        }
-                    ]
-                }
-                self.save_all_users(new_data)
-                logger.info("Migration terminée")
+            users_list = []
+            
+            # Format multi-utilisateurs
+            if 'users' in data:
+                for u in data['users']:
+                    users_list.append((
+                        u['username'],
+                        u['password'],
+                        u.get('role', 'user'),
+                        u.get('must_change_password', False)
+                    ))
+            # Ancien format mono-utilisateur
+            elif 'username' in data:
+                 users_list.append((
+                    data['username'],
+                    data['password'],
+                    'admin',
+                    False
+                ))
+                 # Ajouter un user par défaut aussi
+                 users_list.append(('user', self.hash_password('user123'), 'user', 1))
+
+            if users_list:
+                conn.executemany('INSERT INTO users (username, password, role, must_change_password) VALUES (?, ?, ?, ?)', users_list)
+                conn.commit()
+                logger.info("Migration JSON vers SQLite terminée avec succès.")
+                
+                # Renommer le fichier JSON pour éviter de le réutiliser
+                os.rename(self.json_config_file, self.json_config_file + '.bak')
+                logger.info(f"Fichier {self.json_config_file} renommé en .bak")
+                
         except Exception as e:
-            logger.error(f"Erreur lors de la migration: {e}")
-    
+            logger.error(f"Erreur lors de la migration JSON: {e}")
+
     def hash_password(self, password):
         """Hash un mot de passe avec bcrypt (si disponible) ou SHA256"""
         if BCRYPT_AVAILABLE:
@@ -107,59 +133,25 @@ class WebAuth:
             return hashlib.sha256(password.encode('utf-8')).hexdigest() == hashed
     
     def load_all_users(self):
-        """Charge tous les utilisateurs depuis le fichier"""
+        """Charge tous les utilisateurs depuis la DB"""
+        conn = get_db_connection()
+        if not conn:
+            return []
+        
         try:
-            with open(self.config_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                return data.get('users', [])
+            users = conn.execute('SELECT * FROM users').fetchall()
+            # Convertir sqlite3.Row en dict
+            return [dict(u) for u in users]
         except Exception as e:
             logger.error(f"Erreur chargement users: {e}")
-            # Retourner les utilisateurs par défaut en cas d'erreur
-            return [
-                {'username': 'admin', 'password': self.hash_password('admin123'), 'role': 'admin'},
-                {'username': 'user', 'password': self.hash_password('user123'), 'role': 'user'}
-            ]
-    
-    def save_all_users(self, data):
-        """Sauvegarde tous les utilisateurs"""
-        try:
-            with open(self.config_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=4)
-            return True
-        except Exception as e:
-            logger.error(f"Erreur sauvegarde users: {e}")
-            return False
-    
-    def load_credentials(self):
-        """Charge les identifiants admin (compatibilité)"""
-        users = self.load_all_users()
-        for user in users:
-            if user.get('role') == 'admin':
-                return user
-        return {'username': 'admin', 'password': self.hash_password('admin123'), 'role': 'admin'}
-    
-    def save_credentials(self, username, password_hash):
-        """Sauvegarde les identifiants admin (compatibilité)"""
-        users = self.load_all_users()
-        for user in users:
-            if user.get('role') == 'admin':
-                user['username'] = username
-                user['password'] = password_hash
-                break
-        return self.save_all_users({'users': users})
-    
+            return []
+        finally:
+            conn.close()
+
     def verify_credentials(self, username, password, client_ip=None):
-        """Vérifie les identifiants et retourne le rôle si succès
-        
-        Args:
-            username: Nom d'utilisateur
-            password: Mot de passe en clair
-            client_ip: IP du client pour rate limiting (optionnel)
-        
-        Returns:
-            tuple: (success: bool, role: str|None, must_change: bool)
-        """
+        """Vérifie les identifiants et retourne le rôle si succès"""
         import time
+        from datetime import datetime
         
         # Rate limiting basé sur l'IP
         if client_ip:
@@ -170,196 +162,239 @@ class WebAuth:
                 if current_time - attempt_info['last_attempt'] > LOGIN_LOCKOUT_TIME:
                     del _login_attempts[client_ip]
                 elif attempt_info['count'] >= MAX_LOGIN_ATTEMPTS:
-                    remaining = int(LOGIN_LOCKOUT_TIME - (current_time - attempt_info['last_attempt']))
                     logger.warning(f"SÉCURITÉ: IP {client_ip} bloquée - trop de tentatives ({attempt_info['count']})")
                     return False, None, False
         
-        users = self.load_all_users()
-        
-        for user in users:
-            if user['username'] == username:
-                # Utiliser verify_password pour compatibilité bcrypt/SHA256
-                if self.verify_password(password, user['password']):
-                    # Réinitialiser le compteur de tentatives
-                    if client_ip and client_ip in _login_attempts:
-                        del _login_attempts[client_ip]
-                    
-                    must_change = user.get('must_change_password', False)
-                    logger.info(f"Connexion réussie pour l'utilisateur: {username} (role: {user.get('role', 'user')})")
-                    return True, user.get('role', 'user'), must_change
-        
-        # Incrémenter le compteur de tentatives échouées
-        if client_ip:
-            if client_ip not in _login_attempts:
-                _login_attempts[client_ip] = {'count': 0, 'last_attempt': 0}
-            _login_attempts[client_ip]['count'] += 1
-            _login_attempts[client_ip]['last_attempt'] = time.time()
-            logger.warning(f"Tentative de connexion échouée pour: {username} depuis {client_ip} (tentative {_login_attempts[client_ip]['count']}/{MAX_LOGIN_ATTEMPTS})")
-        else:
-            logger.warning(f"Tentative de connexion échouée pour l'utilisateur: {username}")
-        
-        return False, None, False
+        conn = get_db_connection()
+        if not conn:
+            return False, None, False
+
+        try:
+            user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+            
+            if user and self.verify_password(password, user['password']):
+                # Réinitialiser le compteur de tentatives
+                if client_ip and client_ip in _login_attempts:
+                    del _login_attempts[client_ip]
+                
+                # Mettre à jour last_login
+                conn.execute('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', (user['id'],))
+                conn.commit()
+                
+                logger.info(f"Connexion réussie pour l'utilisateur: {username} (role: {user['role']})")
+                return True, user['role'], bool(user['must_change_password'])
+            
+            # Échec
+            # Incrémenter le compteur de tentatives échouées
+            if client_ip:
+                if client_ip not in _login_attempts:
+                    _login_attempts[client_ip] = {'count': 0, 'last_attempt': 0}
+                _login_attempts[client_ip]['count'] += 1
+                _login_attempts[client_ip]['last_attempt'] = time.time()
+                logger.warning(f"Tentative de connexion échouée pour: {username} depuis {client_ip}")
+            else:
+                logger.warning(f"Tentative de connexion échouée pour l'utilisateur: {username}")
+                
+            return False, None, False
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la vérification des identifiants: {e}")
+            return False, None, False
+        finally:
+            conn.close()
     
     def change_credentials(self, old_password, new_username, new_password):
-        """Change les identifiants admin (nécessite l'ancien mot de passe)"""
-        users = self.load_all_users()
-        old_password_hash = self.hash_password(old_password)
-        
-        # Trouver l'admin
-        for user in users:
-            if user.get('role') == 'admin':
-                if not self.verify_password(old_password, user['password']):
-                    logger.warning("Tentative de changement de credentials avec mauvais mot de passe")
-                    return False, "Mot de passe actuel incorrect"
+        """Change les identifiants admin (nécessite l'ancien mot de passe) - Obsolète pour legacy, mais gardons la logique"""
+        conn = get_db_connection()
+        if not conn:
+             return False, "Erreur base de données"
+
+        try:
+            # Chercher un admin
+            user = conn.execute("SELECT * FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+            
+            if not user:
+                return False, "Utilisateur admin non trouvé"
                 
-                # Modifier les identifiants admin
-                user['username'] = new_username
-                user['password'] = self.hash_password(new_password)
-                
-                if self.save_all_users({'users': users}):
-                    return True, "Identifiants modifiés avec succès"
-                else:
-                    return False, "Erreur lors de la sauvegarde"
-        
-        return False, "Utilisateur admin non trouvé"
+            if not self.verify_password(old_password, user['password']):
+                return False, "Mot de passe actuel incorrect"
+            
+            # Vérifier si le nouveau nom existe déjà (si différent)
+            if new_username != user['username']:
+                exists = conn.execute('SELECT 1 FROM users WHERE username = ?', (new_username,)).fetchone()
+                if exists:
+                    return False, "Ce nom d'utilisateur est déjà utilisé"
+
+            new_hash = self.hash_password(new_password)
+            conn.execute('UPDATE users SET username = ?, password = ? WHERE id = ?', (new_username, new_hash, user['id']))
+            conn.commit()
+            
+            return True, "Identifiants modifiés avec succès"
+        except Exception as e:
+            logger.error(f"Erreur changement credentials: {e}")
+            return False, "Erreur lors de la modification"
+        finally:
+            conn.close()
     
     def change_user_credentials(self, target_role, new_username, new_password, current_password=None, current_username=None):
         """
-        Change les identifiants d'un utilisateur par son rôle.
-        - Si current_password est fourni, on vérifie l'ancien mot de passe (pour l'utilisateur lui-même)
-        - Si appelé par un admin pour un autre utilisateur, current_password n'est pas requis
+        Change les identifiants d'un utilisateur par son rôle (legacy) ou username.
+        Si current_username est fourni, on cible cet utilisateur spécifique.
         """
-        users = self.load_all_users()
-        
-        for user in users:
-            if user.get('role') == target_role:
-                # Si current_password est fourni, vérifier
-                if current_password:
-                    if not self.verify_password(current_password, user['password']):
-                        return False, "Mot de passe actuel incorrect"
-                
-                # Vérifier que le nouveau username n'existe pas déjà (sauf si c'est le même)
-                if new_username != user['username']:
-                    for other_user in users:
-                        if other_user['username'] == new_username:
-                            return False, "Ce nom d'utilisateur est déjà utilisé"
-                
-                # Modifier les identifiants
-                user['username'] = new_username
-                user['password'] = self.hash_password(new_password)
-                
-                if self.save_all_users({'users': users}):
-                    logger.info(f"Credentials modifiés pour le rôle {target_role}")
-                    return True, "Identifiants modifiés avec succès"
-                else:
-                    return False, "Erreur lors de la sauvegarde"
-        
-        return False, f"Utilisateur avec le rôle {target_role} non trouvé"
+        conn = get_db_connection()
+        if not conn:
+             return False, "Erreur base de données"
+             
+        try:
+            user = None
+            if current_username:
+                 user = conn.execute('SELECT * FROM users WHERE username = ?', (current_username,)).fetchone()
+            else:
+                 # Comportement legacy: prendre le premier du rôle
+                 user = conn.execute('SELECT * FROM users WHERE role = ? LIMIT 1', (target_role,)).fetchone()
+            
+            if not user:
+                return False, "Utilisateur non trouvé"
+
+            # Vérification ancien mot de passe si fourni
+            if current_password:
+                if not self.verify_password(current_password, user['password']):
+                    return False, "Mot de passe actuel incorrect"
+            
+            # Vérifier unicité username
+            if new_username != user['username']:
+                exists = conn.execute('SELECT 1 FROM users WHERE username = ?', (new_username,)).fetchone()
+                if exists:
+                    return False, "Ce nom d'utilisateur est déjà utilisé"
+
+            new_hash = self.hash_password(new_password)
+            conn.execute('UPDATE users SET username = ?, password = ?, must_change_password = 0 WHERE id = ?', (new_username, new_hash, user['id']))
+            conn.commit()
+            
+            return True, "Identifiants modifiés avec succès"
+        except Exception as e:
+            logger.error(f"Erreur modification user: {e}")
+            return False, "Erreur lors de la modification"
+        finally:
+            conn.close()
     
     def get_users_list(self):
         """Retourne la liste des utilisateurs (sans les mots de passe)"""
-        users = self.load_all_users()
-        return [{'username': u['username'], 'role': u['role']} for u in users]
+        conn = get_db_connection()
+        if not conn:
+            return []
+            
+        try:
+            users = conn.execute('SELECT id, username, role, must_change_password, created_at, last_login FROM users').fetchall()
+            return [dict(u) for u in users]
+        except Exception as e:
+            logger.error(f"Erreur liste utilisateurs: {e}")
+            return []
+        finally:
+            conn.close()
     
     def add_user(self, username, password, role='user'):
         """Ajoute un nouvel utilisateur"""
-        users = self.load_all_users()
-        
-        # Vérifier que le username n'existe pas déjà
-        for user in users:
-            if user['username'] == username:
-                return False, "Ce nom d'utilisateur existe déjà"
-        
-        # Valider le rôle
         if role not in ['admin', 'user']:
-            role = 'user'
-        
-        # Ajouter l'utilisateur
-        new_user = {
-            'username': username,
-            'password': self.hash_password(password),
-            'role': role
-        }
-        users.append(new_user)
-        
-        if self.save_all_users({'users': users}):
+            return False, "Rôle invalide"
+            
+        conn = get_db_connection()
+        if not conn:
+            return False, "Erreur base de données"
+            
+        try:
+            conn.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+                         (username, self.hash_password(password), role))
+            conn.commit()
             logger.info(f"Nouvel utilisateur créé: {username} (role: {role})")
             return True, "Utilisateur créé avec succès"
-        else:
-            return False, "Erreur lors de la sauvegarde"
+        except sqlite3.IntegrityError:
+            return False, "Ce nom d'utilisateur existe déjà"
+        except Exception as e:
+            logger.error(f"Erreur ajout utilisateur: {e}")
+            return False, "Erreur lors de l'ajout"
+        finally:
+            conn.close()
     
     def delete_user(self, username):
-        """Supprime un utilisateur (ne peut pas supprimer le dernier admin)"""
-        users = self.load_all_users()
-        
-        # Trouver l'utilisateur à supprimer
-        user_to_delete = None
-        for user in users:
-            if user['username'] == username:
-                user_to_delete = user
-                break
-        
-        if not user_to_delete:
-            return False, "Utilisateur non trouvé"
-        
-        # Ne pas permettre de supprimer le dernier admin
-        if user_to_delete['role'] == 'admin':
-            admin_count = sum(1 for u in users if u['role'] == 'admin')
-            if admin_count <= 1:
-                return False, "Impossible de supprimer le dernier administrateur"
-        
-        # Supprimer l'utilisateur
-        users = [u for u in users if u['username'] != username]
-        
-        if self.save_all_users({'users': users}):
+        """Supprime un utilisateur"""
+        conn = get_db_connection()
+        if not conn:
+            return False, "Erreur base de données"
+            
+        try:
+            user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+            if not user:
+                return False, "Utilisateur non trouvé"
+            
+            # Protection dernier admin
+            if user['role'] == 'admin':
+                admin_count = conn.execute("SELECT count(*) FROM users WHERE role = 'admin'").fetchone()[0]
+                if admin_count <= 1:
+                    return False, "Impossible de supprimer le dernier administrateur"
+
+            conn.execute('DELETE FROM users WHERE id = ?', (user['id'],))
+            conn.commit()
             logger.info(f"Utilisateur supprimé: {username}")
             return True, "Utilisateur supprimé avec succès"
-        else:
-            return False, "Erreur lors de la sauvegarde"
+        except Exception as e:
+            logger.error(f"Erreur suppression utilisateur: {e}")
+            return False, "Erreur lors de la suppression"
+        finally:
+            conn.close()
     
     def update_user_password(self, username, new_password):
         """Met à jour le mot de passe d'un utilisateur (admin uniquement)"""
-        users = self.load_all_users()
-        
-        for user in users:
-            if user['username'] == username:
-                user['password'] = self.hash_password(new_password)
+        conn = get_db_connection()
+        if not conn:
+            return False, "Erreur base de données"
+            
+        try:
+            user = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
+            if not user:
+                return False, "Utilisateur non trouvé"
                 
-                if self.save_all_users({'users': users}):
-                    logger.info(f"Mot de passe modifié pour: {username}")
-                    return True, "Mot de passe modifié avec succès"
-                else:
-                    return False, "Erreur lors de la sauvegarde"
-        
-        return False, "Utilisateur non trouvé"
-    
+            new_hash = self.hash_password(new_password)
+            conn.execute('UPDATE users SET password = ? WHERE id = ?', (new_hash, user['id']))
+            conn.commit()
+            logger.info(f"Mot de passe réinitialisé pour: {username}")
+            return True, "Mot de passe modifié avec succès"
+        except Exception as e:
+            logger.error(f"Erreur update password: {e}")
+            return False, "Erreur lors de la modification"
+        finally:
+            conn.close()
+            
     def update_user_role(self, username, new_role):
         """Met à jour le rôle d'un utilisateur"""
-        users = self.load_all_users()
-        
         if new_role not in ['admin', 'user']:
             return False, "Rôle invalide"
-        
-        for user in users:
-            if user['username'] == username:
-                old_role = user['role']
-                
-                # Ne pas permettre de retirer le dernier admin
-                if old_role == 'admin' and new_role == 'user':
-                    admin_count = sum(1 for u in users if u['role'] == 'admin')
-                    if admin_count <= 1:
-                        return False, "Impossible de retirer le rôle du dernier administrateur"
-                
-                user['role'] = new_role
-                
-                if self.save_all_users({'users': users}):
-                    logger.info(f"Rôle modifié pour {username}: {old_role} -> {new_role}")
-                    return True, "Rôle modifié avec succès"
-                else:
-                    return False, "Erreur lors de la sauvegarde"
-        
-        return False, "Utilisateur non trouvé"
-    
+            
+        conn = get_db_connection()
+        if not conn:
+            return False, "Erreur base de données"
+            
+        try:
+            user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+            if not user:
+                return False, "Utilisateur non trouvé"
+            
+            old_role = user['role']
+            if old_role == 'admin' and new_role == 'user':
+                admin_count = conn.execute("SELECT count(*) FROM users WHERE role = 'admin'").fetchone()[0]
+                if admin_count <= 1:
+                    return False, "Impossible de retirer le rôle du dernier administrateur"
+            
+            conn.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user['id']))
+            conn.commit()
+            logger.info(f"Rôle modifié pour {username}: {old_role} -> {new_role}")
+            return True, "Rôle modifié avec succès"
+        except Exception as e:
+            logger.error(f"Erreur update role: {e}")
+            return False, "Erreur lors de la modification"
+        finally:
+            conn.close()
+
     @staticmethod
     def login_required(f):
         """Décorateur pour protéger les routes (admin uniquement)"""

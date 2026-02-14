@@ -207,6 +207,8 @@ def save_settings():
         logger.error(f"Erreur save_settings: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+from src.database import get_host_notification_settings, set_host_notification_settings
+
 @settings_bp.route('/api/test_smtp', methods=['POST'])
 @WebAuth.login_required
 def test_smtp():
@@ -218,4 +220,30 @@ def test_smtp():
         return jsonify({'success': True, 'message': 'Test envoyé'})
     except Exception as e:
         logger.error(f"Erreur test_smtp: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@settings_bp.route('/api/host/settings/<path:ip>', methods=['GET'])
+@WebAuth.login_required
+def get_host_settings_route(ip):
+    try:
+        settings = get_host_notification_settings(ip)
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        logger.error(f"Erreur get_host_settings {ip}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@settings_bp.route('/api/host/settings/<path:ip>', methods=['POST'])
+@WebAuth.login_required
+def save_host_settings_route(ip):
+    try:
+        data = request.get_json()
+        email = data.get('email', True)
+        telegram = data.get('telegram', True)
+        
+        if set_host_notification_settings(ip, email, telegram):
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Erreur sauvegarde'}), 500
+    except Exception as e:
+        logger.error(f"Erreur save_host_settings {ip}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500

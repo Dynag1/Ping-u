@@ -240,7 +240,17 @@ const translations = {
         user_created: "Utilisateur créé avec succès",
         user_deleted: "Utilisateur supprimé",
         password_changed: "Mot de passe modifié",
-        role_changed: "Rôle modifié"
+        role_changed: "Rôle modifié",
+        // Dashboards & Host Settings
+        host_settings: "Paramètres Hôte",
+        host_notif_desc: "Activez ou désactivez les alertes spécifiques pour cet hôte.",
+        notifications: "Notifications",
+        menu_dashboards: "Tableaux de Bord",
+        dashboards: "Tableaux de Bord",
+        add_dashboard: "Créer",
+        create_dashboard: "Créer Tableau de Bord",
+        edit_dashboard: "Modifier Tableau de Bord",
+        hosts: "Hôtes"
     },
     en: {
         admin_title: "Administration - Ping ü",
@@ -458,7 +468,17 @@ const translations = {
         user_created: "User created successfully",
         user_deleted: "User deleted",
         password_changed: "Password changed",
-        role_changed: "Role changed"
+        role_changed: "Role changed",
+        // Dashboards & Host Settings
+        host_settings: "Host Settings",
+        host_notif_desc: "Enable or disable specific alerts for this host.",
+        notifications: "Notifications",
+        menu_dashboards: "Dashboards",
+        dashboards: "Dashboards",
+        add_dashboard: "Create",
+        create_dashboard: "Create Dashboard",
+        edit_dashboard: "Edit Dashboard",
+        hosts: "Hosts"
     }
 };
 
@@ -1241,6 +1261,9 @@ function updateHostsTable(hosts) {
                 style="display: none; width: 100%; padding: 5px; border: 2px solid #10b981; border-radius: 6px;">
         </td>
         <td class="host-actions">
+            <button class="btn btn-secondary btn-small" onclick="openHostSettings('${host.ip}', '${escapeHtml(host.nom)}')" title="${t('host_settings') || 'Paramètres'}">
+                ⚙️
+            </button>
             <button class="btn btn-danger btn-small" onclick="deleteHost('${host.ip}')" title="${t('delete')}">
                 🗑️
             </button>
@@ -2552,7 +2575,7 @@ function switchSection(section) {
     });
 
     // Masquer toutes les sections de contenu inline (toujours, pour repartir de zéro)
-    const allContentSections = ['content-accueil', 'content-sites', 'content-backup', 'content-users', 'content-notifications'];
+    const allContentSections = ['content-accueil', 'content-sites', 'content-dashboards', 'content-backup', 'content-users', 'content-notifications'];
     allContentSections.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('active');
@@ -2567,7 +2590,7 @@ function switchSection(section) {
     });
 
     // Gérer l'affichage de la section demandée
-    const inlineSections = ['accueil', 'sites', 'backup', 'users', 'notifications'];
+    const inlineSections = ['accueil', 'sites', 'dashboards', 'backup', 'users', 'notifications'];
 
     if (inlineSections.includes(section)) {
         const target = document.getElementById('content-' + section);
@@ -2577,6 +2600,7 @@ function switchSection(section) {
 
         // Chargement des données au besoin
         if (section === 'sites') loadSites();
+        if (section === 'dashboards') loadDashboards();
         if (section === 'users') loadUsersList();
 
         closeMenu();
@@ -2648,3 +2672,233 @@ document.querySelectorAll('.section-modal').forEach(modal => {
         }
     });
 });
+
+// ==================== Host Settings ====================
+async function openHostSettings(ip, name) {
+    const modal = document.getElementById('modal-host-settings');
+    const title = document.getElementById('host-settings-ip');
+    const inputIp = document.getElementById('host-settings-ip-input');
+
+    // Set title and hidden input
+    if (title) title.textContent = (name && name !== 'undefined' && name !== '-') ? `${name} (${ip})` : ip;
+    if (inputIp) inputIp.value = ip;
+
+    // Show modal
+    if (modal) {
+        modal.style.display = 'flex';
+        // Force reflow
+        void modal.offsetWidth;
+        modal.classList.add('active');
+    }
+
+    // Reset checkboxes while loading
+    const emailCheck = document.getElementById('host-setting-email');
+    const telegramCheck = document.getElementById('host-setting-telegram');
+    if (emailCheck) emailCheck.checked = true;
+    if (telegramCheck) telegramCheck.checked = true;
+
+    // Load current settings
+    try {
+        const result = await apiCall(`/api/host/settings/${ip}`, 'GET');
+        if (result.success && result.settings) {
+            if (emailCheck) emailCheck.checked = result.settings.email;
+            if (telegramCheck) telegramCheck.checked = result.settings.telegram;
+        }
+    } catch (e) {
+        console.error('Erreur chargement settings host:', e);
+        showNotification('Impossible de charger les paramètres', 'error');
+    }
+}
+
+// Host Settings Form Submission
+const formHostSettings = document.getElementById('form-host-settings');
+if (formHostSettings) {
+    formHostSettings.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const ip = document.getElementById('host-settings-ip-input').value;
+        const email = document.getElementById('host-setting-email').checked;
+        const telegram = document.getElementById('host-setting-telegram').checked;
+
+        try {
+            const result = await apiCall(`/api/host/settings/${ip}`, 'POST', {
+                email: email,
+                telegram: telegram
+            });
+
+            if (result.success) {
+                showNotification(t('settings_saved') || 'Paramètres sauvegardés', 'success');
+                closeSectionModal('host-settings');
+                // Trigger an update request to refresh status if needed (though local list logic should handle it)
+                socket.emit('request_update');
+            } else {
+                showNotification(result.error, 'error');
+            }
+        } catch (e) {
+            showNotification('Erreur sauvegarde settings', 'error');
+        }
+    });
+}
+
+// ==================== Dashboards Management ====================
+async function loadDashboards() {
+    const list = document.getElementById('dashboards-list');
+    if (!list) return;
+
+    list.innerHTML = '<div class="loading-spinner">Chargement...</div>';
+
+    try {
+        const result = await apiCall('/api/dashboards', 'GET');
+        if (result.success && result.dashboards) {
+            if (result.dashboards.length === 0) {
+                list.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">Aucun tableau de bord créé.</div>';
+                return;
+            }
+
+            list.innerHTML = result.dashboards.map(d => `
+                <div class="status-card" style="position: relative;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+                    <h3>${escapeHtml(d.name)}</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                        ${d.hosts ? d.hosts.length : 0} hôte(s)
+                    </p>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button class="btn btn-primary btn-sm" onclick="openDashboardModal(${d.id})">Modifier</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteDashboard(${d.id})">Supprimer</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (e) {
+        console.error('Erreur loading dashboards:', e);
+        list.innerHTML = '<div class="error-message">Erreur de chargement</div>';
+    }
+}
+
+async function openDashboardModal(id = null) {
+    const modal = document.getElementById('modal-dashboard');
+    const form = document.getElementById('form-dashboard');
+    const title = document.getElementById('dashboard-modal-title');
+
+    // Reset form
+    form.reset();
+    document.getElementById('dashboard-id').value = '';
+    document.getElementById('dashboard-hosts-list').innerHTML = '';
+
+    if (id) {
+        title.setAttribute('data-i18n', 'edit_dashboard');
+        title.textContent = 'Modifier Tableau de Bord';
+        document.getElementById('dashboard-id').value = id;
+
+        // Load dashboard details
+        try {
+            const result = await apiCall(`/api/dashboards/${id}`, 'GET');
+            if (result.success) {
+                document.getElementById('dashboard-name').value = result.dashboard.name;
+                populateDashboardHosts(result.dashboard.hosts);
+            }
+        } catch (e) {
+            showNotification('Erreur chargement dashboard', 'error');
+            return;
+        }
+    } else {
+        title.setAttribute('data-i18n', 'create_dashboard');
+        title.textContent = 'Créer Tableau de Bord';
+        populateDashboardHosts([]);
+    }
+
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+}
+
+function populateDashboardHosts(selectedIps) {
+    const tbody = document.getElementById('dashboard-hosts-list');
+    if (!tbody) return;
+
+    // Use the global hostsData loaded in admin.js
+    tbody.innerHTML = hostsData.map(h => {
+        const isChecked = selectedIps.includes(h.ip);
+        return `
+            <tr data-ip="${h.ip}" data-name="${(h.nom || '').toLowerCase()}" data-site="${(h.site || '').toLowerCase()}">
+                <td><input type="checkbox" name="dashboard_hosts" value="${h.ip}" ${isChecked ? 'checked' : ''}></td>
+                <td>${escapeHtml(h.ip)}</td>
+                <td>${escapeHtml(h.nom || '-')}</td>
+                <td>${escapeHtml(h.site || '-')}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filterDashboardHosts() {
+    const filter = document.getElementById('dashboard-hosts-search').value.toLowerCase();
+    const rows = document.querySelectorAll('#dashboard-hosts-list tr');
+
+    rows.forEach(row => {
+        const ip = row.dataset.ip.toLowerCase();
+        const name = row.dataset.name;
+        const site = row.dataset.site;
+
+        if (ip.includes(filter) || name.includes(filter) || site.includes(filter)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function toggleAllDashboardHosts(checkbox) {
+    const checkboxes = document.querySelectorAll('input[name="dashboard_hosts"]');
+    checkboxes.forEach(cb => {
+        // Only toggle visible rows
+        if (cb.closest('tr').style.display !== 'none') {
+            cb.checked = checkbox.checked;
+        }
+    });
+}
+
+async function deleteDashboard(id) {
+    if (!confirm('Voulez-vous vraiment supprimer ce tableau de bord ?')) return;
+
+    try {
+        const result = await apiCall(`/api/dashboards/${id}`, 'DELETE');
+        if (result.success) {
+            showNotification('Tableau de bord supprimé', 'success');
+            loadDashboards();
+            socket.emit('request_update');
+        } else {
+            showNotification(result.error, 'error');
+        }
+    } catch (e) {
+        showNotification('Erreur suppression', 'error');
+    }
+}
+
+// Form logic
+const formDashboard = document.getElementById('form-dashboard');
+if (formDashboard) {
+    formDashboard.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const id = document.getElementById('dashboard-id').value;
+        const name = document.getElementById('dashboard-name').value;
+
+        const checkboxes = document.querySelectorAll('input[name="dashboard_hosts"]:checked');
+        const hosts = Array.from(checkboxes).map(cb => cb.value);
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/dashboards/${id}` : '/api/dashboards';
+
+        try {
+            const result = await apiCall(url, method, { name, hosts });
+            if (result.success) {
+                showNotification('Tableau de bord enregistré', 'success');
+                closeSectionModal('dashboard');
+                loadDashboards();
+                socket.emit('request_update');
+            } else {
+                showNotification(result.error, 'error');
+            }
+        } catch (e) {
+            showNotification('Erreur enregistrement', 'error');
+        }
+    });
+}
