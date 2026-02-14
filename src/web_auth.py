@@ -235,7 +235,7 @@ class WebAuth:
             if user.get('role') == target_role:
                 # Si current_password est fourni, vérifier
                 if current_password:
-                    if user['password'] != self.hash_password(current_password):
+                    if not self.verify_password(current_password, user['password']):
                         return False, "Mot de passe actuel incorrect"
                 
                 # Vérifier que le nouveau username n'existe pas déjà (sauf si c'est le même)
@@ -369,13 +369,13 @@ class WebAuth:
                 if request.path.startswith('/api/'):
                     from flask import jsonify
                     return jsonify({'success': False, 'error': 'Non authentifié'}), 401
-                return redirect(url_for('login'))
+                return redirect(url_for('auth.login'))
             # Vérifier que c'est un admin pour les routes admin
             if session.get('role') != 'admin':
                 if request.path.startswith('/api/'):
                     from flask import jsonify
                     return jsonify({'success': False, 'error': 'Accès admin requis'}), 403
-                return redirect(url_for('index'))
+                return redirect(url_for('main.index'))
             return f(*args, **kwargs)
         return decorated_function
     
@@ -388,7 +388,7 @@ class WebAuth:
                 if request.path.startswith('/api/'):
                     from flask import jsonify
                     return jsonify({'success': False, 'error': 'Non authentifié'}), 401
-                return redirect(url_for('login'))
+                return redirect(url_for('auth.login'))
             return f(*args, **kwargs)
         return decorated_function
 

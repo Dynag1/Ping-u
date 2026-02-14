@@ -1,0 +1,47 @@
+<div id="content-notifications" class="content-section">
+    <div class="collapsible-section open" id="section-notifications">
+        <div class="collapsible-header" onclick="toggleSection('section-notifications')">
+            <div class="collapsible-title">
+                <div class="collapsible-icon" style="background: rgba(239, 68, 68, 0.2); color: #ef4444;">🔔
+                </div>
+                <div>
+                    <h2 data-i18n="notifications_title">Centre de Notifications</h2>
+                    <p data-i18n="notifications_desc">Historique des alertes et événements système</p>
+                </div>
+            </div>
+            <div class="collapsible-toggle">▼</div>
+        </div>
+        <div class="collapsible-content">
+            <div
+                style="background: rgba(0, 0, 0, 0.2); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); padding: 20px;">
+
+                <!-- Contrôles -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-sm" onclick="loadNotifications(50, false)"
+                            style="background: rgba(255,255,255,0.1);">🔄 Actualiser</button>
+                        <label
+                            style="display: flex; align-items: center; gap: 5px; color: #cbd5e0; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="chk-unread-only" onchange="loadNotifications()"> Non
+                            lues uniquement
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-sm btn-info" onclick="markAllNotificationsRead()">✓ Tout
+                            marquer comme lu</button>
+                        <button class="btn btn-sm btn-danger" onclick="clearAllNotifications()">🗑️ Tout
+                            effacer</button>
+                    </div>
+                </div>
+
+                <!-- Liste des notifications -->
+                <div id="notifications-list"
+                    style="display: flex; flex-direction: column; gap: 10px; max-height: 600px; overflow-y: auto; padding-right: 5px;">
+                    <!-- Injecté via JS -->
+                    <div style="text-align: center; color: #a0aec0; padding: 40px;">Chargement...</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

@@ -25,111 +25,11 @@ try:
     from PySide6.QtGui import QStandardItem, QColor, QBrush
     GUI_AVAILABLE = True
 except ImportError:
-    GUI_AVAILABLE = False
-    import threading
-    
-    class Signal: 
-        """Signal fonctionnel pour mode headless"""
-        def __init__(self, *args): 
-            self._callbacks = []
-        def emit(self, *args): 
-            for callback in self._callbacks:
-                try:
-                    callback(*args)
-                except Exception as e:
-                    print(f"Signal emit error: {e}")
-        def connect(self, callback): 
-            self._callbacks.append(callback)
-    
-    class QObject: 
-        pass
-    
-    class QThread:
-        """QThread fonctionnel pour mode headless utilisant threading.Thread"""
-        def __init__(self):
-            self._thread = None
-            self._running = False
-            self.finished = Signal()
-        
-        def start(self):
-            self._running = True
-            self._thread = threading.Thread(target=self._run_wrapper, daemon=True)
-            self._thread.start()
-        
-        def _run_wrapper(self):
-            try:
-                self.run()
-            finally:
-                self._running = False
-                self.finished.emit()
-        
-        def run(self):
-            """À surcharger dans les sous-classes"""
-            pass
-        
-        def wait(self, timeout_ms=None):
-            if self._thread:
-                timeout_sec = timeout_ms / 1000 if timeout_ms else None
-                self._thread.join(timeout=timeout_sec)
-                return not self._thread.is_alive()
-            return True
-        
-        def isRunning(self):
-            return self._running
-        
-        def quit(self):
-            self._running = False
-        
-        def stop(self):
-            self._running = False
-    
-    class QStandardItem:
-        def __init__(self, text=""): 
-            self._text = str(text) if text else ""
-            self._background = None
-            self._foreground = None
-            self._data = {}
-            self._flags = 0
-        def text(self): 
-            return self._text
-        def setText(self, text): 
-            self._text = str(text)
-        def setForeground(self, brush): 
-            self._foreground = brush
-        def setBackground(self, brush): 
-            self._background = brush
-        def background(self):
-            return self._background
-        def foreground(self):
-            return self._foreground
-        def setData(self, data, role=0):
-            self._data[role] = data
-        def data(self, role=0):
-            return self._data.get(role)
-        def flags(self):
-            return self._flags
-        def setFlags(self, flags):
-            self._flags = flags
-        def setEditable(self, editable):
-            pass
-    
-    class QColor:
-        def __init__(self, *args): pass
-    
-    class QBrush:
-        def __init__(self, *args): pass
-    
-    class Qt:
-        pass
-    
-    class QTimer:
-        @staticmethod
-        def singleShot(ms, callback):
-            """Timer fonctionnel pour mode headless"""
-            import threading
-            timer = threading.Timer(ms / 1000, callback)
-            timer.daemon = True
-            timer.start()
+    from src.utils.headless_compat import (
+        GUI_AVAILABLE, QObject, Signal, QThread, Qt, QTimer,
+        QStandardItem, QColor, QBrush
+    )
+
 
 logger = get_logger(__name__)
 
@@ -477,24 +377,27 @@ class AsyncPingWorker(QThread):
 
 
 class PingManager(QObject):
-    def __init__(self, tree_model, main_window=None):
+    result_signal = Signal(str, float, str, object, object)  # ip, latence, couleur, température, bandwidth
+    finished_signal = Signal()  # Signal quand une vague est finie
+
+    def __init__(self, get_ips_callback=None, main_window=None):
         super().__init__()
-        self.tree_model = tree_model
+        self.get_ips_callback = get_ips_callback
         self.main_window = main_window
         self.worker = None
         self.timer = None
         # Cache pour stocker les données de trafic entre les cycles
         self.traffic_cache = {}
+        self.snmp_worker = None
 
     def start(self):
         """Démarre le cycle de ping."""
         logger.info("Démarrage AsyncPingManager")
-        # On utilise un QTimer pour relancer la vague de pings régulièrement
-        self.timer = QObject() # Dummy parent for timer if needed, but simple timer is fine
         
         # Initialiser le worker SNMP autonome
         if SNMP_AVAILABLE:
-            self.snmp_worker = SNMPWorker(self.tree_model, self.traffic_cache)
+            self.snmp_worker = SNMPWorker(self.traffic_cache, self.get_ips_callback)
+            self.snmp_worker.snmp_update_signal.connect(self.handle_snmp_result)
             self.snmp_worker.start()
         
         self.schedule_next_run()
@@ -503,13 +406,14 @@ class PingManager(QObject):
         if not var.tourne:
             return
 
-        # Récupération des IPs
-        ips = self.get_all_ips()
+        # Récupération des IPs via le callback
+        ips = []
+        if self.get_ips_callback:
+            ips = self.get_ips_callback()
         
         if not ips:
-            # Si pas d'IPs, on attend quand même avec un timer non-bloquant
-            # QTimer est déjà défini globalement (PySide6 ou factice)
-            QTimer.singleShot(int(var.delais) * 1000, self.schedule_next_run)
+            # Si pas d'IPs, on attend quand même
+            QTimer.singleShot(max(1, int(var.delais)) * 1000, self.schedule_next_run)
             return
 
         # Lancement du worker
@@ -521,6 +425,8 @@ class PingManager(QObject):
 
     def on_worker_finished(self):
         """Appelé quand une vague de pings est terminée."""
+        self.finished_signal.emit()
+        
         # Broadcaster les mises à jour aux clients web (mode headless)
         if not GUI_AVAILABLE and self.main_window:
             try:
@@ -530,109 +436,42 @@ class PingManager(QObject):
                 logger.debug(f"Erreur broadcast: {e}")
         
         if var.tourne:
-            # Délai avant la prochaine vague (non-bloquant)
-            # QTimer est déjà défini globalement (PySide6 ou factice)
             delay_ms = max(1, int(var.delais)) * 1000
             QTimer.singleShot(delay_ms, self.schedule_next_run)
 
-    def get_all_ips(self):
-        """Récupère toutes les IPs du modèle, filtrées par sites actifs si définis."""
-        ips_set = set()  # Utiliser un set pour éviter les doublons
-        
-        for row in range(self.tree_model.rowCount()):
-            item = self.tree_model.item(row, 1)
-            if item:
-                ip_text = item.text().strip()
-                if not ip_text:
-                    continue
-                
-                # Filtrage par sites actifs si définis
-                if var.sites_actifs:
-                    site_item = self.tree_model.item(row, 8)  # Colonne Site
-                    host_site = site_item.text().strip() if site_item else ''
-                    
-                    # Ne surveiller que les hôtes des sites actifs
-                    if host_site not in var.sites_actifs:
-                        continue
-                
-                ips_set.add(ip_text)
-        
-        return list(ips_set)
-
     def handle_result(self, ip, latency, color, temperature, bandwidth):
-        """Met à jour l'interface avec le résultat."""
-        row = self.find_item_row(ip)
-        if row == -1:
-            return
-
-        # Vérifier si l'hôte est exclu (colonne 10)
-        is_excluded = False
-        item_excl = self.tree_model.item(row, 10)
-        if item_excl and item_excl.text() == "x":
-            is_excluded = True
-
-        # Met à jour toutes les colonnes
-        for col in range(self.tree_model.columnCount()):
-            item = self.tree_model.item(row, col)
-            # Crée l'item si inexistant
-            if not item:
-                item = QStandardItem()
-                self.tree_model.setItem(row, col, item)
-            
-            # Applique la couleur et le texte selon la colonne
-            if col == 5:  # Colonne Latence
-                if is_excluded:
-                    latency_text = f"{latency:.1f} ms" if latency < 500 else "HS"
-                    item.setText(f"{latency_text}")
-                else:
-                    item.setText(f"{latency:.1f} ms" if latency < 500 else "HS")
-            elif col == 6:  # Colonne Température (sera mis à jour par le thread SNMP séparé)
-                pass # Ne rien faire ici pour la température, géré par SNMPWorker
-            
-            # Colorie toute la ligne (seulement si GUI disponible)
-            if GUI_AVAILABLE:
-                if is_excluded:
-                    item.setForeground(QBrush(QColor("gray")))
-                    if latency < 500:
-                        item.setBackground(QBrush(QColor(240, 240, 240)))
-                    else:
-                        item.setBackground(QBrush(QColor(255, 240, 240)))
-                else:
-                    item.setBackground(QBrush(QColor(color)))
-                    item.setForeground(QBrush(QColor("black")))
+        """Relaye le résultat et met à jour les listes internes."""
+        # Relayage vers le signal principal pour que le contrôleur mette à jour le modèle
+        self.result_signal.emit(ip, latency, color, temperature, bandwidth)
         
-        # Mise à jour des listes (HS/OK) via le gestionnaire principal (thread-safe)
+        # Mise à jour des listes de statistiques/alertes (toujours stockées dans src.var)
         self.update_lists(ip, latency)
 
-    def update_lists(self, ip, latency):
-        # Vérifier si l'hôte est exclu
-        is_excluded = False
-        try:
-            row = self.find_item_row(ip)
-            if row != -1:
-                item_excl = self.tree_model.item(row, 10)  # Colonne 10 = Excl
-                if item_excl and item_excl.text() == "x":
-                    is_excluded = True
+    def handle_snmp_result(self, ip, temp, bandwidth):
+        """Relaye les résultats SNMP."""
+        # On peut ré-émettre via un signal dédié ou le signal de résultat général
+        # Pour rester compatible avec l'architecture, on émet vers l'extérieur
+        self.result_signal.emit(ip, -1.0, "", temp, bandwidth) # -1.0 pour indiquer que c'est une MAJ SNMP seulement
 
-            # TOUJOURS mettre à jour liste_stats (même pour les hôtes exclus)
-            # Les alertes sont bloquées pour les exclus, mais pas les statistiques
-            # FIX: Utiliser >= 500 au lieu de == 500 pour capturer tous les cas d'échec
+    def update_lists(self, ip, latency):
+        # Les listes HS/Mail/Telegram dépendent de l'état d'exclusion.
+        # Idéalement, PingManager ne devrait pas avoir à vérifier l'exclusion lui-même.
+        # Mais pour l'instant on garde la compatibilité avec src.var.
+        
+        try:
+            # Stats toujours mises à jour
             if latency >= 500:
-                # Stats toujours mises à jour
                 self.list_increment(var.liste_stats, ip, log=False)
-                # Alertes uniquement pour les non-exclus
-                if not is_excluded:
-                    self.list_increment(var.liste_hs, ip, log=True)
-                    self.list_increment(var.liste_mail, ip, log=False)
-                    self.list_increment(var.liste_telegram, ip, log=False)
+                # On traite tous les échecs comme potentiellement HS ici.
+                # L'exclusion sera gérée visuellement et lors du filtrage initial des IPs.
+                self.list_increment(var.liste_hs, ip, log=True)
+                self.list_increment(var.liste_mail, ip, log=False)
+                self.list_increment(var.liste_telegram, ip, log=False)
             else:
-                # Stats toujours mises à jour
                 self.list_ok(var.liste_stats, ip)
-                # Alertes uniquement pour les non-exclus
-                if not is_excluded:
-                    self.list_ok(var.liste_hs, ip)
-                    self.list_ok(var.liste_mail, ip)
-                    self.list_ok(var.liste_telegram, ip)
+                self.list_ok(var.liste_hs, ip)
+                self.list_ok(var.liste_mail, ip)
+                self.list_ok(var.liste_telegram, ip)
         except Exception as e:
             logger.error(f"Erreur update lists {ip}: {e}")
 
@@ -728,20 +567,9 @@ class PingManager(QObject):
         except Exception as e:
             logger.error(f"Erreur gestion alerte UPS: {e}", exc_info=True)
 
-    def find_item_row(self, ip):
-        """Trouve la ligne correspondant à l'IP."""
-        # Optimisation possible : garder un cache IP -> Row
-        for row in range(self.tree_model.rowCount()):
-            item = self.tree_model.item(row, 1)
-            if item and item.text() == ip:
-                return row
-        return -1
-
     def stop(self):
         """Arrête le cycle et nettoie le cache SNMP."""
         logger.info("Arrêt AsyncPingManager")
-        if hasattr(self, '_timer_ref') and self._timer_ref:
-            self._timer_ref.stop()
         
         # Arrêter le worker SNMP
         if hasattr(self, 'snmp_worker') and self.snmp_worker:
@@ -751,16 +579,13 @@ class PingManager(QObject):
         
         if self.worker and self.worker.isRunning():
             self.worker.stop()
-            # Attendre maximum 5 secondes que le thread se termine
-            if not self.worker.wait(5000):  # 5000 ms = 5 secondes
-                logger.warning("Le thread de ping n'a pas pu s'arrêter proprement dans le délai imparti")
-                # Forcer l'arrêt si nécessaire
+            if not self.worker.wait(5000):
+                logger.warning("Le thread de ping n'a pas pu s'arrêter proprement")
                 self.worker.quit()
-                self.worker.wait(1000)  # Attendre encore 1 seconde
+                self.worker.wait(1000)
             else:
                 logger.info("Thread de ping arrêté proprement")
         
-        # Nettoyer le cache SNMP à l'arrêt (force une nouvelle détection au prochain démarrage)
         if SNMP_AVAILABLE and snmp_helper:
             snmp_helper.clear_cache()
             logger.debug("Cache SNMP nettoyé")
@@ -770,14 +595,12 @@ class SNMPWorker(QThread):
     
     snmp_update_signal = Signal(str, str, object)  # ip, temp, bandwidth
 
-    def __init__(self, tree_model, traffic_cache):
+    def __init__(self, traffic_cache, get_ips_callback=None):
         super().__init__()
-        self.tree_model = tree_model
         self.traffic_cache = traffic_cache
+        self.get_ips_callback = get_ips_callback
         self.is_running = True
         self.system = platform.system().lower()
-        # Connecter le signal à une méthode locale (astuce pour thread-safety)
-        self.snmp_update_signal.connect(self.apply_update)
 
     def run(self):
         """Point d'entrée du thread."""
@@ -808,15 +631,14 @@ class SNMPWorker(QThread):
             try:
                 start_time = asyncio.get_event_loop().time()
                 
-                # Récupérer les IPs (doit être fait de manière thread-safe si possible, ou au début)
-                # Note: Accéder au modèle Qt depuis un autre thread est risqué, mais en lecture seule ça passe souvent
-                # Idéalement, on devrait passer la liste des IPs via un signal ou une queue
-                ips = self.get_all_ips_safe()
+                # Récupérer les IPs via le callback
+                ips = []
+                if self.get_ips_callback:
+                    ips = self.get_ips_callback()
                 
                 if ips:
                     await self.snmp_poll(ips)
                 
-                # Calculer le temps restant pour atteindre 5 secondes
                 elapsed = asyncio.get_event_loop().time() - start_time
                 sleep_time = max(0.1, 5.0 - elapsed)
                 await asyncio.sleep(sleep_time)
@@ -824,20 +646,6 @@ class SNMPWorker(QThread):
             except Exception as e:
                 logger.error(f"Erreur cycle SNMP: {e}")
                 await asyncio.sleep(5)
-
-    def get_all_ips_safe(self):
-        # Cette méthode est appelée depuis le thread, attention aux accès concurrents
-        # Pour faire simple ici, on suppose que la liste ne change pas trop souvent
-        ips = []
-        try:
-            count = self.tree_model.rowCount()
-            for row in range(count):
-                item = self.tree_model.item(row, 1)
-                if item:
-                    ips.append(item.text())
-        except:
-            pass
-        return ips
 
     async def snmp_poll(self, ips):
         """Interroge les équipements SNMP par petits lots pour éviter la surcharge."""
@@ -906,7 +714,7 @@ class SNMPWorker(QThread):
             try:
                 self.snmp_update_signal.emit(ip, str(temp) if temp else "", bandwidth)
                 
-                # Enregistrer dans l'historique pour les graphiques
+                # Enregistrer dans l'historique
                 try:
                     from src.monitoring_history import get_monitoring_manager
                     manager = get_monitoring_manager()
@@ -918,33 +726,3 @@ class SNMPWorker(QThread):
                     logger.debug(f"Erreur enregistrement historique {ip}: {e}")
             except Exception as e:
                 logger.debug(f"Erreur émission signal SNMP {ip}: {e}")
-
-    def apply_update(self, ip, temp, bandwidth):
-        """Mise à jour thread-safe via signal."""
-        for row in range(self.tree_model.rowCount()):
-            item = self.tree_model.item(row, 1)
-            if item and item.text() == ip:
-                # Mise à jour Température
-                if temp:
-                    item_temp = self.tree_model.item(row, 6)
-                    if not item_temp:
-                        item_temp = QStandardItem()
-                        self.tree_model.setItem(row, 6, item_temp)
-                    
-                    item_temp.setText(f"{temp}°C")
-                    
-                    # Gestion de la couleur de fond pour la température
-                    try:
-                        temp_val = float(temp)
-                        if GUI_AVAILABLE:
-                            from PySide6.QtGui import QColor, QBrush
-                            if temp_val >= var.tempSeuil:
-                                item_temp.setBackground(QBrush(QColor(AppColors.ROUGE_PALE)))
-                            elif temp_val >= var.tempSeuilWarning:
-                                item_temp.setBackground(QBrush(QColor(AppColors.ORANGE_PALE)))
-                            else:
-                                # Fond normal (blanc ou transparent selon le thème, ici on met transparent)
-                                item_temp.setBackground(QBrush(Qt.NoBrush))
-                    except (ValueError, TypeError):
-                        pass
-                break

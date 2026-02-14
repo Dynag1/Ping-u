@@ -1,0 +1,158 @@
+<div id="modal-configuration" class="section-modal">
+    <div class="section-modal-content">
+        <div class="section-modal-header">
+            <h2>🎛️ <span data-i18n="menu_config">Configuration</span></h2>
+            <button class="section-modal-close" onclick="closeSectionModal('configuration')">✕</button>
+        </div>
+        <div class="section-modal-body">
+            <div id="content-configuration" class="content-section active">
+
+                <div class="collapsible-grid">
+                    <!-- Contrôle du Monitoring -->
+                    <div class="collapsible-section open" id="section-monitoring">
+                        <div class="collapsible-header" onclick="toggleSection('section-monitoring')">
+                            <div class="collapsible-title">
+                                <div class="collapsible-icon monitoring">🎮</div>
+                                <div>
+                                    <h2 data-i18n="monitoring_control">Contrôle du Monitoring</h2>
+                                    <p data-i18n="monitoring_desc">Démarrer/arrêter et configurer</p>
+                                </div>
+                            </div>
+                            <div class="collapsible-toggle">▼</div>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="input-delai" data-i18n="ping_delay">Délai entre pings (sec)</label>
+                                    <input type="number" id="input-delai" value="10" min="1" max="3600">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-nb-hs" data-i18n="hs_before_alert">Nombre de HS avant
+                                        alerte</label>
+                                    <input type="number" id="input-nb-hs" value="3" min="1" max="10">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertes -->
+                <div class="collapsible-section" id="section-alerts">
+                    <div class="collapsible-header" onclick="toggleSection('section-alerts')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon alerts">🔔</div>
+                            <div>
+                                <h2 data-i18n="alerts_config">Configuration des Alertes</h2>
+                                <p data-i18n="alerts_desc">Email, Telegram, popup</p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-popup">
+                            <label for="check-popup">💬 <span data-i18n="alert_popup">Popup (notification
+                                    visuelle)</span></label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-mail">
+                            <label for="check-mail">📧 <span data-i18n="alert_email">Email
+                                    d'alerte</span></label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-telegram">
+                            <label for="check-telegram">📱 Telegram</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-mail-recap">
+                            <label for="check-mail-recap">📊 <span data-i18n="alert_recap">Email
+                                    récapitulatif</span></label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-db-externe">
+                            <label for="check-db-externe">💾 <span data-i18n="alert_db">Base de données
+                                    externe</span></label>
+                        </div>
+
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="check-temp-alert">
+                                <label for="check-temp-alert">🌡️ <span data-i18n="alert_temp">Alerte
+                                        température
+                                        élevée</span></label>
+                            </div>
+                            <div class="form-row" style="margin-top: 10px;">
+                                <div class="form-group">
+                                    <label for="input-temp-seuil-warning" data-i18n="temp_threshold_warning">Seuil
+                                        de
+                                        warning (°C)</label>
+                                    <input type="number" id="input-temp-seuil-warning" value="60" min="30" max="120">
+                                    <small style="color: #666; font-size: 12px;" data-i18n="alert_if_temp_warning">
+                                        Visuel uniquement si température ≥ seuil
+                                    </small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-temp-seuil" data-i18n="temp_threshold">Seuil critique
+                                        (°C)</label>
+                                    <input type="number" id="input-temp-seuil" value="70" min="30" max="120">
+                                    <small style="color: #666; font-size: 12px;" data-i18n="alert_if_temp">
+                                        Alerte + Visuel si température ≥ seuil
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btn-save-alerts" class="btn btn-info" style="width: 100%; margin-top: 15px;">
+                            💾 <span data-i18n="save_alerts">Sauvegarder les alertes</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Actions rapides -->
+                <div class="collapsible-section" id="section-actions">
+                    <div class="collapsible-header" onclick="toggleSection('section-actions')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon actions">⚡</div>
+                            <div>
+                                <h2 data-i18n="quick_actions">Actions Rapides</h2>
+                                <p data-i18n="actions_desc">Import, export, nettoyage</p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <button id="btn-clear-all" class="btn btn-danger">
+                                🗑️ <span data-i18n="clear_all">Tout effacer</span>
+                            </button>
+                            <button id="btn-remove-duplicates" class="btn btn-warning">
+                                🔄 <span data-i18n="remove_duplicates">Suppr. doublons</span>
+                            </button>
+                            <button id="btn-export-csv" class="btn btn-info">
+                                📥 <span data-i18n="export_csv">Exporter CSV</span>
+                            </button>
+                            <button id="btn-import-csv" class="btn btn-info">
+                                📤 <span data-i18n="import_csv">Importer CSV</span>
+                            </button>
+                            <button id="btn-export-xls" class="btn btn-primary" style="background: #217346;">
+                                📊 <span data-i18n="export_xls">Exporter Excel</span>
+                            </button>
+                            <button id="btn-import-xls" class="btn btn-primary" style="background: #217346;">
+                                📋 <span data-i18n="import_xls">Importer Excel</span>
+                            </button>
+                            <button onclick="setSelectedHostsSite()" class="btn btn-primary"
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); grid-column: span 2;">
+                                🏢 <span data-i18n="assign_site">Assigner site aux sélectionnés</span>
+                            </button>
+                            <button id="btn-save-settings" class="btn btn-primary" style="grid-column: 1 / -1;">
+                                💾 <span data-i18n="save">Sauvegarder</span>
+                            </button>
+                        </div>
+                        <input type="file" id="file-import-csv" accept=".csv" style="display: none;">
+                        <input type="file" id="file-import-xls" accept=".xlsx,.xls" style="display: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: pingu-app
+    restart: unless-stopped
+    # Use host networking mode for full access to the local network
+    # Required for:
+    # - Discovering devices via broadcast (Dahua, Xiaomi, UPnP)
+    # - Correct pinging without NAT complexity
+    # IMPORTANT: Port mapping is ignored in host mode. The app listens on port 9090.
+    network_mode: host
+
+    # Alternative configuration for environments where host mode is not available (macOS/Windows):
+    # network_mode: bridge
+    # ports:
+    #   - "9090:9090"
+
+    volumes:
+      # Persistent storage for database (monitoring history, tracked hosts)
+      - ./bd:/app/bd
+      # Configuration files
+      - ./config:/app/config
+      # SSL Certificates
+      - ./certs:/app/certs
+      # Application logs
+      - ./logs:/app/logs
+
+    environment:
+      - TZ=Europe/Paris
+      - PYTHONUNBUFFERED=1

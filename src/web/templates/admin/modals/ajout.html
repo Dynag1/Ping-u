@@ -1,0 +1,233 @@
+<div id="modal-ajout" class="section-modal">
+    <div class="section-modal-content">
+        <div class="section-modal-header">
+            <h2>📍 <span data-i18n="menu_add">Ajout</span></h2>
+            <button class="section-modal-close" onclick="closeSectionModal('ajout')">✕</button>
+        </div>
+        <div class="section-modal-body">
+            <div id="content-ajout" class="content-section active">
+
+                <div class="collapsible-grid">
+                    <!-- Ajout d'IP -->
+                    <div class="collapsible-section" id="section-add-hosts">
+                        <div class="collapsible-header" onclick="toggleSection('section-add-hosts')">
+                            <div class="collapsible-title">
+                                <div class="collapsible-icon add-hosts">➕</div>
+                                <div>
+                                    <h2 data-i18n="add_hosts">Ajout d'Hôtes</h2>
+                                    <p data-i18n="add_hosts_desc">Scanner et ajouter des hôtes</p>
+                                </div>
+                            </div>
+                            <div class="collapsible-toggle">▼</div>
+                        </div>
+                        <div class="collapsible-content">
+                            <form id="form-add-hosts">
+                                <div class="form-group">
+                                    <label for="input-ip" data-i18n="base_ip">Adresse IP de base</label>
+                                    <input type="text" id="input-ip" placeholder="192.168.1.1 ou https://site.com:8443"
+                                        required>
+                                    <small style="color: #a0aec0; font-size: 12px; margin-top: 5px; display: block;">
+                                        💡 Formats supportés: <code
+                                            style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">192.168.1.1:8080</code>,
+                                        <code
+                                            style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">https://example.com:8443</code>
+                                    </small>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="input-hosts" data-i18n="hosts_count">Nombre
+                                            d'hôtes</label>
+                                        <input type="number" id="input-hosts" value="255" min="1" max="255">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="input-port">Port</label>
+                                        <input type="text" id="input-port" value="80">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="select-scan-type" data-i18n="scan_type">Type de
+                                            scan</label>
+                                        <select id="select-scan-type">
+                                            <option value="alive" data-i18n="scan_alive">Alive (actifs
+                                                uniquement)
+                                            </option>
+                                            <option value="all" data-i18n="scan_all">Tous les hôtes
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="select-scan-site" data-i18n="assign_to_site">Assigner au
+                                            site</label>
+                                        <select id="select-scan-site" class="scan-site-select">
+                                            <option value="" data-i18n="no_site">- Aucun -</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                    🔍 <span data-i18n="scan_hosts">Scanner les hôtes</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Scanner Réseau -->
+                    <div class="collapsible-section" id="section-network-scan">
+                        <div class="collapsible-header" onclick="toggleSection('section-network-scan')">
+                            <div class="collapsible-title">
+                                <div class="collapsible-icon"
+                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                    🔍</div>
+                                <div>
+                                    <h2 data-i18n="network_scanner">Scanner Réseau</h2>
+                                    <p data-i18n="network_scanner_desc">Découvrir automatiquement les
+                                        périphériques
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="collapsible-toggle">▼</div>
+                        </div>
+                        <div class="collapsible-content">
+                            <div style="display: flex; flex-direction: column; gap: 20px;">
+                                <!-- Sélection des types de scan -->
+                                <div class="form-group">
+                                    <label style="font-weight: 600; margin-bottom: 10px; display: block;">
+                                        🎯 <span data-i18n="scan_types">Types de scan</span>
+                                    </label>
+                                    <div
+                                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px;">
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.2); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-hik" value="hik" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">📹
+                                                Hikvision</span>
+                                        </label>
+
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.2); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-dahua" value="dahua" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">📹
+                                                Dahua</span>
+                                        </label>
+
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.2); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-onvif" value="onvif" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">📹
+                                                ONVIF</span>
+                                        </label>
+
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-samsung" value="samsung" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">📹
+                                                Samsung</span>
+                                        </label>
+
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-avigilon" value="avigilon" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">📹
+                                                Avigilon</span>
+                                        </label>
+
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-upnp" value="upnp" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">🌐
+                                                UPnP</span>
+                                        </label>
+
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-snmp" value="snmp" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">🖥️
+                                                Serveur</span>
+                                        </label>
+
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-ups" value="ups" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">🔋
+                                                Onduleur</span>
+                                        </label>
+                                        <label class="scan-option-card"
+                                            style="display: flex; align-items: center; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                            <input type="checkbox" id="scan-type-xiaomi" value="xiaomi" checked
+                                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; margin-right: 12px;">
+                                            <span style="font-weight: 500; font-size: 15px;">📱
+                                                Xiaomi</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Boutons Tout Cocher / Décocher -->
+                                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                    <button onclick="toggleAllScanTypes(true)" type="button" class="btn btn-sm"
+                                        style="background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; font-size: 13px;">
+                                        ☑️ <span data-i18n="check_all">Tout cocher</span>
+                                    </button>
+                                    <button onclick="toggleAllScanTypes(false)" type="button" class="btn btn-sm"
+                                        style="background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; font-size: 13px;">
+                                        ⬜ <span data-i18n="uncheck_all">Tout décocher</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Boutons de contrôle -->
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button id="btn-start-scan" class="btn btn-primary" style="flex: 0 0 auto;">
+                                    🔍 <span data-i18n="start_scan">Démarrer le scan</span>
+                                </button>
+                                <button id="btn-stop-scan" class="btn btn-danger"
+                                    style="flex: 0 0 auto; display: none;">
+                                    ⏹️ <span data-i18n="stop_scan">Arrêter</span>
+                                </button>
+                                <div id="scan-progress"
+                                    style="display: none; flex: 1; font-size: 14px; color: var(--text-secondary);">
+                                    <span id="scan-status-text">Scan en cours...</span>
+                                    <span id="scan-devices-count" style="margin-left: 10px; font-weight: 600;">0
+                                        périphérique(s)</span>
+                                </div>
+                            </div>
+
+                            <!-- Tableau des résultats -->
+                            <div id="scan-results-container" style="display: none;">
+                                <h3 style="margin: 0 0 15px 0; font-size: 16px; color: var(--text-primary);">
+                                    📡 <span data-i18n="scan_results">Résultats du scan</span>
+                                </h3>
+                                <div
+                                    style="overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <table class="hosts-table" id="scan-results-table">
+                                        <thead>
+                                            <tr>
+                                                <th data-i18n="ip">IP</th>
+                                                <th data-i18n="type">Type</th>
+                                                <th data-i18n="manufacturer">Fabricant</th>
+                                                <th data-i18n="model">Modèle</th>
+                                                <th data-i18n="name">Nom</th>
+                                                <th data-i18n="protocol">Protocole</th>
+                                                <th data-i18n="actions">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="scan-results-body">
+                                            <!-- Les résultats seront ajoutés ici -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- Fin collapsible-grid ajout -->
+        </div><!-- Fin content-ajout -->
+    </div>
+</div>

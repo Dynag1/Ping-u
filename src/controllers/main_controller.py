@@ -44,9 +44,19 @@ class MainController:
             var.liste_temp_alert.clear()
             
             # Instanciation des managers
-            # Note: PingManager prend le modèle de données + main_window pour broadcast
-            self.ping_manager = PingManager(self.main_window.treeIpModel, self.main_window)
-            self.alert_manager = AlertManager(self.main_window, self.main_window.treeIpModel)
+            # Note: PingManager est maintenant découplé du modèle Qt
+            self.ping_manager = PingManager(
+                get_ips_callback=self.get_ips_to_monitor,
+                main_window=self.main_window
+            )
+            # Connexion des signaux de résultat
+            self.ping_manager.result_signal.connect(self.on_monitoring_result)
+            
+            self.alert_manager = AlertManager(
+                self.main_window,
+                get_host_metadata_callback=self.get_host_metadata,
+                get_all_hosts_data_callback=self.get_all_hosts_data
+            )
             
             var.tourne = True
             self.ping_manager.start()
@@ -107,3 +117,161 @@ class MainController:
                     
         except Exception as e:
             logger.error(f"Erreur arrêt monitoring: {e}", exc_info=True)
+    def get_ips_to_monitor(self):
+        """Callback pour fournir la liste des IPs à monitorer au PingManager."""
+        ips_set = set()
+        try:
+            model = self.main_window.treeIpModel
+            for row in range(model.rowCount()):
+                item = model.item(row, 1) # Colonne IP
+                if item:
+                    ip_text = item.text().strip()
+                    if not ip_text: continue
+                    
+                    # Filtrage par sites actifs
+                    if var.sites_actifs:
+                        site_item = model.item(row, 8) # Colonne Site
+                        host_site = site_item.text().strip() if site_item else ''
+                        if host_site not in var.sites_actifs:
+                            continue
+                    
+                    ips_set.add(ip_text)
+        except Exception as e:
+            logger.error(f"Erreur get_ips_to_monitor: {e}")
+        return list(ips_set)
+
+    def on_monitoring_result(self, ip, latency, color, temperature, bandwidth):
+        """Gère le résultat d'un ping ou d'une mise à jour SNMP et met à jour le modèle Qt."""
+        try:
+            from PySide6.QtGui import QStandardItem, QBrush, QColor
+            from PySide6.QtCore import Qt
+            from src.utils.colors import AppColors
+            
+            model = self.main_window.treeIpModel
+            row = self.find_item_row(ip)
+            if row == -1: return
+
+            # Vérifier l'exclusion
+            is_excluded = False
+            item_excl = model.item(row, 10)
+            if item_excl and item_excl.text() == "x":
+                is_excluded = True
+
+            # Mise à jour Latence (si latency >= 0)
+            if latency >= 0:
+                item_lat = model.item(row, 5)
+                if not item_lat:
+                    item_lat = QStandardItem()
+                    model.setItem(row, 5, item_lat)
+                
+                if is_excluded:
+                    latency_text = f"{latency:.1f} ms" if latency < 500 else "HS"
+                    item_lat.setText(f"{latency_text}")
+                else:
+                    item_lat.setText(f"{latency:.1f} ms" if latency < 500 else "HS")
+
+            # Mise à jour Température (si temperature n'est pas None)
+            if temperature is not None:
+                item_temp = model.item(row, 6)
+                if not item_temp:
+                    item_temp = QStandardItem()
+                    model.setItem(row, 6, item_temp)
+                
+                temp_str = str(temperature)
+                item_temp.setText(f"{temp_str}°C")
+                
+                # Couleur selon seuil
+                try:
+                    temp_val = float(temperature)
+                    if temp_val >= var.tempSeuil:
+                        item_temp.setBackground(QBrush(QColor(AppColors.ROUGE_PALE)))
+                    elif temp_val >= var.tempSeuilWarning:
+                        item_temp.setBackground(QBrush(QColor(AppColors.ORANGE_PALE)))
+                    else:
+                        item_temp.setBackground(QBrush(Qt.NoBrush))
+                except (ValueError, TypeError):
+                    pass
+
+            # Coloration de la ligne (si latence mise à jour et non exclusion)
+            if latency >= 0:
+                for col in range(model.columnCount()):
+                    if col == 6: continue # On ne touche pas au fond de la température si géré spécifiquement
+                    item = model.item(row, col)
+                    if not item:
+                        item = QStandardItem()
+                        model.setItem(row, col, item)
+                    
+                    if is_excluded:
+                        item.setForeground(QBrush(QColor("gray")))
+                        if latency < 500:
+                            item.setBackground(QBrush(QColor(240, 240, 240)))
+                        else:
+                            item.setBackground(QBrush(QColor(255, 240, 240)))
+                    else:
+                        if color:
+                            item.setBackground(QBrush(QColor(color)))
+                        item.setForeground(QBrush(QColor("black")))
+
+            # Synchronisation Thread-Safe avec HostManager pour le serveur Web
+            if hasattr(self.main_window, 'host_manager'):
+                try:
+                    lat_text = "HS"
+                    status = "offline"
+                    if not is_excluded and latency >= 0 and latency < 500:
+                        lat_text = f"{latency:.1f} ms"
+                        status = "online"
+                    elif is_excluded:
+                        # Si exclu, on garde le status offline mais on affiche le ping si dispo ?
+                        # Dans la logique actuelle, exclu = grisé.
+                        pass
+
+                    self.main_window.host_manager.update_host_status(
+                        ip, 
+                        lat_text, 
+                        status, 
+                        str(temperature) if temperature is not None else None
+                    )
+                except Exception as hm_err:
+                    logger.error(f"Erreur update HostManager: {hm_err}")
+
+        except Exception as e:
+            logger.error(f"Erreur on_monitoring_result pour {ip}: {e}")
+
+    def find_item_row(self, ip):
+        """Trouve la ligne correspondant à l'IP dans le modèle."""
+        model = self.main_window.treeIpModel
+        for row in range(model.rowCount()):
+            item = model.item(row, 1)
+            if item and item.text() == ip:
+                return row
+        return -1
+
+    def get_host_metadata(self, ip):
+        """Récupère les métadonnées pour un hôte spécifique."""
+        metadata = {'ip': ip}
+        try:
+            row = self.find_item_row(ip)
+            if row != -1:
+                model = self.main_window.treeIpModel
+                metadata['nom'] = model.item(row, 2).text() if model.item(row, 2) else ""
+                metadata['mac'] = model.item(row, 3).text() if model.item(row, 3) else ""
+                metadata['site'] = model.item(row, 8).text() if model.item(row, 8) else ""
+                metadata['latence'] = model.item(row, 5).text() if model.item(row, 5) else ""
+                metadata['temp'] = model.item(row, 6).text() if model.item(row, 6) else ""
+        except Exception as e:
+            logger.error(f"Erreur get_host_metadata pour {ip}: {e}")
+        return metadata
+
+    def get_all_hosts_data(self):
+        """Récupère les données de tous les hôtes du modèle."""
+        all_data = []
+        try:
+            model = self.main_window.treeIpModel
+            for row in range(model.rowCount()):
+                ip_item = model.item(row, 1)
+                if ip_item:
+                    ip = ip_item.text()
+                    all_data.append(self.get_host_metadata(ip))
+        except Exception as e:
+            logger.error(f"Erreur get_all_hosts_data: {e}")
+        return all_data

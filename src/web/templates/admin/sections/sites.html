@@ -1,0 +1,87 @@
+            <div id="content-sites" class="content-section">
+
+                <!-- Gestion des Sites - Design Premium Collapsible -->
+                <div class="collapsible-section open sites-collapsible" id="section-sites">
+                    <div class="collapsible-header" onclick="toggleSection('section-sites')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon sites">🏢</div>
+                            <div>
+                                <h2 data-i18n="sites_management">Gestion des Sites</h2>
+                                <p data-i18n="sites_subtitle">Organisez vos hôtes par localisation</p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content sites-content">
+                        <!-- Ajout rapide de site -->
+                        <div class="add-site-form" style="margin-bottom: 20px;">
+                            <input type="text" id="input-new-site" placeholder="Nom du nouveau site..."
+                                class="site-input">
+                            <button onclick="addSite()" class="add-site-btn">
+                                <span class="btn-icon">✨</span>
+                                <span data-i18n="add_site">Créer</span>
+                            </button>
+                        </div>
+
+                        <!-- Cartes de contrôle -->
+                        <div class="sites-controls-grid">
+                            <!-- Carte Filtre d'affichage -->
+                            <div class="site-control-card filter-card">
+                                <div class="control-card-header">
+                                    <div class="control-icon filter-icon">👁️</div>
+                                    <div class="control-info">
+                                        <h3 data-i18n="display_filter">Affichage</h3>
+                                        <p data-i18n="filter_desc">Sites visibles dans le tableau</p>
+                                    </div>
+                                </div>
+                                <div class="control-card-body">
+                                    <select id="select-site-filter" multiple class="site-multiselect">
+                                    </select>
+                                    <div class="control-actions">
+                                        <button onclick="applySiteFilter()" class="control-btn apply-btn">
+                                            <span>✓</span> <span data-i18n="apply">Appliquer</span>
+                                        </button>
+                                        <button onclick="clearSiteFilter()" class="control-btn reset-btn">
+                                            <span data-i18n="show_all">Tout afficher</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Carte Sites à surveiller -->
+                            <div class="site-control-card monitor-card">
+                                <div class="control-card-header">
+                                    <div class="control-icon monitor-icon">📡</div>
+                                    <div class="control-info">
+                                        <h3 data-i18n="monitor_sites">Surveillance</h3>
+                                        <p data-i18n="monitor_desc">Sites à pinger activement</p>
+                                    </div>
+                                </div>
+                                <div class="control-card-body">
+                                    <select id="select-sites-actifs" multiple class="site-multiselect">
+                                    </select>
+                                    <div class="control-actions">
+                                        <button onclick="applySitesActifs()" class="control-btn apply-btn">
+                                            <span>✓</span> <span data-i18n="apply">Appliquer</span>
+                                        </button>
+                                        <button onclick="clearSitesActifs()" class="control-btn reset-btn">
+                                            <span data-i18n="monitor_all">Tout surveiller</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Liste des sites créés -->
+                        <div class="sites-list-section">
+                            <div class="sites-list-header">
+                                <span class="sites-count-badge" id="sites-count-badge">0 sites</span>
+                            </div>
+                            <div id="sites-list" class="sites-tags-container">
+                                <!-- Sites générés dynamiquement -->
+                            </div>
+                        </div>
+                    </div><!-- Fin collapsible-content -->
+                </div><!-- Fin collapsible-section sites -->
+            </div><!-- Fin content-sites -->
+

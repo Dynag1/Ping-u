@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring - Ping ü</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 span {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        select {
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .period-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .period-btn {
+            padding: 10px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .period-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .period-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: white;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .no-data {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #666;
+        }
+
+        .no-data .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-color.temp {
+            background: #ff6b6b;
+        }
+
+        .legend-color.in {
+            background: #4ecdc4;
+        }
+
+        .legend-color.out {
+            background: #ff8a65;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        /* View Mode Selector */
+        .view-mode-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .view-mode-btn {
+            padding: 10px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .view-mode-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .view-mode-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: white;
+        }
+
+        /* Switch Ports Grid */
+        .ports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .port-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .port-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .port-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #e4e4e4;
+        }
+
+        .port-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+        }
+
+        .port-status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .port-status-indicator.up {
+            background: #4ecdc4;
+            box-shadow: 0 0 8px #4ecdc4;
+        }
+
+        .port-status-indicator.down {
+            background: #f97e7e;
+        }
+
+        .port-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .port-stat {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .port-stat-label {
+            color: #888;
+            font-size: 0.75rem;
+            margin-bottom: 3px;
+        }
+
+        .port-stat-value {
+            color: #e4e4e4;
+            font-weight: 600;
+        }
+
+        .port-chart {
+            height: 150px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .chart-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .ports-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <a href="/" style="text-decoration: none; display: inline-flex; align-items: center;">
+                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Ping ü"
+                        style="height: 40px; width: auto; cursor: pointer;">
+                </a>
+                <span>Monitoring Graphiques</span>
+            </h1>
+            <div class="header-actions">
+                <a href="/statistics" class="btn btn-secondary">📊 Statistiques</a>
+                <a href="/" class="btn btn-secondary">🖥️ Monitoring</a>
+            </div>
+        </div>
+
+        <div class="controls">
+            <!-- Sélection du mode de vue -->
+            <div class="control-group">
+                <label>Mode d'affichage</label>
+                <div class="view-mode-btns">
+                    <button class="view-mode-btn active" data-mode="host">📊 Hôte unique</button>
+                    <button class="view-mode-btn" data-mode="switch">🔌 Ports de switch</button>
+                </div>
+            </div>
+
+            <!-- Vue hôte unique -->
+            <div id="host-view-controls" class="view-controls">
+                <div class="control-group">
+                    <label>Hôte</label>
+                    <select id="host-select">
+                        <option value="">-- Sélectionner un hôte --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Vue ports de switch -->
+            <div id="switch-view-controls" class="view-controls" style="display: none;">
+                <div class="control-group">
+                    <label>Switch</label>
+                    <select id="switch-select">
+                        <option value="">-- Sélectionner un switch --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Période (commune aux deux vues) -->
+            <div class="control-group">
+                <label>Période</label>
+                <div class="period-btns">
+                    <button class="period-btn" data-hours="1">1h</button>
+                    <button class="period-btn" data-hours="6">6h</button>
+                    <button class="period-btn active" data-hours="24">24h</button>
+                    <button class="period-btn" data-hours="168">7j</button>
+                    <button class="period-btn" data-hours="360">15j</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphique Température -->
+        <div class="charts-grid" id="host-view-charts">
+            <div class="chart-card" id="temp-card">
+                <div class="chart-header">
+                    <div class="chart-title">🌡️ Température</div>
+                    <div class="chart-stats" id="temp-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="temp-current">--</span>
+                            <span class="stat-label">Actuel</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="temp-min">--</span>
+                            <span class="stat-label">Min</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="temp-max">--</span>
+                            <span class="stat-label">Max</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="temp-avg">--</span>
+                            <span class="stat-label">Moy</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="tempChart"></canvas>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color temp"></div>
+                        <span>Température (°C)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graphique Débit -->
+            <div class="chart-card" id="bw-card">
+                <div class="chart-header">
+                    <div class="chart-title">📶 Débit Réseau</div>
+                    <div class="chart-stats" id="bw-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="bw-in-current">--</span>
+                            <span class="stat-label">IN</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="bw-out-current">--</span>
+                            <span class="stat-label">OUT</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="bw-in-max">--</span>
+                            <span class="stat-label">Max IN</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="bw-out-max">--</span>
+                            <span class="stat-label">Max OUT</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="bwChart"></canvas>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color in"></div>
+                        <span>Débit entrant</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color out"></div>
+                        <span>Débit sortant</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vue Ports de Switch -->
+        <div id="switch-view-container" style="display: none;">
+            <div class="ports-grid" id="ports-grid">
+                <!-- Les ports seront ajoutés dynamiquement ici -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let currentHost = '';
+        let currentSwitch = '';
+        let currentPeriod = 24;
+        let currentViewMode = 'host';  // 'host' ou 'switch'
+        let tempChart = null;
+        let bwChart = null;
+        let portCharts = {};  // Graphiques des ports de switch
+        let switchInterfaces = [];  // Interfaces du switch sélectionné
+        let switchBandwidthInterval = null;  // Intervalle pour mise à jour des débits
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchHosts();
+            setupEventListeners();
+            setupViewModeListeners();
+        });
+
+        function setupViewModeListeners() {
+            // Basculer entre les modes de vue
+            document.querySelectorAll('.view-mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentViewMode = btn.dataset.mode;
+                    switchView(currentViewMode);
+                });
+            });
+
+            // Sélection switch
+            document.getElementById('switch-select').addEventListener('change', (e) => {
+                currentSwitch = e.target.value;
+                if (currentSwitch) {
+                    loadSwitchPorts();
+                }
+            });
+        }
+
+        function setupEventListeners() {
+            // Sélection hôte
+            document.getElementById('host-select').addEventListener('change', (e) => {
+                currentHost = e.target.value;
+                if (currentHost) {
+                    refreshCharts();
+                }
+            });
+
+            // Boutons période
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPeriod = parseInt(btn.dataset.hours);
+                    if (currentViewMode === 'host' && currentHost) {
+                        refreshCharts();
+                    } else if (currentViewMode === 'switch' && currentSwitch) {
+                        loadSwitchPorts();  // Recharger avec nouvelle période
+                    }
+                });
+            });
+        }
+
+        function switchView(mode) {
+            if (mode === 'host') {
+                document.getElementById('host-view-controls').style.display = 'block';
+                document.getElementById('switch-view-controls').style.display = 'none';
+                document.getElementById('host-view-charts').style.display = 'grid';
+                document.getElementById('switch-view-container').style.display = 'none';
+
+                // Arrêter l'auto-refresh des ports
+                if (switchBandwidthInterval) {
+                    clearInterval(switchBandwidthInterval);
+                    switchBandwidthInterval = null;
+                }
+            } else if (mode === 'switch') {
+                document.getElementById('host-view-controls').style.display = 'none';
+                document.getElementById('switch-view-controls').style.display = 'block';
+                document.getElementById('host-view-charts').style.display = 'none';
+                document.getElementById('switch-view-container').style.display = 'block';
+
+                // Peupler la liste des switches
+                if (document.getElementById('switch-select').options.length === 1) {
+                    fetchHosts();  // Réutiliser la liste des hôtes pour les switches
+                }
+            }
+        }
+
+        async function fetchHosts() {
+            try {
+                const resp = await fetch('/api/monitoring/hosts');
+                const data = await resp.json();
+                if (data.success) {
+                    populateHostSelect(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch hosts:', err);
+            }
+        }
+
+        function populateHostSelect(hosts) {
+            const select = document.getElementById('host-select');
+            const switchSelect = document.getElementById('switch-select');
+
+            select.innerHTML = '<option value="">-- Sélectionner un hôte --</option>';
+            switchSelect.innerHTML = '<option value="">-- Sélectionner un switch --</option>';
+
+            hosts.forEach(host => {
+                // Ajouter à la liste des hôtes
+                const option = document.createElement('option');
+                option.value = host.ip;
+                let label = host.hostname || host.ip;
+                let badges = [];
+                if (host.has_temperature) badges.push('🌡️');
+                if (host.has_bandwidth) badges.push('📶');
+                option.textContent = `${label} (${host.ip}) ${badges.join(' ')}`;
+                select.appendChild(option);
+
+                // Ajouter aussi à la liste des switches (tous les hôtes SNMP peuvent être des switches)
+                if (host.has_bandwidth) {
+                    const switchOption = document.createElement('option');
+                    switchOption.value = host.ip;
+                    switchOption.textContent = `${label} (${host.ip})`;
+                    switchSelect.appendChild(switchOption);
+                }
+            });
+        }
+
+        async function refreshCharts() {
+            await Promise.all([
+                fetchTemperature(),
+                fetchBandwidth()
+            ]);
+        }
+
+        async function fetchTemperature() {
+            try {
+                const resp = await fetch(`/api/monitoring/temperature/${currentHost}?hours=${currentPeriod}`);
+                const data = await resp.json();
+                if (data.success) {
+                    renderTempChart(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch température:', err);
+            }
+        }
+
+        async function fetchBandwidth() {
+            try {
+                const resp = await fetch(`/api/monitoring/bandwidth/${currentHost}?hours=${currentPeriod}`);
+                const data = await resp.json();
+                if (data.success) {
+                    renderBwChart(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch débit:', err);
+            }
+        }
+
+        function renderTempChart(data) {
+            const ctx = document.getElementById('tempChart').getContext('2d');
+
+            if (tempChart) {
+                tempChart.destroy();
+            }
+
+            if (!data || data.length === 0) {
+                document.getElementById('temp-current').textContent = '--';
+                document.getElementById('temp-min').textContent = '--';
+                document.getElementById('temp-max').textContent = '--';
+                document.getElementById('temp-avg').textContent = '--';
+                return;
+            }
+
+            const labels = data.map(d => formatTime(d.timestamp));
+            const values = data.map(d => d.value);
+
+            // Stats
+            const current = values[values.length - 1];
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+            document.getElementById('temp-current').textContent = current.toFixed(1) + '°C';
+            document.getElementById('temp-min').textContent = min.toFixed(1) + '°C';
+            document.getElementById('temp-max').textContent = max.toFixed(1) + '°C';
+            document.getElementById('temp-avg').textContent = avg.toFixed(1) + '°C';
+
+            tempChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Température (°C)',
+                        data: values,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#888', maxTicksLimit: 10 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#888' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderBwChart(data) {
+            const ctx = document.getElementById('bwChart').getContext('2d');
+
+            if (bwChart) {
+                bwChart.destroy();
+            }
+
+            if (!data || data.length === 0) {
+                document.getElementById('bw-in-current').textContent = '--';
+                document.getElementById('bw-out-current').textContent = '--';
+                document.getElementById('bw-in-max').textContent = '--';
+                document.getElementById('bw-out-max').textContent = '--';
+                return;
+            }
+
+            const labels = data.map(d => formatTime(d.timestamp));
+            const inValues = data.map(d => d.in_mbps);
+            const outValues = data.map(d => d.out_mbps);
+
+            // Stats
+            const inCurrent = inValues[inValues.length - 1];
+            const outCurrent = outValues[outValues.length - 1];
+            const inMax = Math.max(...inValues);
+            const outMax = Math.max(...outValues);
+
+            document.getElementById('bw-in-current').textContent = formatBandwidth(inCurrent);
+            document.getElementById('bw-out-current').textContent = formatBandwidth(outCurrent);
+            document.getElementById('bw-in-max').textContent = formatBandwidth(inMax);
+            document.getElementById('bw-out-max').textContent = formatBandwidth(outMax);
+
+            bwChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Débit IN',
+                        data: inValues,
+                        borderColor: '#4ecdc4',
+                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }, {
+                        label: 'Débit OUT',
+                        data: outValues,
+                        borderColor: '#ff8a65',
+                        backgroundColor: 'rgba(255, 138, 101, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#888', maxTicksLimit: 10 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#888' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            if (currentPeriod <= 24) {
+                return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            }
+            return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatBandwidth(mbps) {
+            if (mbps < 1) {
+                return (mbps * 1000).toFixed(0) + ' Kbps';
+            }
+            return mbps.toFixed(1) + ' Mbps';
+        }
+
+        // ============= Fonctions pour la vue Switch Ports =============
+
+        async function loadSwitchPorts() {
+            try {
+                // Récupérer la liste des interfaces
+                const resp = await fetch(`/api/monitoring/switch/${currentSwitch}/interfaces?filter_inactive=true`);
+                const data = await resp.json();
+
+                if (!data.success) {
+                    alert('Erreur: ' + (data.error || 'Impossible de récupérer les interfaces'));
+                    return;
+                }
+
+                switchInterfaces = data.data;
+
+                if (switchInterfaces.length === 0) {
+                    document.getElementById('ports-grid').innerHTML = '<div class="no-data"><div class="icon">⚠️</div><div>Aucune interface active trouvée</div></div>';
+                    return;
+                }
+
+                // Afficher les ports
+                renderSwitchPorts();
+
+                // Démarrer l'auto-refresh des débits
+                if (switchBandwidthInterval) {
+                    clearInterval(switchBandwidthInterval);
+                }
+                updatePortsBandwidth();  // Première mise à jour immédiate
+                switchBandwidthInterval = setInterval(updatePortsBandwidth, 5000);  // Puis toutes les 5 secondes
+
+            } catch (err) {
+                console.error('Erreur chargement ports:', err);
+                alert('Erreur lors du chargement des ports');
+            }
+        }
+
+        function renderSwitchPorts() {
+            const grid = document.getElementById('ports-grid');
+            grid.innerHTML = '';
+
+            switchInterfaces.forEach(iface => {
+                const card = document.createElement('div');
+                card.className = 'port-card';
+                card.id = `port-card-${iface.index}`;
+
+                const statusClass = iface.status === 'up' ? 'up' : 'down';
+
+                card.innerHTML = `
+                    <div class="port-header">
+                        <div class="port-name">${iface.name}</div>
+                        <div class="port-status">
+                            <div class="port-status-indicator ${statusClass}"></div>
+                            <span>${iface.status}</span>
+                        </div>
+                    </div>
+                    <div class="port-stats">
+                        <div class="port-stat">
+                            <div class="port-stat-label">📥 Débit IN</div>
+                            <div class="port-stat-value" id="port-${iface.index}-in">--</div>
+                        </div>
+                        <div class="port-stat">
+                            <div class="port-stat-label">📤 Débit OUT</div>
+                            <div class="port-stat-value" id="port-${iface.index}-out">--</div>
+                        </div>
+                        <div class="port-stat">
+                            <div class="port-stat-label">⚡ Vitesse max</div>
+                            <div class="port-stat-value">${iface.speed_mbps} Mbps</div>
+                        </div>
+                        <div class="port-stat">
+                            <div class="port-stat-label">🔍 Interface</div>
+                            <div class="port-stat-value">#${iface.index}</div>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function updatePortsBandwidth() {
+            try {
+                const resp = await fetch(`/api/monitoring/switch/${currentSwitch}/ports_bandwidth`);
+                const data = await resp.json();
+
+                if (!data.success) {
+                    console.error('Erreur récupération débits:', data.error);
+                    return;
+                }
+
+                const bandwidthData = data.data;
+
+                // Mettre à jour chaque port
+                for (const [ifaceIndex, bandwidth] of Object.entries(bandwidthData)) {
+                    const inElem = document.getElementById(`port-${ifaceIndex}-in`);
+                    const outElem = document.getElementById(`port-${ifaceIndex}-out`);
+
+                    if (inElem && outElem) {
+                        inElem.textContent = formatBandwidth(bandwidth.in_mbps);
+                        outElem.textContent = formatBandwidth(bandwidth.out_mbps);
+                    }
+                }
+
+            } catch (err) {
+                console.error('Erreur mise à jour débits:', err);
+            }
+        }
+    </script>
+</body>
+
+</html>

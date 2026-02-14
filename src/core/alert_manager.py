@@ -67,6 +67,7 @@ import threading
 from src import thread_mail, thread_recap_mail, thread_telegram, var, db
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
+from src.notification_manager import NotificationManager
 
 # Import du gestionnaire de statistiques de connexion
 try:
@@ -87,18 +88,21 @@ class AlertManager(QObject):
     
     popup_signal = Signal(str)
 
-    def __init__(self, main_window, model):
+    def __init__(self, main_window, get_host_metadata_callback=None, get_all_hosts_data_callback=None):
         super().__init__()
         self.main_window = main_window
-        self.model = model
+        self.notification_manager = NotificationManager()
+        self.get_host_metadata_callback = get_host_metadata_callback
+        self.get_all_hosts_data_callback = get_all_hosts_data_callback
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_alerts)
         
         # Référence au thread mail recap pour éviter les doublons
         self.mail_recap_thread = None
         
-        # Connecter le signal popup local au signal de la fenêtre principale
-        self.popup_signal.connect(self.main_window.show_popup)
+        # Connecter le signal popup local au signal de la fenêtre principale (si dispo)
+        if GUI_AVAILABLE and hasattr(self.main_window, 'show_popup'):
+            self.popup_signal.connect(self.main_window.show_popup)
 
     def start(self):
         """Démarre la surveillance des alertes."""
@@ -160,9 +164,17 @@ class AlertManager(QObject):
                 return
             
             try:
+                # Note: On passe une liste d'IPs/Host info au lieu du modèle si possible
+                # Mais thread_recap_mail semble encore dépendre du modèle.
+                # Pour l'instant, on reste compatible ou on passe None si non-GUI
+                from src.utils.headless_compat import GUI_AVAILABLE
+                model_to_pass = None
+                if GUI_AVAILABLE and hasattr(self.main_window, 'treeIpModel'):
+                    model_to_pass = self.main_window.treeIpModel
+
                 self.mail_recap_thread = threading.Thread(
                     target=thread_recap_mail.main, 
-                    args=(self.main_window, self.model),
+                    args=(self.main_window, model_to_pass),
                     daemon=True,
                     name="MailRecapThread"
                 )
@@ -190,17 +202,24 @@ class AlertManager(QObject):
                 if int_value == int(var.nbrHs):
                     # Déconnexion détectée
                     if key not in self._stats_recorded_disconnects:
-                        hostname = db.lireNom(key, self.model) or key
-                        # Récupérer le site de l'hôte
-                        site = ""
-                        for row in range(self.model.rowCount()):
-                            item_ip = self.model.item(row, 1)
-                            if item_ip and item_ip.text() == key:
-                                site_item = self.model.item(row, 8)
-                                site = site_item.text() if site_item else ""
-                                break
+                        metadata = {}
+                        if self.get_host_metadata_callback:
+                            metadata = self.get_host_metadata_callback(key)
+                        
+                        hostname = metadata.get('nom') or key
+                        site = metadata.get('site') or ""
+                        
                         stats_manager.record_disconnect(key, hostname, site)
                         logger.info(f"[STATS] Déconnexion enregistrée: {key} [site: {site or 'N/A'}]")
+                        
+                        # Notification "Système" pour l'historique (sans popup utilisateur)
+                        self.notification_manager.add_notification(
+                            type_alert='system',
+                            message=f"Hôte hors ligne : {hostname} ({key})",
+                            level='warning',
+                            details={'ip': key, 'nom': hostname, 'site': site}
+                        )
+                        
                         self._stats_recorded_disconnects.add(key)
                     # Passer à l'état "alerté" pour permettre la détection de reconnexion
                     var.liste_stats[key] = 10
@@ -208,17 +227,24 @@ class AlertManager(QObject):
                 elif int_value == 20:
                     # Reconnexion détectée
                     if key in self._stats_recorded_disconnects:
-                        hostname = db.lireNom(key, self.model) or key
-                        # Récupérer le site de l'hôte
-                        site = ""
-                        for row in range(self.model.rowCount()):
-                            item_ip = self.model.item(row, 1)
-                            if item_ip and item_ip.text() == key:
-                                site_item = self.model.item(row, 8)
-                                site = site_item.text() if site_item else ""
-                                break
+                        metadata = {}
+                        if self.get_host_metadata_callback:
+                            metadata = self.get_host_metadata_callback(key)
+                            
+                        hostname = metadata.get('nom') or key
+                        site = metadata.get('site') or ""
+                        
                         stats_manager.record_reconnect(key, hostname, site)
                         logger.info(f"[STATS] Reconnexion enregistrée: {key} [site: {site or 'N/A'}]")
+                        
+                        # Notification "Système" pour l'historique
+                        self.notification_manager.add_notification(
+                            type_alert='system',
+                            message=f"Hôte rétabli : {hostname} ({key})",
+                            level='success',
+                            details={'ip': key, 'nom': hostname, 'site': site}
+                        )
+                        
                         self._stats_recorded_disconnects.discard(key)
                     # Marquer pour suppression
                     erase.append(key)
@@ -276,25 +302,18 @@ class AlertManager(QObject):
                 logger.debug(f"[MAIL] État liste_mail: {dict(var.liste_mail)}")
             
             for key, value in list(var.liste_mail.items()):
-                logger.debug(f"[MAIL] Vérification {key}: valeur={value} (type={type(value).__name__}), nbrHs={var.nbrHs}")
-                
                 if int(value) == int(var.nbrHs):
                     # Hôte qui vient de tomber
                     logger.info(f"Alerte mail: {key} HS")
-                    nom = db.lireNom(key, self.model) or "Inconnu"
                     
-                    # Récupérer les infos de l'hôte depuis le modèle
-                    mac = ""
+                    metadata = {}
+                    if self.get_host_metadata_callback:
+                        metadata = self.get_host_metadata_callback(key)
+                    
+                    nom = metadata.get('nom') or "Inconnu"
+                    mac = metadata.get('mac') or ""
+                    site = metadata.get('site') or ""
                     latence = "HS"
-                    site = ""
-                    for row in range(self.model.rowCount()):
-                        item_ip = self.model.item(row, 1)
-                        if item_ip and item_ip.text() == key:
-                            mac_item = self.model.item(row, 3)
-                            site_item = self.model.item(row, 8)
-                            mac = mac_item.text() if mac_item else ""
-                            site = site_item.text() if site_item else ""
-                            break
                     
                     host_info = {
                         'ip': key,
@@ -304,27 +323,29 @@ class AlertManager(QObject):
                         'site': site
                     }
                     hosts_down.append(host_info)
+                    
+                    # Notification Interne
+                    self.notification_manager.add_notification(
+                        type_alert='mail',
+                        message=f"Alerte Mail : {nom} ({key}) est HS",
+                        level='error',
+                        details=host_info
+                    )
+                    
                     var.liste_mail[key] = 10
                     
                 elif int(value) == 20:
                     # Hôte qui revient en ligne
-                    logger.info(f"[MAIL] Alerte retour détectée: {key} revient en ligne (valeur={value})")
-                    nom = db.lireNom(key, self.model) or "Inconnu"
+                    logger.info(f"[MAIL] Alerte retour détectée: {key} revient en ligne")
                     
-                    # Récupérer les infos de l'hôte
-                    mac = ""
-                    latence = "OK"
-                    site = ""
-                    for row in range(self.model.rowCount()):
-                        item_ip = self.model.item(row, 1)
-                        if item_ip and item_ip.text() == key:
-                            mac_item = self.model.item(row, 3)
-                            latence_item = self.model.item(row, 5)
-                            site_item = self.model.item(row, 8)
-                            mac = mac_item.text() if mac_item else ""
-                            latence = latence_item.text() if latence_item else "OK"
-                            site = site_item.text() if site_item else ""
-                            break
+                    metadata = {}
+                    if self.get_host_metadata_callback:
+                        metadata = self.get_host_metadata_callback(key)
+                    
+                    nom = metadata.get('nom') or "Inconnu"
+                    mac = metadata.get('mac') or ""
+                    site = metadata.get('site') or ""
+                    latence = metadata.get('latence') or "OK"
                     
                     host_info = {
                         'ip': key,
@@ -334,6 +355,15 @@ class AlertManager(QObject):
                         'site': site
                     }
                     hosts_up.append(host_info)
+                    
+                    # Notification Interne
+                    self.notification_manager.add_notification(
+                        type_alert='mail',
+                        message=f"Rétablissement Mail : {nom} ({key}) est OK",
+                        level='success',
+                        details=host_info
+                    )
+                    
                     erase.append(key)
             
             for cle in erase:
@@ -363,30 +393,45 @@ class AlertManager(QObject):
             for key, value in list(var.liste_telegram.items()):
                 if int(value) == int(var.nbrHs):
                     logger.info(f"Alerte Telegram: {key} HS")
-                    nom = db.lireNom(key, self.model) or "Inconnu"
-                    # Récupérer le site de l'hôte
-                    site = ""
-                    for row in range(self.model.rowCount()):
-                        item_ip = self.model.item(row, 1)
-                        if item_ip and item_ip.text() == key:
-                            site_item = self.model.item(row, 8)
-                            site = site_item.text() if site_item else ""
-                            break
+                    
+                    metadata = {}
+                    if self.get_host_metadata_callback:
+                        metadata = self.get_host_metadata_callback(key)
+                    
+                    nom = metadata.get('nom') or "Inconnu"
+                    site = metadata.get('site') or ""
+                    
                     site_prefix = f"[{site}] " if site else ""
                     ip_hs_text += f"{site_prefix}{nom} : {key}\n"
+                    
+                    # Notification Interne
+                    self.notification_manager.add_notification(
+                        type_alert='telegram',
+                        message=f"Alerte Telegram : {nom} ({key}) HS",
+                        level='error',
+                        details={'ip': key, 'nom': nom, 'site': site}
+                    )
+                    
                     var.liste_telegram[key] = 10
                 elif int(value) == 20:
-                    nom = db.lireNom(key, self.model) or "Inconnu"
-                    # Récupérer le site de l'hôte
-                    site = ""
-                    for row in range(self.model.rowCount()):
-                        item_ip = self.model.item(row, 1)
-                        if item_ip and item_ip.text() == key:
-                            site_item = self.model.item(row, 8)
-                            site = site_item.text() if site_item else ""
-                            break
+                    metadata = {}
+                    if self.get_host_metadata_callback:
+                        metadata = self.get_host_metadata_callback(key)
+                        
+                    nom = metadata.get('nom') or "Inconnu"
+                    site = metadata.get('site') or ""
+                    
                     site_prefix = f"[{site}] " if site else ""
                     ip_ok_text += f"{site_prefix}{nom} : {key}\n"
+                    
+                    # Notification Interne
+                    self.notification_manager.add_notification(
+                        type_alert='telegram',
+                        message=f"Rétablissement Telegram : {nom} ({key}) OK",
+                        level='success',
+                        details={'ip': key, 'nom': nom, 'site': site}
+                    )
+                    
                     erase.append(key)
             
             for cle in erase:
@@ -407,26 +452,26 @@ class AlertManager(QObject):
             logger.error(f"Erreur process telegram: {e}", exc_info=True)
 
     def process_temp_alerts(self):
-        """Traite les alertes de température élevée."""
+        """Traite les alertes de température élevée en utilisant les données fournies."""
+        if not self.get_all_hosts_data_callback:
+            return
+
         try:
             seuil = int(var.tempSeuil)
             hosts_high_temp = []
             hosts_normal_temp = []
             
-            # Parcourir tous les hôtes pour vérifier leur température
-            for row in range(self.model.rowCount()):
-                item_ip = self.model.item(row, 1)
-                item_temp = self.model.item(row, 6)  # Colonne température
-                
-                if not item_ip or not item_temp:
+            # Récupérer toutes les données via le callback
+            all_hosts_data = self.get_all_hosts_data_callback()
+            
+            for host in all_hosts_data:
+                ip = host.get('ip')
+                temp_text = host.get('temp')
+                if not ip or not temp_text:
                     continue
-                    
-                ip = item_ip.text()
-                temp_text = item_temp.text()
                 
                 # Extraire la valeur numérique de la température
                 try:
-                    # Gérer les formats "45°C", "45", "45.5°C", etc.
                     temp_str = temp_text.replace('°C', '').replace('°', '').strip()
                     if not temp_str or temp_str == '-':
                         continue
@@ -440,9 +485,9 @@ class AlertManager(QObject):
                     if ip not in var.liste_temp_alert:
                         var.liste_temp_alert[ip] = 1
                     elif var.liste_temp_alert[ip] < 10:
-                        # Première alerte (compteur = 1), on envoie
+                        # Première alerte
                         if var.liste_temp_alert[ip] == 1:
-                            nom = db.lireNom(ip, self.model) or "Inconnu"
+                            nom = host.get('nom') or "Inconnu"
                             hosts_high_temp.append({
                                 'ip': ip,
                                 'nom': nom,
@@ -450,18 +495,36 @@ class AlertManager(QObject):
                                 'seuil': seuil
                             })
                             logger.warning(f"🌡️ Alerte température: {ip} ({nom}) = {temp}°C (seuil: {seuil}°C)")
+                            
+                            # Notification Interne
+                            self.notification_manager.add_notification(
+                                type_alert='temperature',
+                                message=f"Température élevée : {nom} ({key}) - {temp}°C",
+                                level='warning',
+                                details={'ip': ip, 'nom': nom, 'temp': temp, 'seuil': seuil}
+                            )
+                            
                             var.liste_temp_alert[ip] = 10  # Marquer comme alerté
                 else:
-                    # Température normale - retirer de la liste si présent
+                    # Température normale
                     if ip in var.liste_temp_alert:
                         if var.liste_temp_alert[ip] == 10:
-                            nom = db.lireNom(ip, self.model) or "Inconnu"
+                            nom = host.get('nom') or "Inconnu"
                             hosts_normal_temp.append({
                                 'ip': ip,
                                 'nom': nom,
                                 'temp': temp
                             })
                             logger.info(f"🌡️ Température normalisée: {ip} ({nom}) = {temp}°C")
+                            
+                            # Notification Interne
+                            self.notification_manager.add_notification(
+                                type_alert='temperature',
+                                message=f"Température normale : {nom} ({key}) - {temp}°C",
+                                level='success',
+                                details={'ip': ip, 'nom': nom, 'temp': temp}
+                            )
+                            
                         del var.liste_temp_alert[ip]
             
             # Envoyer les alertes

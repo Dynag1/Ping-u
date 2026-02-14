@@ -1,0 +1,51 @@
+<div id="content-backup" class="content-section">
+    <!-- Sauvegarde & Restauration Collapsible -->
+    <div class="collapsible-section open" id="section-backup">
+        <div class="collapsible-header" onclick="toggleSection('section-backup')">
+            <div class="collapsible-title">
+                <div class="collapsible-icon backup">💾</div>
+                <div>
+                    <h2 data-i18n="backup_restore_title">Sauvegarde & Restauration</h2>
+                    <p data-i18n="backup_restore_desc">Gérez les sauvegardes de votre configuration compléte
+                    </p>
+                </div>
+            </div>
+            <div class="collapsible-toggle">▼</div>
+        </div>
+        <div class="collapsible-content">
+            <div class="main-grid">
+                <!-- Sauvegarde -->
+                <div class="card">
+                    <h2 data-i18n="backup_title">Sauvegarder</h2>
+                    <p style="margin-bottom: 20px; color: #a0aec0;" data-i18n="backup_desc">
+                        Téléchargez une archive complète (.pingu) contenant :<br>
+                        - Configuration des sites<br>
+                        - Liste des hôtes<br>
+                        - Paramètres de l'application<br>
+                        - Configuration synoptique<br>
+                        - Utilisateurs
+                    </p>
+                    💾 <span data-i18n="download_backup">Télécharger la sauvegarde</span>
+                    </a>
+                </div>
+
+                <!-- Restauration -->
+                <div class="card">
+                    <h2 data-i18n="restore_title">Restaurer</h2>
+                    <p style="margin-bottom: 20px; color: #a0aec0;" data-i18n="restore_desc">
+                        Restaurez une configuration depuis un fichier .pingu.<br>
+                        ⚠️ Cela écrasera la configuration actuelle.
+                    </p>
+                    <form id="restoreForm" onsubmit="handleRestore(event)">
+                        <div class="form-group">
+                            <input type="file" id="backupFile" accept=".pingu" required style="padding: 8px;">
+                        </div>
+                        <button type="submit" class="btn btn-danger" style="width: 100%; justify-content: center;">
+                            ♻️ <span data-i18n="restore_btn">Restaurer la sauvegarde</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

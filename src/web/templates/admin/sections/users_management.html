@@ -1,0 +1,49 @@
+    <div id="content-users" class="content-section">
+        <div class="users-management">
+            <!-- Formulaire d'ajout d'utilisateur -->
+            <div class="card">
+                <h2>➕ <span data-i18n="add_user">Ajouter un utilisateur</span></h2>
+                <form id="form-add-user" class="user-form" onsubmit="return handleAddUser(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-user-username" data-i18n="username">Nom d'utilisateur</label>
+                            <input type="text" id="new-user-username" required placeholder="ex: john">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-user-password" data-i18n="password">Mot de passe</label>
+                            <input type="password" id="new-user-password" required placeholder="••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-user-role" data-i18n="role">Rôle</label>
+                            <select id="new-user-role">
+                                <option value="user" data-i18n="role_user">Utilisateur</option>
+                                <option value="admin" data-i18n="role_admin">Administrateur</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        ➕ <span data-i18n="add_user_btn">Ajouter l'utilisateur</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Liste des utilisateurs -->
+            <div class="card" style="margin-top: 20px;">
+                <h2>👥 <span data-i18n="users_list">Liste des utilisateurs</span></h2>
+                <div class="users-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-i18n="username">Nom d'utilisateur</th>
+                                <th data-i18n="role">Rôle</th>
+                                <th data-i18n="user_actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Rempli dynamiquement par JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div><!-- Fin content-users -->
