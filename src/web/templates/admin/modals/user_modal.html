@@ -1,0 +1,80 @@
+        <div id="modal-change-password"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
+            <div
+                style="background: rgba(26, 32, 44, 0.98); padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <h2 style="margin-bottom: 20px; color: #333;" data-i18n="manage_users_title">👥 Gestion des
+                    Utilisateurs
+                </h2>
+
+                <!-- Onglets -->
+                <div class="user-tabs"
+                    style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+                    <button type="button" class="user-tab active" data-tab="admin" onclick="switchUserTab('admin')"
+                        style="padding: 10px 20px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        👑 <span data-i18n="admin_user">Administrateur</span>
+                    </button>
+                    <button type="button" class="user-tab" data-tab="user" onclick="switchUserTab('user')"
+                        style="padding: 10px 20px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.3); color: #e4e4e4; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        👤 <span data-i18n="standard_user">Utilisateur</span>
+                    </button>
+                </div>
+
+                <!-- Formulaire Admin -->
+                <div id="tab-admin" class="user-tab-content">
+                    <div
+                        style="background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <p style="margin: 0; color: #667eea; font-size: 14px;">
+                            <strong>👑 <span data-i18n="admin_role">Rôle Admin</span></strong> - <span
+                                data-i18n="admin_role_desc">Accès complet à l'administration</span>
+                        </p>
+                    </div>
+                    <form id="form-change-password">
+                        <div class="form-group">
+                            <label data-i18n="current_password">Mot de passe actuel</label>
+                            <input type="password" id="old-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="new_username">Nouveau nom d'utilisateur</label>
+                            <input type="text" id="new-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="new_password">Nouveau mot de passe</label>
+                            <input type="password" id="new-password" required>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">💾 <span
+                                    data-i18n="save">Enregistrer</span></button>
+                            <button type="button" id="btn-cancel-change" class="btn btn-secondary" style="flex: 1;">❌
+                                <span data-i18n="cancel">Annuler</span></button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Formulaire User -->
+                <div id="tab-user" class="user-tab-content" style="display: none;">
+                    <div
+                        style="background: linear-gradient(135deg, #10b98122 0%, #059d6e22 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <p style="margin: 0; color: #059669; font-size: 14px;">
+                            <strong>👤 <span data-i18n="user_role">Rôle Utilisateur</span></strong> - <span
+                                data-i18n="user_role_desc">Accès à la vue monitoring uniquement</span>
+                        </p>
+                    </div>
+                    <form id="form-change-user-password">
+                        <div class="form-group">
+                            <label data-i18n="new_username">Nom d'utilisateur</label>
+                            <input type="text" id="user-new-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="new_password">Mot de passe</label>
+                            <input type="password" id="user-new-password" required>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-success" style="flex: 1;">💾 <span
+                                    data-i18n="save">Enregistrer</span></button>
+                            <button type="button" class="btn btn-secondary" onclick="closeUserModal()"
+                                style="flex: 1;">❌ <span data-i18n="cancel">Annuler</span></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>

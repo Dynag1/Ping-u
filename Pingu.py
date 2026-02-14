@@ -14,109 +14,23 @@ try:
     import qt_themes
     GUI_AVAILABLE = True
 except ImportError:
-    # Mode headless ou environnement sans GUI
-    GUI_AVAILABLE = False
+    from src.utils.headless_compat import (
+        GUI_AVAILABLE, QObject, Signal, QMainWindow, QSortFilterProxyModel,
+        QPoint, QModelIndex, QColor, QAction, QActionGroup, QStandardItem,
+        QStandardItemModel, QEvent, Qt, Ui_MainWindow, QApplication, QTranslator
+    )
     qt_themes = None
-    # Créer des classes factices pour éviter les erreurs d'import
-    class QObject: pass
-    class Signal: 
-        """Signal factice fonctionnel pour le mode headless"""
-        def __init__(self, *args): 
-            self._callbacks = []
-        def emit(self, *args): 
-            for callback in self._callbacks:
-                try:
-                    callback(*args)
-                except Exception as e:
-                    print(f"Signal emit error: {e}")
-        def connect(self, callback): 
-            self._callbacks.append(callback)
-    class QMainWindow: pass
-    class QSortFilterProxyModel: pass
-    class QPoint: pass
-    class QModelIndex: pass
-    class QColor: pass
-    class QAction: pass
-    class QActionGroup: pass
-    class QStandardItem:
-        def __init__(self, text=""): 
-            self._text = str(text) if text else ""
-            self._background = None
-            self._data = {}
-        def text(self): return self._text
-        def setText(self, text): self._text = str(text)
-        def setBackground(self, color): self._background = color
-        def background(self): return self._background
-        def setData(self, data, role=0): self._data[role] = data
-        def data(self, role=0): return self._data.get(role)
-        def setEditable(self, editable): pass
-    class QStandardItemModel:
-        def __init__(self, *args):
-            self._rows = []
-            self._headers = []
-            self._column_count = 0
-        def rowCount(self): return len(self._rows)
-        def columnCount(self): return self._column_count
-        def appendRow(self, items):
-            self._rows.append(items)
-            if items and len(items) > self._column_count:
-                self._column_count = len(items)
-        def removeRows(self, start, count): 
-            del self._rows[start:start+count]
-        def removeRow(self, row): 
-            if 0 <= row < len(self._rows):
-                del self._rows[row]
-        def clear(self): 
-            self._rows = []
-            self._column_count = 0
-        def setHorizontalHeaderLabels(self, labels): 
-            self._headers = [QStandardItem(l) for l in labels]
-            if len(labels) > self._column_count:
-                self._column_count = len(labels)
-        def horizontalHeaderItem(self, col): 
-            return self._headers[col] if col < len(self._headers) else QStandardItem("")
-        def item(self, row, col=0):
-            if row < len(self._rows) and col < len(self._rows[row]):
-                return self._rows[row][col]
-            return None
-        def setItem(self, row, col, item):
-            while len(self._rows) <= row:
-                self._rows.append([])
-            while len(self._rows[row]) <= col:
-                self._rows[row].append(QStandardItem(""))
-            self._rows[row][col] = item
-        def index(self, row, col, parent=None):
-            return QModelIndex()
-        def data(self, index, role=0):
-            return None
-        def dataChanged(self):
-            class FakeSignal:
-                def connect(self, *args): pass
-                def emit(self, *args): pass
-            return FakeSignal()
-        def rowsInserted(self):
-            class FakeSignal:
-                def connect(self, *args): pass
-            return FakeSignal()
-        def rowsRemoved(self):
-            class FakeSignal:
-                def connect(self, *args): pass
-            return FakeSignal()
-    class QEvent:
-        LanguageChange = 0
-    class Qt:
-        DisplayRole = 0
-        ItemIsEditable = 0
-        BackgroundRole = 0
-        UserRole = 0
-    class Ui_MainWindow: pass
+
 
 from src import var, fct, lic, threadAjIp, db, sFenetre
 from src import fctXls, fctMaj
 import src.Snyf.main as snyf
 from src.controllers.settings_controller import SettingsController
 from src.controllers.main_controller import MainController
+from src.controllers.main_controller import MainController
 from src.web_server import WebServer
+from src.host_manager import HostManager
+       
 import threading
 import webbrowser
 import importlib
@@ -245,6 +159,7 @@ class MainWindow(QMainWindow):
         
         # Contrôleurs
         self.settings_controller = SettingsController(self)
+        self.host_manager = HostManager()
         self.main_controller = MainController(self)
         
         # Serveur Web
@@ -360,9 +275,20 @@ class MainWindow(QMainWindow):
         self._setup_web_server_menu()
         
         # Connexion des signaux du modèle pour détecter les changements
+        # Connexion des signaux du modèle pour détecter les changements
         self.treeIpModel.dataChanged.connect(self.on_treeview_data_changed)
         self.treeIpModel.rowsInserted.connect(self.on_treeview_rows_inserted)
         self.treeIpModel.rowsRemoved.connect(self.on_treeview_rows_removed)
+        
+        # Synchronisation avec HostManager (Thread-Safe State)
+        self.treeIpModel.rowsInserted.connect(self._sync_host_manager)
+        self.treeIpModel.rowsRemoved.connect(self._sync_host_manager)
+        self.treeIpModel.modelReset.connect(self._sync_host_manager)
+        # On ne sync pas sur dataChanged pour éviter la surcharge lors des mises à jour de ping (latence)
+        # sauf si c'est une modif de config (IP, Nom, Site) - mais difficile à filtrer ici simplement
+        # Pour l'instant, on assume que la config statique change peu. 
+        # Si on édite un nom, il faudra peut-être forcer le sync.
+        self.treeIpModel.dataChanged.connect(self._on_data_changed_sync)
 
     def change_theme(self, theme_name):
         if qt_themes is None:
@@ -859,6 +785,62 @@ class MainWindow(QMainWindow):
                 
         except Exception as e:
             logger.error(f"Erreur mise à jour textes menu serveur web: {e}", exc_info=True)
+            
+    def _sync_host_manager(self, *args):
+        """Synchronise le modèle Qt vers le HostManager (Thread-Safe)"""
+        try:
+            hosts = []
+            model = self.treeIpModel
+            for row in range(model.rowCount()):
+                try:
+                    ip_item = model.item(row, 1)
+                    if not ip_item: continue
+                    ip = ip_item.text()
+                    
+                    # Récupération sécurisée des items
+                    def get_text(col):
+                        item = model.item(row, col)
+                        return item.text() if item else ""
+                    
+                    host = {
+                        'id': get_text(0),
+                        'ip': ip,
+                        'nom': get_text(2),
+                        'mac': get_text(3),
+                        'port': get_text(4),
+                        'latence': get_text(5),
+                        'temp': get_text(6),
+                        'suivi': get_text(7),
+                        'site': get_text(8),
+                        'commentaire': get_text(9),
+                        'excl': get_text(10)
+                        # Status sera géré dynamiquement, mais on prend l'état initial
+                    }
+                    
+                    # Déterminer status initial
+                    latence = host['latence']
+                    if latence == "HS" or host['excl'] == 'x':
+                        host['status'] = 'offline'
+                    else:
+                        host['status'] = 'online'
+                        
+                    hosts.append(host)
+                except Exception as row_e:
+                    logger.error(f"Erreur lecture ligne {row}: {row_e}")
+            
+            self.host_manager.set_hosts(hosts)
+            # logger.debug(f"HostManager synchronisé : {len(hosts)} hôtes")
+            
+        except Exception as e:
+            logger.error(f"Erreur synchronisation HostManager: {e}", exc_info=True)
+
+    def _on_data_changed_sync(self, top_left, bottom_right, roles):
+        """Gère la synchro sélective sur changement de données"""
+        # Si le changement concerne les colonnes de config (IP=1, Nom=2, Site=8, Excl=10), on sync
+        # Si c'est Latence(5) ou Temp(6), on ignore car géré par MainController.update_status
+        col = top_left.column()
+        if col in [1, 2, 3, 4, 8, 9, 10]:
+            self._sync_host_manager()
     
     def toggle_web_server(self):
         """Démarre ou arrête le serveur web"""
@@ -872,7 +854,7 @@ class MainWindow(QMainWindow):
                                        self.tr("Aucun port disponible entre 9090 et 9100."))
                     return
                 
-                self.web_server = WebServer(self, port=port)
+                self.web_server = WebServer(self, port=port, host_manager=self.host_manager)
                 if self.web_server.start():
                     self.web_server_running = True
                     self.action_toggle_web_server.setText(self.tr("Arrêter le serveur"))
@@ -1104,6 +1086,7 @@ def run_headless_mode():
         def __init__(self):
             self.treeIpModel = treeIpModel
             self.comm = Communicate()
+            self.host_manager = HostManager()
             self.web_server = None
             self.web_server_running = False
             
@@ -1234,7 +1217,7 @@ def run_headless_mode():
          logger.error("[HEADLESS] Aucun port disponible entre 9090 et 9100. Impossible de démarrer le serveur web.")
          sys.exit(1)
 
-    window.web_server = WebServer(window, port=port)
+    window.web_server = WebServer(window, port=port, host_manager=window.host_manager)
     if window.web_server.start():
         window.web_server_running = True
         logger.info(f"[HEADLESS] Serveur web demarre sur http://0.0.0.0:{port}")

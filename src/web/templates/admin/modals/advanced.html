@@ -1,0 +1,288 @@
+<div id="modal-advanced" class="section-modal">
+    <div class="section-modal-content">
+        <div class="section-modal-header">
+            <h2>⚙️ <span data-i18n="menu_advanced">Paramètres avancés</span></h2>
+            <button class="section-modal-close" onclick="closeSectionModal('advanced')">✕</button>
+        </div>
+        <div class="section-modal-body">
+            <div id="content-advanced" class="content-section active">
+
+                <!-- Paramètres Avancés -->
+                <div class="collapsible-section" id="section-advanced" style="margin-bottom: 25px;">
+                    <div class="collapsible-header" onclick="toggleSection('section-advanced')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon advanced">⚙️</div>
+                            <div>
+                                <div class="editable-title-container" onclick="event.stopPropagation()">
+                                    <h2 id="advanced-settings-title" class="editable-title"
+                                        onclick="editSectionTitle('advanced-settings-title')"
+                                        data-i18n="advanced_settings">
+                                        Paramètres Avancés</h2>
+                                    <input type="text" id="advanced-settings-title-input" class="editable-title-input"
+                                        style="display: none;" onblur="saveSectionTitle('advanced-settings-title')"
+                                        onkeydown="if(event.key==='Enter') saveSectionTitle('advanced-settings-title')">
+                                </div>
+                                <p data-i18n="advanced_settings_desc">Configuration SMTP, Telegram et système
+                                </p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+
+                        <!-- Configuration SMTP -->
+                        <div class="accordion">
+                            <div class="accordion-header" onclick="toggleAccordion('smtp')">
+                                <span>📧 <span data-i18n="smtp_config">Configuration Email (SMTP)</span></span>
+                                <span class="accordion-icon" id="icon-smtp">▼</span>
+                            </div>
+                            <div class="accordion-content" id="content-smtp">
+                                <form id="form-smtp">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="smtp-server" data-i18n="smtp_server">Serveur
+                                                SMTP</label>
+                                            <input type="text" id="smtp-server" placeholder="smtp.gmail.com">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="smtp-port">Port</label>
+                                            <input type="number" id="smtp-port" placeholder="587" value="587">
+                                            <small
+                                                style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                                                💡 Port 587 (STARTTLS) <span data-i18n="or">ou</span> 465
+                                                (SSL/TLS)
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="smtp-email" data-i18n="sender_email">Email
+                                            expéditeur</label>
+                                        <input type="email" id="smtp-email" placeholder="votre-email@gmail.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="smtp-password" data-i18n="password">Mot de passe</label>
+                                        <input type="password" id="smtp-password"
+                                            data-placeholder-i18n="password_placeholder"
+                                            placeholder="Mot de passe ou app password">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="smtp-recipients" data-i18n="recipients">Destinataires
+                                            (séparés
+                                            par des
+                                            virgules)</label>
+                                        <input type="text" id="smtp-recipients"
+                                            placeholder="email1@exemple.com, email2@exemple.com">
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                            💾 <span data-i18n="save">Sauvegarder</span>
+                                        </button>
+                                        <button type="button" class="btn btn-info" onclick="testSMTP()"
+                                            style="flex: 1;">
+                                            ✉️ <span data-i18n="test">Tester</span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Telegram -->
+                        <div class="accordion">
+                            <div class="accordion-header" onclick="toggleAccordion('telegram')">
+                                <span>📱 <span data-i18n="telegram_config">Configuration Telegram</span></span>
+                                <span class="accordion-icon" id="icon-telegram">▼</span>
+                            </div>
+                            <div class="accordion-content" id="content-telegram">
+                                <form id="form-telegram">
+                                    <div class="form-group">
+                                        <label for="telegram-token" data-i18n="bot_token">Token du Bot</label>
+                                        <input type="text" id="telegram-token"
+                                            placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="telegram-chatid">Chat ID</label>
+                                        <input type="text" id="telegram-chatid" placeholder="123456789">
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                            💾 <span data-i18n="save">Sauvegarder</span>
+                                        </button>
+                                        <button type="button" class="btn btn-info" onclick="testTelegram()"
+                                            style="flex: 1;">
+                                            📲 <span data-i18n="test">Tester</span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Email Récapitulatif -->
+                        <div class="accordion">
+                            <div class="accordion-header" onclick="toggleAccordion('mailrecap')">
+                                <span>📊 <span data-i18n="recap_email_config">Email Récapitulatif
+                                        Périodique</span></span>
+                                <span class="accordion-icon" id="icon-mailrecap">▼</span>
+                            </div>
+                            <div class="accordion-content" id="content-mailrecap">
+                                <form id="form-mail-recap">
+                                    <div class="form-group">
+                                        <label for="recap-heure" data-i18n="send_time">Heure d'envoi</label>
+                                        <input type="time" id="recap-heure" value="08:00">
+                                    </div>
+                                    <div
+                                        style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                                        <label
+                                            style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-primary);"
+                                            data-i18n="send_days">Jours d'envoi</label>
+                                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                                            <div class="checkbox-group" style="margin: 0;">
+                                                <input type="checkbox" id="recap-lundi">
+                                                <label for="recap-lundi" data-i18n="monday">Lundi</label>
+                                            </div>
+                                            <div class="checkbox-group" style="margin: 0;">
+                                                <input type="checkbox" id="recap-mardi">
+                                                <label for="recap-mardi" data-i18n="tuesday">Mardi</label>
+                                            </div>
+                                            <div class="checkbox-group" style="margin: 0;">
+                                                <input type="checkbox" id="recap-mercredi">
+                                                <label for="recap-mercredi" data-i18n="wednesday">Mercredi</label>
+                                            </div>
+                                            <div class="checkbox-group" style="margin: 0;">
+                                                <input type="checkbox" id="recap-jeudi">
+                                                <label for="recap-jeudi" data-i18n="thursday">Jeudi</label>
+                                            </div>
+                                            <div class="checkbox-group" style="margin: 0;">
+                                                <input type="checkbox" id="recap-vendredi">
+                                                <label for="recap-vendredi" data-i18n="friday">Vendredi</label>
+                                            </div>
+                                            <div class="checkbox-group" style="margin: 0;">
+                                                <input type="checkbox" id="recap-samedi">
+                                                <label for="recap-samedi" data-i18n="saturday">Samedi</label>
+                                            </div>
+                                            <div class="checkbox-group" style="margin: 0; grid-column: 1 / -1;">
+                                                <input type="checkbox" id="recap-dimanche">
+                                                <label for="recap-dimanche" data-i18n="sunday">Dimanche</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                            💾 <span data-i18n="save">Sauvegarder</span>
+                                        </button>
+                                        <button type="button" class="btn btn-info" onclick="sendTestRecap()"
+                                            style="flex: 1;">
+                                            📨 <span data-i18n="send_test">Envoyer un test</span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Paramètres Généraux -->
+                        <div class="accordion">
+                            <div class="accordion-header" onclick="toggleAccordion('general')">
+                                <span>🌐 <span data-i18n="general_settings">Paramètres Généraux</span></span>
+                                <span class="accordion-icon" id="icon-general">▼</span>
+                            </div>
+                            <div class="accordion-content" id="content-general">
+                                <form id="form-general">
+                                    <div class="form-group">
+                                        <label for="general-site" data-i18n="site_name">Nom du Site</label>
+                                        <input type="text" id="general-site" placeholder="Site">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="general-theme" data-i18n="theme">Thème</label>
+                                        <select id="general-theme">
+                                            <option value="nord">Nord</option>
+                                            <option value="dark">Dark</option>
+                                            <option value="light">Light</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                        💾 <span data-i18n="save">Sauvegarder</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Licence -->
+                        <div class="accordion">
+                            <div class="accordion-header" onclick="toggleAccordion('license')">
+                                <span>🔑 <span data-i18n="license_management">Gestion de Licence</span></span>
+                                <span class="accordion-icon" id="icon-license">▼</span>
+                            </div>
+                            <div class="accordion-content" id="content-license">
+                                <div
+                                    style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <span style="font-size: 24px;" id="license-icon">❌</span>
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--text-primary);"
+                                                id="license-status" data-i18n="no_license">Pas de licence active
+                                            </div>
+                                            <div style="font-size: 13px; color: var(--text-secondary);"
+                                                id="license-days">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 10px;">
+                                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;"
+                                            data-i18n="activation_code_label">Code d'activation (Hardware ID) à
+                                            envoyer :
+                                        </div>
+                                        <div style="display: flex; gap: 10px;">
+                                            <input type="text" id="activation-code" readonly
+                                                style="background: rgba(0, 0, 0, 0.3); color: var(--text-primary); font-family: monospace; font-size: 14px; border: 1px solid rgba(255, 255, 255, 0.1);"
+                                                onclick="this.select()">
+                                            <button class="btn btn-secondary btn-small"
+                                                onclick="navigator.clipboard.writeText(document.getElementById('activation-code').value); showNotification(t('copied'), 'success')">📋</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form id="form-license">
+                                    <div class="form-group">
+                                        <label for="license-key" data-i18n="license_key">Clé de licence</label>
+                                        <input type="text" id="license-key" data-placeholder-i18n="enter_license"
+                                            placeholder="Entrez votre clé de licence">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                        🔓 <span data-i18n="activate_license">Activer la licence</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Informations Système -->
+                        <div class="accordion">
+                            <div class="accordion-header" onclick="toggleAccordion('system')">
+                                <span>ℹ️ <span data-i18n="system_info">Informations Système</span></span>
+                                <span class="accordion-icon" id="icon-system">▼</span>
+                            </div>
+                            <div class="accordion-content" id="content-system">
+                                <div
+                                    style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                                    <div style="margin-bottom: 10px;">
+                                        <strong>Version:</strong> <span id="system-version">-</span>
+                                    </div>
+                                    <div style="margin-bottom: 10px;">
+                                        <strong>Mode:</strong> <span data-i18n="web_server">Serveur Web</span>
+                                    </div>
+                                    <div style="margin-bottom: 10px;">
+                                        <strong>Port:</strong> <span>9090</span>
+                                    </div>
+                                    <div>
+                                        <strong data-i18n="connected_user">Utilisateur connecté:</strong> <span
+                                            id="system-user">admin</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- Fin collapsible-section advanced -->
+            </div><!-- Fin content-advanced -->
+
+
+        </div>
+    </div>
+</div>

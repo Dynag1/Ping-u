@@ -1,0 +1,34 @@
+<div class="card full-width" style="margin-top: 20px;">
+    <h2>📋 <span data-i18n="hosts_list">Liste des Hôtes Monitorés</span></h2>
+    <div class="hosts-table">
+        <table>
+            <thead>
+                <tr>
+                    <th style="cursor: pointer;" onclick="sortHosts('ip')">IP <span id="sort-ip"
+                            class="sort-icon">↕️</span></th>
+                    <th style="cursor: pointer;" onclick="sortHosts('nom')" data-i18n="name">Nom <span id="sort-nom"
+                            class="sort-icon">↕️</span></th>
+                    <th style="cursor: pointer;" onclick="sortHosts('mac')">MAC <span id="sort-mac"
+                            class="sort-icon">↕️</span></th>
+                    <th style="cursor: pointer;" onclick="sortHosts('port')">Port <span id="sort-port"
+                            class="sort-icon">↕️</span></th>
+                    <th style="cursor: pointer;" onclick="sortHosts('delai')" data-i18n="delay">Délai <span
+                            id="sort-delai" class="sort-icon">↕️</span></th>
+                    <th style="cursor: pointer;" onclick="sortHosts('site')" data-i18n="site">Site <span id="sort-site"
+                            class="sort-icon">↕️</span></th>
+                    <th data-i18n="status">Statut</th>
+                    <th data-i18n="actions">Actions</th>
+                    <th><input type="checkbox" id="select-all-hosts" onclick="toggleSelectAll(this)"></th>
+                </tr>
+            </thead>
+            <tbody id="hosts-table-body">
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 40px; color: #9ca3af;"
+                        data-i18n="no_hosts_configured">
+                        Aucun hôte configuré. Ajoutez des hôtes pour commencer le monitoring.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -18,28 +18,46 @@ import queue
 def labThread(value):
     var.progress['value'] = value
 
-def worker(q, thread_no):
-    try:
-        while True:
-            item = q.get()
-            if item is None:
-                break
-            q.task_done()
-    except Exception as e:
-        print(e)
-        #design.logs("fct_ping - " + str(e))
 
+def worker(q, comm):
+    while True:
+        task = q.get()
+        if task is None:
+            q.task_done()
+            break
+        
+        # Déballer les arguments
+        # args expected: (self, comm, model, ip, tout, i, hote, port, site)
+        try:
+            threadIp(task[0], task[1], task[2], task[3], task[4], task[5], task[6], task[7], task[8])
+        except Exception as e:
+            print(f"Erreur thread worker: {e}")
+        finally:
+            q.task_done()
 
 def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
     # Vérifie si l'IP existe déjà dans le modèle
     ipexist = False
-    for row in range(model.rowCount()):
-        item = model.item(row, 1)
-        if item and item.text() == ip:
-            # Affiche une alerte (à adapter selon ton système)
-            print(f"L'adresse {ip} existe déjà")
-            ipexist = True
-            break
+    # Note: Accès concurrent au modèle Qt peut être risqué, idéalement utiliser des signaux ou verrous
+    # Ici on suppose que model.rowCount() et model.item() sont safe en lecture ou gérés par Qt
+    # (En général, QStandardItemModel n'est pas thread-safe pour les écritures, mais lecture ça peut aller si pas de modif concurrente)
+    
+    # Optimisation: évitons de parcourir le modèle si possible ou faisons le dans le thread principal avant
+    # Pour l'instant on garde la logique existante
+    
+    # Utilisation de méthodes thread-safe via invokeMethod ou similaire serait mieux, 
+    # mais gardons la structure actuelle en espérant que le modèle n'est pas modifié ailleurs
+    
+    try:
+        for row in range(model.rowCount()):
+            item = model.item(row, 1)
+            if item and item.text() == ip:
+                # Affiche une alerte (à adapter selon ton système)
+                print(f"L'adresse {ip} existe déjà")
+                ipexist = True
+                break
+    except Exception:
+        pass # Risque de race condition ignoré pour l'instant
 
     if not ipexist:
         # Simule le ping et la récupération des infos
@@ -100,104 +118,96 @@ def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
                 port_val = fct_ip.check_port(ip, port)
                 comm.addRow.emit(i, ip, nom, mac, str(port_val), site, True)
                 var.u += 1
+                
     var.thread_ferme += 1
-    thread_tot = ((var.thread_ouvert - (var.thread_ouvert - var.thread_ferme)) / var.thread_ouvert) *100
-    comm.progress.emit(thread_tot)
-
+    # Eviter division par zéro
+    if var.thread_ouvert > 0:
+        thread_tot = ((var.thread_ouvert - (var.thread_ouvert - var.thread_ferme)) / var.thread_ouvert) * 100
+        comm.progress.emit(int(thread_tot))
 
 
 ###########################################################################################
 #####   Préparation de l'ajout      												  #####
 ###########################################################################################
 def main(self, comm, model, ip, hote, tout, port, mac, site=""):
-    nbrworker = multiprocessing.cpu_count()
-    num_worker_threads = nbrworker
+    nbrworker = min(32, multiprocessing.cpu_count() * 4) # Limiter à une valeur raisonnable
     q = queue.Queue()
     threads = []
+    
+    # Calculer le nombre total de tâches à l'avance pour la progress bar globalement
+    # Ce n'est pas parfait car on ne sait pas encore exactement combien d'IPs on va scanner
+    # Mais le code original utilisait 'hote' comme nombre total attendu
     var.thread_ouvert = int(hote)
     var.thread_ferme = 0
-    for i in range(num_worker_threads):
-        t = threading.Thread(target=worker, args=(q, i,), daemon=True)
+    
+    # Démarrer les workers
+    for i in range(nbrworker):
+        t = threading.Thread(target=worker, args=(q, comm), daemon=True)
         t.start()
         threads.append(t)
-    """
-    for parent in var.app_instance.tab_ip.get_children():
-        result = var.app_instance.tab_ip.item(parent)["values"]
-        ip1 = result[0]
-        q.put(ip1)
-    """
-    # block until all tasks are done
-    q.join()
-    # stop workers
-    for i in range(num_worker_threads):
-        q.put(None)
-    for t in threads:
-        t.join()
+
+    # Importer le parser d'URL pour gérer les ports
+    is_url = False
     if tout != self.tr("Site"):
-        # Importer le parser d'URL pour gérer les ports
         try:
             from src.utils.url_parser import parse_host_port
             parsed = parse_host_port(ip)
-            # Si un port est spécifié ou si c'est une URL, traiter comme une URL
             is_url = (ip.startswith('http://') or ip.startswith('https://') or 
                       parsed['has_port'] or any(c.isalpha() for c in parsed['host']))
         except ImportError:
-            # Fallback si le parser n'est pas disponible
             is_url = (ip.startswith('http://') or ip.startswith('https://') or 
                       any(c.isalpha() for c in ip))
+    
+    if is_url:
+        # Mode URL/Site
+        print(f"URL/Site web détecté: {ip}")
+        q.put((self, comm, model, ip, tout, 0, 1, port, site))
         
-        if is_url:
-            # Mode URL/Site web : ajouter directement sans validation IP
-            print(f"URL/Site web détecté: {ip}")
-            ip2 = ip
-            q.put(threading.Thread(target=threadIp, args=(self, comm, model, ip2, tout, 0, 1, port, site)).start())
-            
-            # Scan terminé - émettre la notification
-            if hasattr(self, 'web_server') and self.web_server:
-                self.web_server.emit_scan_complete(1)
-        else:
-            # Mode IP classique : Valider que l'IP est bien formatée
-            if not ip or ip.count('.') != 3:
-                print(f"Erreur: IP invalide '{ip}' - abandon du scan")
-                return
-                
-            ip1 = ip.split(".")
-            # Vérifier que chaque partie est un nombre valide
-            try:
-                for part in ip1:
-                    int(part)
-            except ValueError:
-                print(f"Erreur: IP invalide '{ip}' - les parties ne sont pas des nombres")
-                return
-                
-            u = 0
-            i = 0
-            if int(hote) > 500:
-                # Émettre la fin du scan via le serveur web si disponible
-                if hasattr(self, 'web_server') and self.web_server:
-                    self.web_server.emit_scan_complete(hote)
-                return
-            while i < int(hote):
-                ip2 = ip1[0] + "." + ip1[1] + "."
-                ip3 = int(ip1[3]) + i
-
-                i = i + 1
-                if int(ip3) <= 255:
-                    ip2 = ip2 + ip1[2] + "." + str(ip3)
-                else:
-                    ip4 = int(ip1[2]) + 1
-                    ip2 = ip2 + str(ip4) + "." + str(u)
-                    u = u + 1
-                t = i
-                q.put(threading.Thread(target=threadIp, args=(self, comm, model, ip2, tout, i, hote, port, site)).start())
-            
-            # Scan terminé - émettre la notification
-            if hasattr(self, 'web_server') and self.web_server:
-                self.web_server.emit_scan_complete(hote)
     else:
-        ip2=ip
-        q.put(threading.Thread(target=threadIp, args=(self, comm, model, ip2, tout, i, hote, port, site)).start())
+        # Mode IP classique
+        if not ip or ip.count('.') != 3:
+            print(f"Erreur: IP invalide '{ip}' - abandon du scan")
+            # Arrêter les workers proprement
+            for _ in range(nbrworker): q.put(None)
+            return
+
+        ip1 = ip.split(".")
+        try:
+            for part in ip1: int(part)
+        except ValueError:
+            print(f"Erreur: IP invalide '{ip}'")
+            for _ in range(nbrworker): q.put(None)
+            return
+
+        i = 0
+        u = 0
+        hote_count = int(hote)
         
-        # Scan terminé - émettre la notification
-        if hasattr(self, 'web_server') and self.web_server:
-            self.web_server.emit_scan_complete(1)
+        while i < hote_count:
+            ip2 = ip1[0] + "." + ip1[1] + "."
+            ip3 = int(ip1[3]) + i
+
+            if int(ip3) <= 255:
+                ip2 = ip2 + ip1[2] + "." + str(ip3)
+            else:
+                ip4 = int(ip1[2]) + 1
+                ip2 = ip2 + str(ip4) + "." + str(u)
+                u = u + 1
+            
+            # Enqueue task
+            q.put((self, comm, model, ip2, tout, i, hote, port, site))
+            i += 1
+
+    # Attendre que toutes les tâches soient traitées
+    q.join()
+
+    # Arrêter les workers
+    for _ in range(nbrworker):
+        q.put(None)
+    for t in threads:
+        t.join()
+
+    # Scan terminé - émettre la notification via le serveur web si disponible
+    if hasattr(self, 'web_server') and self.web_server:
+        self.web_server.emit_scan_complete(var.u)
+

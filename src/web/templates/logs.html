@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs Système - Ping ü</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a1a;
+            color: #ccc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: #252526;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 18px;
+            color: #eee;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #2d2d30;
+            border: 1px solid #444;
+            color: #ddd;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+
+        }
+
+        button:hover {
+            background: #3e3e42;
+        }
+
+        button.primary {
+            background: #007acc;
+            border-color: #007acc;
+            color: white;
+        }
+
+        button.primary:hover {
+            background: #0062a3;
+        }
+
+        button.danger {
+            background: #d13a3a;
+            border-color: #d13a3a;
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #log-container {
+            flex: 1;
+            overflow-y: auto;
+            background: #1e1e1e;
+            padding: 15px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            scroll-behavior: smooth;
+        }
+
+        .log-entry {
+            display: block;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 1px 0;
+        }
+
+        /* Coloration syntaxique de base */
+        .level-info {
+            color: #4ec9b0;
+        }
+
+        .level-warn {
+            color: #dcdcaa;
+        }
+
+        .level-error {
+            color: #f44747;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .level-debug {
+            color: #808080;
+        }
+
+        .timestamp {
+            color: #569cd6;
+            margin-right: 8px;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #aaa;
+            font-size: 20px;
+            display: none;
+        }
+
+        .active-dot {
+            height: 8px;
+            width: 8px;
+            background-color: #4cd964;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.4;
+            }
+        }
+
+        .status-bar {
+            background: #007acc;
+            color: white;
+            font-size: 12px;
+            padding: 4px 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1><span class="active-dot"></span> Logs du Serveur</h1>
+        <div class="actions">
+            <button onclick="window.location.href='/admin'">← Retour Admin</button>
+            <span style="border-left: 1px solid #444; margin: 0 5px;"></span>
+            <button onclick="setPolling(!pollingActive)" id="btn-pause">Pause</button>
+            <button onclick="refreshLogs()" class="primary">Actualiser</button>
+            <button onclick="clearLogs()" class="danger">Effacer</button>
+            <label style="font-size: 12px; align-self: center; margin-left:10px;">
+                <input type="checkbox" id="auto-scroll" checked> Auto-scroll
+            </label>
+        </div>
+    </header>
+
+    <div id="log-container">
+        <!-- Logs injected here -->
+    </div>
+    <div class="loading" id="loading">Chargement...</div>
+
+    <div class="status-bar">
+        <span id="status-lines">0 lignes</span>
+        <span id="last-update">Dernière maj: --:--:--</span>
+    </div>
+
+    <script>
+        const container = document.getElementById('log-container');
+        const autoScrollCheck = document.getElementById('auto-scroll');
+        let pollingActive = true;
+        let lastContent = '';
+
+        function formatLine(line) {
+            // Tentative simple de détecter le niveau de log
+            let className = '';
+            if (line.includes('ERROR') || line.includes('CRITICAL')) className = 'level-error';
+            else if (line.includes('WARNING')) className = 'level-warn';
+            else if (line.includes('DEBUG')) className = 'level-debug';
+            else className = 'level-info';
+
+            // Highlight timestamp (simple regex for YYYY-MM-DD HH:MM:SS)
+            line = line.replace(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})/, '<span class="timestamp">$1</span>');
+
+            return `<span class="log-entry ${className}">${line}</span>`;
+        }
+
+        async function fetchLogs() {
+            try {
+                // Fetch last 1000 lines for responsiveness
+                const res = await fetch('/api/logs/content?lines=1000');
+                const data = await res.json();
+
+                if (data.success) {
+                    // Avoid redraw if content identical
+                    if (data.logs !== lastContent) {
+                        lastContent = data.logs;
+                        const lines = data.logs.split('\n');
+
+                        // Render
+                        container.innerHTML = lines.map(line => line.trim() ? formatLine(line) : '').join('');
+
+                        document.getElementById('status-lines').textContent = `${lines.length} lignes affichées (max 1000)`;
+
+                        if (autoScrollCheck.checked) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    }
+
+                    document.getElementById('last-update').textContent = `Dernière maj: ${new Date().toLocaleTimeString()}`;
+                }
+            } catch (e) {
+                console.error("Erreur logs:", e);
+                //document.getElementById('status-lines').textContent = "Erreur de connexion";
+            }
+        }
+
+        function refreshLogs() {
+            document.getElementById('loading').style.display = 'block';
+            fetchLogs().then(() => {
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+
+        async function clearLogs() {
+            if (!confirm('Voulez-vous vraiment effacer tous les logs ?')) return;
+
+            try {
+                const res = await fetch('/api/logs/clear', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    lastContent = '';
+                    container.innerHTML = '';
+                    refreshLogs();
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            } catch (e) {
+                alert('Erreur réseau');
+            }
+        }
+
+        function setPolling(active) {
+            pollingActive = active;
+            const btn = document.getElementById('btn-pause');
+            if (active) {
+                btn.textContent = "Pause";
+                btn.classList.remove('danger');
+            } else {
+                btn.textContent = "Reprendre";
+                btn.classList.add('danger'); // Visual cue for paused state
+            }
+        }
+
+        // Initial load
+        refreshLogs();
+
+        // Polling logs every 2 seconds
+        setInterval(() => {
+            if (pollingActive) fetchLogs();
+        }, 2000);
+
+    </script>
+</body>
+
+</html>

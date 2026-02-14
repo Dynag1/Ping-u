@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques - Ping ü</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e4e4e4;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(45, 55, 72, 0.95);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            color: #e4e4e4;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e4e4e4;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Stats Overview Cards */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(45, 55, 72, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-card .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        .stat-card.danger .value {
+            color: #ef4444;
+        }
+
+        .stat-card.warning .value {
+            color: #f59e0b;
+        }
+
+        .stat-card.success .value {
+            color: #10b981;
+        }
+
+        .stat-card.info .value {
+            color: #3b82f6;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(45, 55, 72, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-size: 18px;
+            color: #e4e4e4;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #a0aec0;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+            color: #e4e4e4;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-disconnect {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-reconnect {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-count {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Duration formatting */
+        .duration {
+            font-family: monospace;
+            color: #6b7280;
+        }
+
+        /* Collapsible sections */
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .collapsible-header:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .collapsible-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .collapse-icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+            font-size: 0.8em;
+        }
+
+        .collapse-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .collapsible-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+            opacity: 1;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding: 0 !important;
+        }
+
+        /* Host select */
+        .host-select-container {
+            margin-bottom: 20px;
+        }
+
+        .host-select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.2);
+            color: #e4e4e4;
+        }
+
+        .host-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .host-select option {
+            background: #1a1a2e;
+            color: #e4e4e4;
+        }
+
+        /* Period filter */
+        .period-filter {
+            display: flex;
+            gap: 8px;
+        }
+
+        .period-btn {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .period-btn:hover,
+        .period-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60%,
+            100% {
+                content: '...';
+            }
+        }
+
+        /* Host details modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 15px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .host-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .host-stat {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .host-stat .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .host-stat .label {
+            font-size: 12px;
+            color: #a0aec0;
+        }
+
+        /* Timeline Chart */
+        .timeline-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #a0aec0;
+        }
+
+        .timeline-chart {
+            position: relative;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline-bar {
+            position: absolute;
+            height: 100%;
+            background: #ef4444;
+            opacity: 0.8;
+            min-width: 2px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .timeline-bar:hover {
+            opacity: 1;
+            z-index: 10;
+            transform: scaleY(1.1);
+        }
+
+        /* Tooltip for timeline bars */
+        .timeline-tooltip {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 1000;
+            font-weight: 600;
+            display: none;
+        }
+
+        .timeline-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #1f2937;
+        }
+
+        .timeline-bar:hover .timeline-tooltip {
+            display: block;
+        }
+
+        .timeline-legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #a0aec0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-color.online {
+            background: #10b981;
+        }
+
+        .legend-color.offline {
+            background: #ef4444;
+        }
+
+        /* Full width card */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <a href="/" style="text-decoration: none; display: inline-flex; align-items: center;">
+                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Ping ü"
+                        style="height: 40px; width: auto; vertical-align: middle; cursor: pointer;">
+                </a>
+                <span>Statistiques de Connexion</span>
+            </h1>
+            <div class="header-actions">
+                <select id="site-filter" class="host-select" style="width: auto; min-width: 150px; margin-right: 10px;">
+                    <option value="">Tous les sites</option>
+                </select>
+                <div class="period-filter">
+                    <button class="period-btn" data-days="1">24h</button>
+                    <button class="period-btn" data-days="7">7 jours</button>
+                    <button class="period-btn active" data-days="30">30 jours</button>
+                </div>
+                <button id="reset-stats-btn" class="btn btn-danger"
+                    style="background: linear-gradient(135deg, #f97e7e, #d63031); margin-right: 10px;">🗑️
+                    Réinitialiser</button>
+                <a href="/admin" class="btn btn-secondary">⚙️ Admin</a>
+                <a href="/" class="btn btn-secondary">📊 Monitoring</a>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-overview" id="stats-overview">
+            <div class="stat-card danger">
+                <div class="icon">🔻</div>
+                <div class="value" id="stat-total-disconnects">-</div>
+                <div class="label">Déconnexions</div>
+            </div>
+            <div class="stat-card success">
+                <div class="icon">🔺</div>
+                <div class="value" id="stat-total-reconnects">-</div>
+                <div class="label">Reconnexions</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="icon">⏱️</div>
+                <div class="value" id="stat-avg-duration">-</div>
+                <div class="label">Durée moyenne</div>
+            </div>
+            <div class="stat-card info">
+                <div class="icon">🖥️</div>
+                <div class="value" id="stat-unique-hosts">-</div>
+                <div class="label">Hôtes affectés</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <div class="card collapsible-card">
+                <div class="card-header collapsible-header" onclick="toggleSection('top-disconnectors')">
+                    <h2><span class="collapse-icon" id="top-disconnectors-icon">▶</span> 🏆 Top Déconnecteurs</h2>
+                </div>
+                <div class="card-body collapsible-content collapsed" id="top-disconnectors-content">
+                    <table class="data-table" id="top-disconnectors-table">
+                        <thead>
+                            <tr>
+                                <th>Hôte</th>
+                                <th>IP</th>
+                                <th>Site</th>
+                                <th>Déco.</th>
+                                <th>Temps total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-disconnectors-body">
+                            <tr>
+                                <td colspan="5" class="loading">Chargement</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card collapsible-card">
+                <div class="card-header collapsible-header" onclick="toggleSection('recent-events')">
+                    <h2><span class="collapse-icon" id="recent-events-icon">▶</span> 📋 Événements Récents</h2>
+                </div>
+                <div class="card-body collapsible-content collapsed" id="recent-events-content">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Hôte</th>
+                                <th>Site</th>
+                                <th>Type</th>
+                                <th>Durée</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-events-body">
+                            <tr>
+                                <td colspan="5" class="loading">Chargement</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Host Details -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <h2>🔍 Détail par Hôte</h2>
+                </div>
+                <div class="card-body">
+                    <div class="host-select-container">
+                        <select class="host-select" id="host-select">
+                            <option value="">-- Sélectionner un hôte --</option>
+                        </select>
+                    </div>
+                    <div id="host-details">
+                        <div class="empty-state">
+                            <div class="icon">🖥️</div>
+                            <p>Sélectionnez un hôte pour voir ses statistiques</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Host Detail Modal -->
+    <div class="modal-overlay" id="host-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Détail de l'hôte</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Tooltip for Timeline -->
+    <div id="global-tooltip" style="
+        position: fixed;
+        display: none;
+        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        z-index: 10000;
+        pointer-events: none;
+    "></div>
+
+    <script>
+        // State
+        let currentPeriod = 30;
+        let currentSiteFilter = '';
+        let allSites = new Set();
+
+        // Toggle collapsible sections
+        function toggleSection(sectionId) {
+            const content = document.getElementById(`${sectionId}-content`);
+            const icon = document.getElementById(`${sectionId}-icon`);
+
+            if (content && icon) {
+                content.classList.toggle('collapsed');
+                icon.classList.toggle('expanded');
+            }
+        }
+
+        // Utility functions
+        function formatDuration(seconds) {
+            if (!seconds || seconds === 0) return '-';
+            if (seconds < 60) return `${seconds}s`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${mins}m`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // API calls
+        async function fetchStats() {
+            try {
+                const response = await fetch(`/api/stats/overview?days=${currentPeriod}`);
+                const data = await response.json();
+                if (data.success) {
+                    updateOverview(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch stats:', err);
+            }
+        }
+
+        async function fetchTopDisconnectors() {
+            try {
+                const response = await fetch(`/api/stats/top?days=${currentPeriod}&limit=10`);
+                const data = await response.json();
+                if (data.success) {
+                    updateTopDisconnectors(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch top:', err);
+            }
+        }
+
+        async function fetchRecentEvents() {
+            try {
+                const response = await fetch('/api/stats/events?limit=15');
+                const data = await response.json();
+                if (data.success) {
+                    updateRecentEvents(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch events:', err);
+            }
+        }
+
+        async function fetchHosts() {
+            console.log('[DEBUG] fetchHosts called');
+            try {
+                const response = await fetch('/api/stats/hosts');
+                console.log('[DEBUG] fetchHosts response received');
+                const data = await response.json();
+                console.log('[DEBUG] fetchHosts data:', data);
+
+                if (data.success) {
+                    console.log('[DEBUG] Calling populateHostSelect with', data.data.length, 'hosts');
+                    populateHostSelect(data.data);
+                    // Après avoir peuplé le select, vérifier s'il y a un paramètre IP dans l'URL
+                    console.log('[DEBUG] About to call checkAndSelectHostFromURL');
+                    checkAndSelectHostFromURL();
+                } else {
+                    console.error('[DEBUG] fetchHosts failed:', data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch hosts:', err);
+            }
+        }
+
+        function checkAndSelectHostFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ipParam = urlParams.get('ip');
+
+            console.log('[DEBUG] checkAndSelectHostFromURL called, ipParam:', ipParam);
+
+            if (ipParam) {
+                const hostSelect = document.getElementById('host-select');
+                console.log('[DEBUG] hostSelect found:', hostSelect !== null);
+
+                if (hostSelect) {
+                    console.log('[DEBUG] hostSelect options count:', hostSelect.options.length);
+
+                    // Chercher l'option correspondant à l'IP
+                    let found = false;
+                    for (let option of hostSelect.options) {
+                        if (option.value === ipParam) {
+                            option.selected = true;
+                            found = true;
+                            console.log('[DEBUG] IP found and selected:', ipParam);
+
+                            // Déclencher l'affichage des détails
+                            console.log('[DEBUG] Calling fetchHostStats with IP:', ipParam);
+                            fetchHostStats(ipParam);
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        console.warn('[DEBUG] IP not found in options:', ipParam);
+                    }
+                }
+            }
+        }
+
+        async function fetchHostStats(ip) {
+            try {
+                const response = await fetch(`/api/stats/host/${encodeURIComponent(ip)}?days=${currentPeriod}`);
+                const data = await response.json();
+                if (data.success) {
+                    displayHostDetails(data.data);
+                }
+            } catch (err) {
+                console.error('Erreur fetch host stats:', err);
+            }
+        }
+
+        // UI updates
+        function updateOverview(stats) {
+            document.getElementById('stat-total-disconnects').textContent = stats.total_disconnects || 0;
+            document.getElementById('stat-total-reconnects').textContent = stats.total_reconnects || 0;
+            document.getElementById('stat-avg-duration').textContent = formatDuration(stats.avg_duration_seconds);
+            document.getElementById('stat-unique-hosts').textContent = stats.unique_hosts_affected || 0;
+        }
+
+        function updateTopDisconnectors(hosts) {
+            const tbody = document.getElementById('top-disconnectors-body');
+
+            // Appliquer le filtre par site
+            let filteredHosts = hosts;
+            if (currentSiteFilter) {
+                filteredHosts = hosts.filter(h => h.site === currentSiteFilter);
+            }
+
+            // Collecter les sites pour le filtre
+            hosts.forEach(h => { if (h.site) allSites.add(h.site); });
+            updateSiteFilter();
+
+            if (!filteredHosts || filteredHosts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="icon">✅</div>Aucune déconnexion enregistrée</td></tr>';
+                return;
+            }
+
+            // Trier par site puis par nombre de déconnexions
+            filteredHosts.sort((a, b) => {
+                if (a.site !== b.site) return (a.site || '').localeCompare(b.site || '');
+                return b.disconnect_count - a.disconnect_count;
+            });
+
+            tbody.innerHTML = filteredHosts.map(host => `
+                <tr onclick="showHostModal('${host.ip}')" style="cursor: pointer;">
+                    <td><strong>${host.hostname || host.ip}</strong></td>
+                    <td><code>${host.ip}</code></td>
+                    <td>${host.site || '-'}</td>
+                    <td><span class="badge badge-count">${host.disconnect_count}</span></td>
+                    <td class="duration">${formatDuration(host.total_downtime_seconds)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateRecentEvents(events) {
+            const tbody = document.getElementById('recent-events-body');
+
+            // Appliquer le filtre par site
+            let filteredEvents = events;
+            if (currentSiteFilter) {
+                filteredEvents = events.filter(e => e.site === currentSiteFilter);
+            }
+
+            // Collecter les sites pour le filtre
+            events.forEach(e => { if (e.site) allSites.add(e.site); });
+            updateSiteFilter();
+
+            if (!filteredEvents || filteredEvents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="icon">📭</div>Aucun événement</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredEvents.map(event => {
+                const isDisconnect = event.event_type === 'disconnect';
+                return `
+                    <tr>
+                        <td>${formatDate(event.timestamp)}</td>
+                        <td><strong>${event.hostname || event.ip}</strong></td>
+                        <td>${event.site || '-'}</td>
+                        <td><span class="badge ${isDisconnect ? 'badge-disconnect' : 'badge-reconnect'}">${isDisconnect ? '🔻 Déco' : '🔺 Reco'}</span></td>
+                        <td class="duration">${event.duration_seconds ? formatDuration(event.duration_seconds) : '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateSiteFilter() {
+            const select = document.getElementById('site-filter');
+            const currentValue = select.value;
+            const sites = Array.from(allSites).sort();
+
+            // Ne mettre à jour que si de nouveaux sites sont disponibles
+            const existingOptions = Array.from(select.options).slice(1).map(o => o.value);
+            if (JSON.stringify(sites) === JSON.stringify(existingOptions)) return;
+
+            select.innerHTML = '<option value="">Tous les sites</option>';
+            sites.forEach(site => {
+                const option = document.createElement('option');
+                option.value = site;
+                option.textContent = site;
+                select.appendChild(option);
+            });
+            select.value = currentValue;
+        }
+
+        function populateHostSelect(hosts) {
+            const select = document.getElementById('host-select');
+            select.innerHTML = '<option value="">-- Sélectionner un hôte --</option>';
+
+            // Sort: offline hosts first (more urgent), then by hostname
+            const sortedHosts = [...hosts].sort((a, b) => {
+                // Offline hosts come first
+                if (a.status !== b.status) {
+                    return a.status === 'offline' ? -1 : 1;
+                }
+                // Then sort alphabetically by hostname
+                return (a.hostname || a.ip).localeCompare(b.hostname || b.ip);
+            });
+
+            sortedHosts.forEach(host => {
+                const option = document.createElement('option');
+                option.value = host.ip;
+                // Add status indicator: green dot for online, red dot for offline
+                const statusIcon = host.status === 'online' ? '🟢' : '🔴';
+                option.textContent = `${statusIcon} ${host.hostname || host.ip} (${host.ip})`;
+                select.appendChild(option);
+            });
+        }
+
+        function displayHostDetails(data) {
+            const container = document.getElementById('host-details');
+            const stats = data.stats;
+            const events = data.events;
+
+            if (!stats.exists) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Aucune donnée pour cet hôte</p></div>';
+                return;
+            }
+
+            let html = `
+                <div class="host-stats-grid">
+                    <div class="host-stat">
+                        <div class="value">${stats.disconnect_count || 0}</div>
+                        <div class="label">Déconnexions</div>
+                    </div>
+                    <div class="host-stat">
+                        <div class="value">${formatDuration(stats.avg_duration_seconds)}</div>
+                        <div class="label">Durée moyenne</div>
+                    </div>
+                    <div class="host-stat">
+                        <div class="value">${formatDuration(stats.total_downtime_seconds)}</div>
+                        <div class="label">Temps total HS</div>
+                    </div>
+                </div>
+            `;
+
+            // Générer la timeline graphique
+            if (events && events.length > 0) {
+                html += renderTimeline(events, currentPeriod);
+            }
+
+            if (events && events.length > 0) {
+                html += `
+                    <h4 style="margin: 20px 0 15px; color: #e4e4e4;">Historique des événements</h4>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Durée</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${events.slice(0, 20).map(event => `
+                                <tr>
+                                    <td>${formatDate(event.timestamp)}</td>
+                                    <td><span class="badge ${event.event_type === 'disconnect' ? 'badge-disconnect' : 'badge-reconnect'}">${event.event_type === 'disconnect' ? '🔻 Déconnexion' : '🔺 Reconnexion'}</span></td>
+                                    <td class="duration">${event.duration_seconds ? formatDuration(event.duration_seconds) : '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            container.innerHTML = html;
+
+            // Setup tooltips for timeline bars after rendering
+            setupTimelineTooltips();
+        }
+
+        function setupTimelineTooltips() {
+            const tooltip = document.getElementById('global-tooltip');
+            const timeline = document.querySelector('.timeline-chart');
+
+            if (!timeline) return;
+
+            const bars = timeline.querySelectorAll('.timeline-bar');
+
+            bars.forEach(bar => {
+                bar.addEventListener('mouseenter', (e) => {
+                    const duration = bar.dataset.duration;
+                    const date = bar.dataset.date;
+                    const time = bar.dataset.time;
+
+                    tooltip.innerHTML = `⏱️ Durée: <strong>${duration}</strong> | 🔻 ${date} ${time}`;
+                    tooltip.style.display = 'block';
+
+                    // Position tooltip above the bar
+                    const rect = bar.getBoundingClientRect();
+                    tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+                    tooltip.style.top = (rect.top - 10) + 'px';
+                    tooltip.style.transform = 'translate(-50%, -100%)';
+                });
+
+                bar.addEventListener('mouseleave', () => {
+                    tooltip.style.display = 'none';
+                });
+
+                bar.addEventListener('mousemove', (e) => {
+                    // Update position as mouse moves (for better UX)
+                    const rect = bar.getBoundingClientRect();
+                    tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+                    tooltip.style.top = (rect.top - 10) + 'px';
+                });
+            });
+        }
+
+
+        function renderTimeline(events, days) {
+            const now = new Date();
+            const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+            const totalMs = now.getTime() - startDate.getTime();
+
+            // Formater les dates pour l'affichage
+            const startStr = startDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+            const endStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+
+            // Construire les barres de déconnexion
+            let bars = '';
+
+            // Grouper les événements par paires disconnect/reconnect
+            const sortedEvents = [...events].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            for (let i = 0; i < sortedEvents.length; i++) {
+                const event = sortedEvents[i];
+                if (event.event_type === 'disconnect') {
+                    const disconnectTime = new Date(event.timestamp);
+
+                    // Chercher la reconnexion suivante
+                    let reconnectTime = now; // Par défaut, considérer encore offline
+                    for (let j = i + 1; j < sortedEvents.length; j++) {
+                        if (sortedEvents[j].event_type === 'reconnect') {
+                            reconnectTime = new Date(sortedEvents[j].timestamp);
+                            break;
+                        }
+                    }
+
+                    // Calculer la position et largeur en pourcentage
+                    const startPos = Math.max(0, (disconnectTime.getTime() - startDate.getTime()) / totalMs * 100);
+                    const endPos = Math.min(100, (reconnectTime.getTime() - startDate.getTime()) / totalMs * 100);
+                    const width = Math.max(0.5, endPos - startPos);
+
+                    if (startPos < 100 && endPos > 0) {
+                        const duration = Math.round((reconnectTime - disconnectTime) / 1000);
+                        const durationStr = formatDuration(duration);
+                        const startTimeStr = disconnectTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                        const startDateStr = disconnectTime.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+
+                        // Tooltip avec durée mise en évidence
+                        const tooltip = `⏱️ Durée: ${durationStr} | 🔻 ${startDateStr} ${startTimeStr}`;
+                        bars += `<div class="timeline-bar" style="left: ${startPos}%; width: ${width}%;" data-duration="${durationStr}" data-date="${startDateStr}" data-time="${startTimeStr}"></div>`;
+                    }
+                }
+            }
+
+            return `
+                <div class="timeline-container">
+                    <h4 style="margin-bottom: 10px; color: #e4e4e4;">📈 Timeline des déconnexions</h4>
+                    <div class="timeline-header">
+                        <span>${startStr}</span>
+                        <span>${endStr}</span>
+                    </div>
+                    <div class="timeline-chart">
+                        ${bars || '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#10b981;font-size:12px;">✓ Aucune déconnexion</div>'}
+                    </div>
+                    <div class="timeline-legend">
+                        <div class="legend-item"><div class="legend-color online"></div> En ligne</div>
+                        <div class="legend-item"><div class="legend-color offline"></div> Hors ligne</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showHostModal(ip) {
+            fetchHostStats(ip).then(() => {
+                // Modal display handled by displayHostDetails for inline view
+            });
+            document.getElementById('host-select').value = ip;
+        }
+
+        function closeModal() {
+            document.getElementById('host-modal').classList.remove('active');
+        }
+
+        // Event listeners
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPeriod = parseInt(btn.dataset.days);
+                refreshAll();
+
+                // Recharger les détails de l'hôte si un hôte est sélectionné
+                const hostSelect = document.getElementById('host-select');
+                if (hostSelect && hostSelect.value) {
+                    fetchHostStats(hostSelect.value);
+                }
+            });
+        });
+
+        document.getElementById('host-select').addEventListener('change', (e) => {
+            if (e.target.value) {
+                fetchHostStats(e.target.value);
+            }
+        });
+
+        document.getElementById('site-filter').addEventListener('change', (e) => {
+            currentSiteFilter = e.target.value;
+            refreshAll();
+        });
+
+        // Refresh all data
+        function refreshAll() {
+            fetchStats();
+            fetchTopDisconnectors();
+            fetchRecentEvents();
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+            fetchHosts(); // fetchHosts appellera automatiquement checkAndSelectHostFromURL
+
+            // Auto-refresh every 30 seconds - INCLUDING host list
+            setInterval(() => {
+                refreshAll();
+                fetchHosts(); // Refresh host list to get updated status
+            }, 30000);
+
+            // Reset statistics button
+            document.getElementById('reset-stats-btn').addEventListener('click', async () => {
+                if (!confirm('⚠️ Êtes-vous sûr de vouloir réinitialiser TOUTES les statistiques ?\n\nCette action est irréversible et supprimera tous les événements de déconnexion/reconnexion enregistrés.')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/stats/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        alert(`✅ Statistiques réinitialisées avec succès!\n\n${result.deleted_count} événements supprimés.`);
+                        // Rafraîchir toutes les données
+                        refreshAll();
+                        fetchHosts();
+                    } else {
+                        alert(`❌ Erreur: ${result.error}`);
+                    }
+                } catch (error) {
+                    console.error('Erreur réinitialisation:', error);
+                    alert('❌ Erreur lors de la réinitialisation des statistiques');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
