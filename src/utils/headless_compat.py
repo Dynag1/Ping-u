@@ -9,7 +9,7 @@ import threading
 
 # Détecter si on doit forcer le mode headless
 # Détecter si on doit forcer le mode headless
-force_headless = "--headless" in sys.argv or "-headless" in sys.argv or "--start" in sys.argv or "-start" in sys.argv or "HEADLESS" in os.environ
+force_headless = "--headless" in sys.argv or "-headless" in sys.argv or "--start" in sys.argv or "-start" in sys.argv or "--stop" in sys.argv or "-stop" in sys.argv or "--reset-admin" in sys.argv or "HEADLESS" in os.environ
 
 GUI_AVAILABLE = False
 if not force_headless:
@@ -112,6 +112,23 @@ if not GUI_AVAILABLE:
         def run(self):
             """À surcharger dans les sous-classes"""
             pass
+
+        def wait(self, msecs=None):
+            """Attend la fin du thread (timeout en ms)"""
+            if self._thread and self._thread.is_alive():
+                timeout = None
+                if msecs is not None:
+                    timeout = msecs / 1000.0
+                
+                self._thread.join(timeout)
+                return not self._thread.is_alive()
+            return True
+        
+        def isRunning(self):
+            return self._running and self._thread and self._thread.is_alive()
+        
+        def quit(self):
+            self._running = False
 
     class QStandardItem:
         def __init__(self, text=""):

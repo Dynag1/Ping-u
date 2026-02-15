@@ -134,7 +134,8 @@ def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
                 comm.addRow.emit(i, ip, nom, mac, str(port_val), site, True)
                 var.u += 1
             else:
-                # Hôte DOWN
+                # Hôte DOWN ignored in 'Alive' mode
+                print(f"Hôte {ip} ignoré car DOWN (scan type={tout})")
                 pass
                 
     var.thread_ferme += 1

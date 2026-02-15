@@ -195,10 +195,14 @@ class WebServer(QObject):
         """Callback appelé quand un périphérique est découvert"""
         try:
             # Envoyer via WebSocket
-            self.socketio.emit('scan_device_found', device.to_dict())
+            device_dict = device.to_dict()
+            logger.info(f"EMITTING scan_device_found: {device_dict}")
+            # Specifier namespace='/' est important car on est hors contexte requête (thread)
+            self.socketio.emit('scan_device_found', device_dict, namespace='/')
             logger.info(f"Périphérique découvert: {device.ip} ({device.device_type.value})")
         except Exception as e:
             logger.error(f"Erreur callback device discovered: {e}", exc_info=True)
+
     
     def _setup_socketio(self):
         """Configuration des événements Socket.IO"""

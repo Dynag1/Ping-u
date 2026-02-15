@@ -143,7 +143,8 @@ class MainController:
     def on_monitoring_result(self, ip, latency, color, temperature, bandwidth):
         """Gère le résultat d'un ping ou d'une mise à jour SNMP et met à jour le modèle Qt."""
         try:
-            from src.utils.headless_compat import QStandardItem, QBrush, QColor, Qt, AppColors
+            from src.utils.headless_compat import QStandardItem, QBrush, QColor, Qt
+            from src.utils.colors import AppColors
             
             model = self.main_window.treeIpModel
             row = self.find_item_row(ip)
