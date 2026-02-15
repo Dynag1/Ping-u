@@ -133,6 +133,9 @@ def threadIp(self, comm, model, ip, tout, i, hote, port, site=""):
                 port_val = fct_ip.check_port(ip, port)
                 comm.addRow.emit(i, ip, nom, mac, str(port_val), site, True)
                 var.u += 1
+            else:
+                # Hôte DOWN
+                pass
                 
     var.thread_ferme += 1
     # Eviter division par zéro

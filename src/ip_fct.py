@@ -86,6 +86,7 @@ def check_port(host,port):
 def check_socket(host, port):
         try:
                 with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+                        sock.settimeout(2.0)  # Timeout de 2 secondes
                         if sock.connect_ex((host, int(port))) == 0:
                                 return str(port)+"/"
                         else:
@@ -112,8 +113,9 @@ def ipPing(ip):
                         )
                 else:
                         # Linux/Mac: ping -c 1 -W 1 (1 paquet, timeout 1s)
+                        # Utilisation de "ping" directement (dans le PATH) au lieu de chemin absolu
                         result = subprocess.run(
-                                ["/bin/ping", "-c", "1", "-W", "1", ip],
+                                ["ping", "-c", "1", "-W", "1", ip],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 timeout=2

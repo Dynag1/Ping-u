@@ -1176,9 +1176,66 @@ def run_headless_mode():
             self.treeIpModel.appendRow(items)
             site_info = f" [Site: {site}]" if site else ""
             logger.info(f"Hôte ajouté: {ip} ({nom}){site_info}")
+            
+            # Synchroniser le HostManager
+            # C'est CRUCIAL car le modèle ne notifie pas automatiquement le HostManager en mode headless
+            try:
+                self._sync_host_manager()
+            except AttributeError:
+                logger.error("Erreur: méthode _sync_host_manager introuvable dans HeadlessWindow")
+            
             # Diffuser la mise à jour aux clients web
             if self.web_server:
                 self.web_server.broadcast_update()
+
+        def _sync_host_manager(self):
+            """Synchronise le HostManager avec le modèle de données"""
+            try:
+                hosts = []
+                model = self.treeIpModel
+                for row in range(model.rowCount()):
+                    try:
+                        # Récupération sécurisée des items
+                        def get_text(col):
+                            item = model.item(row, col)
+                            return item.text() if item else ""
+                        
+                        # Reconstruction de l'objet hôte (même structure que MainWindow._sync_host_manager)
+                        ip = get_text(1)
+                        if not ip: continue
+                        
+                        host = {
+                            'id': get_text(0),
+                            'ip': ip,
+                            'nom': get_text(2),
+                            'mac': get_text(3),
+                            'port': get_text(4),
+                            'latence': get_text(5),
+                            'temp': get_text(6),
+                            'suivi': get_text(7),
+                            'site': get_text(8),
+                            'commentaire': get_text(9),
+                            'excl': get_text(10),
+                            'status': 'offline' # Status initial
+                        }
+                        
+                        # Déterminer status initial simple
+                        latence = host['latence']
+                        if latence == "HS" or host['excl'] == 'x':
+                            host['status'] = 'offline'
+                        else:
+                            host['status'] = 'online'
+                            
+                        hosts.append(host)
+                    except Exception:
+                        pass
+                
+                if self.host_manager:
+                    self.host_manager.set_hosts(hosts)
+                    logger.debug(f"HostManager synchronisé: {len(hosts)} hôtes")
+                
+            except Exception as e:
+                logger.error(f"Erreur synchro HostManager: {e}")
     
     window = HeadlessWindow()
     
@@ -1206,6 +1263,9 @@ def run_headless_mode():
         
         if hosts_loaded:
             logger.info(f"{window.treeIpModel.rowCount()} hôte(s) chargé(s)")
+            # SYNC INITIALE
+            window._sync_host_manager()
+            
     except Exception as e:
         logger.warning(f"Impossible de charger les données: {e}")
     

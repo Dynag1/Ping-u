@@ -1,7 +1,10 @@
 import socket
 import threading
 import time
-from src.Snyf import fct
+import logging
+
+logger = logging.getLogger(__name__)
+
 peripheriques_vus = set()
 lock = threading.Lock()
 
@@ -57,7 +60,7 @@ def send(type, comm, dialog):
         port = 161
         dest_ip = '255.255.255.255'
     else:
-        print("Type inconnu")
+        logger.warning(f"Type de scan inconnu: {type}")
         return
 
     # Création du socket UDP
@@ -85,7 +88,7 @@ def send(type, comm, dialog):
         # Utilisation de ('', 0) pour éviter les conflits de port et recevoir sur toutes les interfaces
         s.bind(('', 0))
     except Exception as e:
-        print(f"Erreur de bind sur le port {port}: {e}")
+        logger.error(f"Erreur de bind sur le port {port}: {e}")
         s.close()
         return
 
@@ -112,21 +115,22 @@ def send(type, comm, dialog):
                     modele = donn[1] if len(donn) > 1 else ""
                     mac = donn[2] if len(donn) > 2 else ""
                 except Exception as e:
-                    print(f"Erreur de parsing: {e}")
+                    logger.debug(f"Erreur de parsing ({type}): {e}")
                     nom = modele = mac = ""
                 # Vérification des doublons
                 identifiant = mac if mac else ip
                 with lock:
                     if identifiant not in peripheriques_vus:
                         peripheriques_vus.add(identifiant)
-                        print(f"DEBUG: Scanner found: IP={ip} ID={identifiant} Data={donn}")
+                        peripheriques_vus.add(identifiant)
+                        logger.info(f"Découverte {type}: IP={ip} ID={identifiant} (Nom: {nom}, Modèle: {modele})")
                         comm.addRow.emit("", ip, modele, mac, nom, "", "")
         finally:
             s.close()
 
     # Fonction d'envoi et de lancement du thread de réception
     def start(dialog, comm):
-        print(f"Envoi du message {type} vers {dest_ip}:{port}")
+        # logger.debug(f"Envoi du message {type} vers {dest_ip}:{port}")
         try:
             # Envoi répété pour UPnP (SSDP)
             if type == 'upnp':
@@ -135,8 +139,16 @@ def send(type, comm, dialog):
                     time.sleep(0.1)
             else:
                 s.sendto(msg, (dest_ip, port))
+            logger.info(f"Message de découverte {type} envoyé à {dest_ip}:{port}")
+        except OSError as e:
+            if e.errno == 101: # Network is unreachable
+                 logger.error(f"Erreur réseau (Unreachable): Impossible d'envoyer vers {dest_ip}. Vérifiez les routes ou l'interface.")
+            else:
+                 logger.error(f"Erreur d'envoi {type}: {e}")
+            s.close()
+            return
         except Exception as e:
-            print(f"Erreur d'envoi: {e}")
+            logger.error(f"Erreur d'envoi {type}: {e}")
             s.close()
             return
         t1 = threading.Thread(target=resp, args=(s, dialog, comm, type))
