@@ -8,6 +8,7 @@ import os
 import threading
 
 # Détecter si on doit forcer le mode headless
+# Détecter si on doit forcer le mode headless
 force_headless = "--headless" in sys.argv or "-headless" in sys.argv or "--start" in sys.argv or "-start" in sys.argv or "HEADLESS" in os.environ
 
 GUI_AVAILABLE = False
@@ -20,6 +21,21 @@ if not force_headless:
         GUI_AVAILABLE = True
     except (ImportError, Exception):
         GUI_AVAILABLE = False
+
+# Toujours importer AppColors pour le re-exporter
+try:
+    from src.utils.colors import AppColors
+except ImportError:
+    class AppColors:
+        VERT_PALE = "#d4edda"
+        JAUNE_PALE = "#fff3cd"
+        ORANGE_PALE = "#ffe5b4"
+        ROUGE_PALE = "#f8d7da"
+        NOIR_GRIS = "#343a40"
+        BG_FRAME_HAUT = "#f8f9fa"
+        BG_FRAME_MID = "#e9ecef"
+        BG_FRAME_DROIT = "#dee2e6"
+        BG_BUT = "#ffffff"
 
 if not GUI_AVAILABLE:
     class QAbstractItemModel: pass
@@ -169,6 +185,20 @@ if not GUI_AVAILABLE:
             if 0 <= row < len(self._rows):
                 del self._rows[row]
                 self.rowsRemoved.emit(None, row, row)
+
+        def removeRows(self, row, count, parent=None):
+            if 0 <= row < len(self._rows):
+                end = min(row + count, len(self._rows))
+                del self._rows[row:end]
+                self.rowsRemoved.emit(None, row, row + count - 1)
+            return True
+
+        def removeColumns(self, col, count, parent=None):
+            for row in self._rows:
+                if 0 <= col < len(row):
+                    end = min(col + count, len(row))
+                    del row[col:end]
+            return True
 
         def index(self, row, col, parent=None):
             return QModelIndex(row, col)
