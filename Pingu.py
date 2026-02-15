@@ -29,6 +29,7 @@ from src.controllers.settings_controller import SettingsController
 from src.controllers.main_controller import MainController
 from src.controllers.main_controller import MainController
 from src.web_server import WebServer
+from src.web_auth import web_auth
 from src.host_manager import HostManager
        
 import threading
@@ -1467,8 +1468,31 @@ Mode headless:
                        help='Alias pour --start (mode headless)')
     parser.add_argument('-stop', '--stop', action='store_true',
                        help='Arrêter l\'application en mode headless')
+    parser.add_argument('--reset-admin', action='store_true',
+                       help='Réinitialiser le mot de passe administrateur (admin/admin123)')
     
     args = parser.parse_args()
+    
+    if args.reset_admin:
+        print("🔄 Réinitialisation du compte administrateur...")
+        try:
+            # Essayer de mettre à jour le mot de passe
+            success, msg = web_auth.update_user_password('admin', 'admin123')
+            
+            # Si l'utilisateur n'existe pas, on le crée
+            if not success and "non trouvé" in msg:
+                 print("⚠️  Compte admin introuvable, création...")
+                 success, msg = web_auth.add_user('admin', 'admin123', 'admin')
+            
+            if success:
+                print("✅ Succès: Compte 'admin' réinitialisé.")
+                print("👉 Identifiant: admin")
+                print("👉 Mot de passe: admin123")
+            else:
+                 print(f"❌ Erreur: {msg}")
+        except Exception as e:
+            print(f"❌ Erreur inattendue: {e}")
+        sys.exit(0)
     
     if args.stop:
         # Mode stop
