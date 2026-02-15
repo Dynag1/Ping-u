@@ -77,8 +77,17 @@ except ImportError:
             self._foreground = None
             self._data = {}
             self._flags = 0
+            self._model = None
+            self._row = -1
+            self._col = -1
+            
         def text(self): return self._text
-        def setText(self, text): self._text = str(text)
+        def setText(self, text): 
+            self._text = str(text)
+            if self._model:
+                idx = self._model.index(self._row, self._col)
+                self._model.dataChanged.emit(idx, idx, [])
+                
         def setBackground(self, brush): self._background = brush
         def background(self): return self._background
         def setForeground(self, brush): self._foreground = brush
@@ -103,8 +112,17 @@ except ImportError:
         def rowCount(self, parent=None): return len(self._rows)
         def columnCount(self, parent=None): return self._column_count
         
+        def _link_item(self, row, col, item):
+            if hasattr(item, '_model'):
+                item._model = self
+                item._row = row
+                item._col = col
+
         def appendRow(self, items):
             row = len(self._rows)
+            for col, item in enumerate(items):
+                self._link_item(row, col, item)
+            
             self._rows.append(items)
             if items and len(items) > self._column_count:
                 self._column_count = len(items)
@@ -114,6 +132,7 @@ except ImportError:
         def removeRows(self, start, count):
             if count <= 0: return
             del self._rows[start:start+count]
+            # On devrait logiquement délier les items mais c'est pas critique ici
             self.rowsRemoved.emit(QModelIndex(), start, start + count - 1)
 
         def removeRow(self, row):
@@ -144,6 +163,8 @@ except ImportError:
                 self._rows.append([])
             while len(self._rows[row]) <= col:
                 self._rows[row].append(QStandardItem(""))
+            
+            self._link_item(row, col, item)
             self._rows[row][col] = item
             
             # Emission signal (topLeft, bottomRight, roles)
@@ -151,13 +172,19 @@ except ImportError:
             self.dataChanged.emit(idx, idx, [])
 
         def index(self, row, col, parent=None):
-            return QModelIndex()
+            return QModelIndex(row, col)
             
         def data(self, index, role=0):
             return None
 
     class QPoint: pass
-    class QModelIndex: pass
+    class QModelIndex:
+        def __init__(self, row=-1, col=-1):
+            self._row = row
+            self._col = col
+        def row(self): return self._row
+        def column(self): return self._col
+        def isValid(self): return self._row >= 0 and self._col >= 0
     class QColor:
         def __init__(self, *args): pass
     class QBrush:

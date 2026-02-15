@@ -830,7 +830,10 @@ class MainWindow(QMainWindow):
                     logger.error(f"Erreur lecture ligne {row}: {row_e}")
             
             self.host_manager.set_hosts(hosts)
-            # logger.debug(f"HostManager synchronisé : {len(hosts)} hôtes")
+            
+            # Diffuser la mise à jour aux clients web après synchronisation
+            if getattr(self, 'web_server_running', False) and hasattr(self, 'web_server') and self.web_server:
+                self.web_server.broadcast_update()
             
         except Exception as e:
             logger.error(f"Erreur synchronisation HostManager: {e}", exc_info=True)
@@ -914,19 +917,16 @@ class MainWindow(QMainWindow):
                 logger.error(f"Erreur affichage URLs: {e}", exc_info=True)
     
     def on_treeview_data_changed(self, topLeft, bottomRight, roles):
-        """Appelé quand des données du treeview changent"""
-        if self.web_server_running and self.web_server:
-            self.web_server.broadcast_update()
+        """Appelé quand des données du treeview changent (optionnel car géré par _on_data_changed_sync)"""
+        pass # La mise à jour est déjà gérée par _on_data_changed_sync -> _sync_host_manager -> broadcast_update
     
     def on_treeview_rows_inserted(self, parent, first, last):
         """Appelé quand des lignes sont ajoutées au treeview"""
-        if self.web_server_running and self.web_server:
-            self.web_server.broadcast_update()
+        pass # Géré par _sync_host_manager -> broadcast_update
     
     def on_treeview_rows_removed(self, parent, first, last):
         """Appelé quand des lignes sont supprimées du treeview"""
-        if self.web_server_running and self.web_server:
-            self.web_server.broadcast_update()
+        pass # Géré par _sync_host_manager -> broadcast_update
 
 
 def run_headless_mode():
@@ -1001,82 +1001,15 @@ def run_headless_mode():
     except Exception as e:
         logger.warning(f"Erreur chargement sites: {e}")
     
-    # Créer une application Qt minimale (nécessaire pour QStandardItemModel)
+    # Utiliser les classes de compatibilité déjà importées
     if GUI_AVAILABLE:
         app = QApplication.instance()
         if app is None:
             app = QApplication(sys.argv)
     else:
-        # En mode headless pur sans PySide6, on crée un objet dummy
-        # qui doit avoir une méthode exec() pour la boucle principale
-        class DummyApp:
-            def __init__(self):
-                self._running = True
-            def exec(self):
-                while self._running:
-                    time.sleep(1)
-                return 0
-            def quit(self):
-                self._running = False
-        app = DummyApp()
+        # En mode headless pur sans PySide6, on utilise l'objet dummy de headless_compat
+        app = QApplication(sys.argv)
     
-    # Créer un modèle de données minimal
-    if GUI_AVAILABLE:
-        from PySide6.QtGui import QStandardItemModel
-    else:
-        # Modèle complet pour headless
-        class QStandardItemModel:
-            def __init__(self):
-                self._rows = []
-                self._headers = []
-                self._column_count = 10
-            def rowCount(self, parent=None): return len(self._rows)
-            def columnCount(self, parent=None): return self._column_count
-            def setHorizontalHeaderLabels(self, labels): 
-                # Créer des items pour les headers
-                class HeaderItem:
-                    def __init__(self, text): self._text = str(text)
-                    def text(self): return self._text
-                self._headers = [HeaderItem(l) for l in labels]
-                self._column_count = len(labels)
-            def horizontalHeaderItem(self, col):
-                if 0 <= col < len(self._headers):
-                    return self._headers[col]
-                class DummyItem:
-                    def text(self): return ""
-                return DummyItem()
-            def appendRow(self, items): 
-                self._rows.append(items)
-                if len(items) > self._column_count:
-                    self._column_count = len(items)
-            def removeRow(self, row): 
-                if 0 <= row < len(self._rows):
-                    self._rows.pop(row)
-            def removeRows(self, row, count):
-                if 0 <= row < len(self._rows):
-                    del self._rows[row:row+count]
-            def clear(self):
-                self._rows = []
-            def item(self, row, col):
-                if 0 <= row < len(self._rows) and 0 <= col < len(self._rows[row]):
-                    return self._rows[row][col]
-                return None
-            def setItem(self, row, col, item):
-                if 0 <= row < len(self._rows):
-                    while len(self._rows[row]) <= col:
-                        self._rows[row].append(None)
-                    self._rows[row][col] = item
-            def index(self, row, col):
-                # Retourne un objet simple qui peut stocker row/col
-                class Index:
-                    def __init__(self, r, c, m): self._r, self._c, self._m = r, c, m
-                    def data(self, role=None): 
-                        item = self._m.item(self._r, self._c)
-                        return item.text() if item else ""
-                return Index(row, col, self)
-            def data(self, index, role=None):
-                return index.data(role)
-
     treeIpModel = QStandardItemModel()
     treeIpModel.setHorizontalHeaderLabels([
         "Id", "IP", "Nom", "Mac", "Port", "Latence", "Temp", "Suivi", "site", "Commentaire", "Excl"
@@ -1118,12 +1051,39 @@ def run_headless_mode():
             
             self.ui = PseudoUI()
             
+            # Connexion des signaux du modèle pour la synchronisation automatique
+            # C'est ce qui permet au HostManager et au WebServer de se mettre à jour
+            # quand on supprime ou modifie un hôte via l'API.
+            self.treeIpModel.dataChanged.connect(self._on_treeview_data_changed)
+            self.treeIpModel.rowsInserted.connect(self._on_treeview_rows_inserted)
+            self.treeIpModel.rowsRemoved.connect(self._on_treeview_rows_removed)
+            
             # Créer le contrôleur APRÈS self.ui
             self.main_controller = MainController(self)
         
         def tr(self, text):
             """Traduction minimale pour compatibilité Qt"""
             return text
+            
+        def _on_treeview_data_changed(self, topLeft, bottomRight, roles):
+            """Déclenché quand une cellule est modifiée (ex: nom, site)"""
+            # Synchro HostManager si colonnes de config modifiées
+            # La synchro déclenchera le broadcast_update
+            col = topLeft.column()
+            if col in [1, 2, 8, 9, 10]: # IP, Nom, Site, Commentaire, Excl
+                self._sync_host_manager()
+            else:
+                # Si modification mineure (latence/temp), diffuser quand même ? 
+                # En mode headless, fcy_ping le fait déjà en fin de cycle.
+                pass
+
+        def _on_treeview_rows_inserted(self, parent, first, last):
+            """Déclenché quand des lignes sont ajoutées (ex: scan)"""
+            self._sync_host_manager()
+
+        def _on_treeview_rows_removed(self, parent, first, last):
+            """Déclenché quand des lignes sont supprimées"""
+            self._sync_host_manager()
         
         def show_popup(self, message):
             """Afficher popup - mode headless log seulement"""
@@ -1137,29 +1097,7 @@ def run_headless_mode():
             
         def on_add_row(self, i, ip, nom, mac, port, site, is_ok):
             """Ajoute une ligne au modèle (appelé par le thread de scan)"""
-            if GUI_AVAILABLE:
-                from PySide6.QtGui import QStandardItem
-            else:
-                # Version Headless - classe complète
-                class QStandardItem:
-                    def __init__(self, text=""): 
-                        self._text = str(text) if text else ""
-                        self._background = None
-                        self._foreground = None
-                        self._data = {}
-                        self._flags = 0
-                    def text(self): return self._text
-                    def setText(self, text): self._text = str(text)
-                    def setBackground(self, brush): self._background = brush
-                    def background(self): return self._background
-                    def setForeground(self, brush): self._foreground = brush
-                    def foreground(self): return self._foreground
-                    def setData(self, data, role=0): self._data[role] = data
-                    def data(self, role=0): return self._data.get(role)
-                    def flags(self): return self._flags
-                    def setFlags(self, flags): self._flags = flags
-                    def setEditable(self, editable): pass
-            
+            # On utilise QStandardItem importé au début du fichier
             items = [
                 QStandardItem(str(i)),    # 0: Id
                 QStandardItem(ip),        # 1: IP
@@ -1176,17 +1114,7 @@ def run_headless_mode():
             self.treeIpModel.appendRow(items)
             site_info = f" [Site: {site}]" if site else ""
             logger.info(f"Hôte ajouté: {ip} ({nom}){site_info}")
-            
-            # Synchroniser le HostManager
-            # C'est CRUCIAL car le modèle ne notifie pas automatiquement le HostManager en mode headless
-            try:
-                self._sync_host_manager()
-            except AttributeError:
-                logger.error("Erreur: méthode _sync_host_manager introuvable dans HeadlessWindow")
-            
-            # Diffuser la mise à jour aux clients web
-            if self.web_server:
-                self.web_server.broadcast_update()
+            # La synchronisation est maintenant gérée par les signaux connectés dans __init__
 
         def _sync_host_manager(self):
             """Synchronise le HostManager avec le modèle de données"""
@@ -1233,6 +1161,10 @@ def run_headless_mode():
                 if self.host_manager:
                     self.host_manager.set_hosts(hosts)
                     logger.debug(f"HostManager synchronisé: {len(hosts)} hôtes")
+                
+                # Broadcaster après synchronisation
+                if self.web_server_running and self.web_server:
+                    self.web_server.broadcast_update()
                 
             except Exception as e:
                 logger.error(f"Erreur synchro HostManager: {e}")

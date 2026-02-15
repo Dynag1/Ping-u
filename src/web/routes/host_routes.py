@@ -116,3 +116,60 @@ def remove_duplicates():
     except Exception as e:
         logger.error(f"Erreur remove_duplicates: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@host_bp.route('/api/set_host_site', methods=['POST'])
+@WebAuth.login_required
+def set_host_site():
+    try:
+        data = request.get_json()
+        ip = data.get('ip')
+        site = data.get('site')
+        
+        main_window = current_app.config['MAIN_WINDOW']
+        model = main_window.treeIpModel
+        
+        found = False
+        for row in range(model.rowCount()):
+            item_ip = model.item(row, 1)
+            if item_ip and item_ip.text() == ip:
+                model.setItem(row, 8, QStandardItem(site))
+                found = True
+                break
+        
+        if found:
+            current_app.config['WEB_SERVER'].broadcast_update()
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
+            
+    except Exception as e:
+        logger.error(f"Erreur set_host_site: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@host_bp.route('/api/set_multiple_hosts_site', methods=['POST'])
+@WebAuth.login_required
+def set_multiple_hosts_site():
+    try:
+        data = request.get_json()
+        ips = data.get('ips', [])
+        site = data.get('site', '')
+        
+        main_window = current_app.config['MAIN_WINDOW']
+        model = main_window.treeIpModel
+        
+        updated_count = 0
+        for row in range(model.rowCount()):
+            item_ip = model.item(row, 1)
+            if item_ip and item_ip.text() in ips:
+                model.setItem(row, 8, QStandardItem(site))
+                updated_count += 1
+        
+        if updated_count > 0:
+            current_app.config['WEB_SERVER'].broadcast_update()
+            return jsonify({'success': True, 'message': f'{updated_count} hôtes mis à jour'})
+        else:
+            return jsonify({'success': False, 'error': 'Aucun hôte trouvé'}), 404
+            
+    except Exception as e:
+        logger.error(f"Erreur set_multiple_hosts_site: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
