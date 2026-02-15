@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from src.web_auth import WebAuth
 from src.utils.logger import get_logger
-from src import db, var, lic
+from src import db, var, lic, secure_config
 
 logger = get_logger(__name__)
 
@@ -38,7 +38,8 @@ def get_settings():
             },
             'telegram': {
                 'configured': bool(smtp_params[5] if len(smtp_params) > 5 else ''),
-                'chatid': smtp_params[5] if len(smtp_params) > 5 else ''
+                'chatid': smtp_params[5] if len(smtp_params) > 5 else '',
+                'token': secure_config.get_telegram_token()
             },
             'general': {
                 'site': general_params[0],
@@ -75,12 +76,20 @@ def save_telegram():
     try:
         data = request.get_json()
         chatid = data.get('chatid', '')
+        token = data.get('token', '')
+
+        # Save to database/config
         current_params = db.lire_param_mail() or ['', '', '', '', '', '']
+        
+        # Save chat ID in legacy db param for compatibility
         variables = [
             current_params[0], current_params[1], current_params[2],
             current_params[3], current_params[4], chatid
         ]
         db.save_param_mail(variables)
+        
+        # Save token and chat ID in secure config
+        secure_config.save_telegram_config(token=token, chat_ids=[chatid])
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"Erreur save_telegram: {e}", exc_info=True)

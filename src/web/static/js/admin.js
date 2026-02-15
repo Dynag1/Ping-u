@@ -1517,6 +1517,24 @@ document.getElementById('file-import-csv').addEventListener('change', async func
     e.target.value = '';
 });
 
+
+document.getElementById('btn-save-monitoring').addEventListener('click', async function () {
+    const settings = {
+        delai: parseInt(document.getElementById('input-delai').value) || 10,
+        nb_hs: parseInt(document.getElementById('input-nb-hs').value) || 3
+    };
+
+    try {
+        const result = await apiCall('/api/save_settings', 'POST', settings);
+        showNotification(t('monitoring_saved') || 'Configuration sauvegardée', 'success');
+        // Update monitoring status visually if running
+        if (monitoringRunning) {
+            updateMonitoringStatus(true); // Re-trigger update to reflect new delay?
+            // Actually backend handles logic. Visually nothing changes drastically.
+        }
+    } catch (error) { }
+});
+
 document.getElementById('btn-save-settings').addEventListener('click', async function () {
     const settings = {
         delai: parseInt(document.getElementById('input-delai').value) || 10,
@@ -2609,7 +2627,7 @@ function switchSection(section) {
     });
 
     // Gérer l'affichage de la section demandée
-    const inlineSections = ['accueil', 'sites', 'dashboards', 'backup', 'users', 'notifications'];
+    const inlineSections = ['accueil', 'sites', 'dashboards', 'backup', 'notifications'];
 
     if (inlineSections.includes(section)) {
         const target = document.getElementById('content-' + section);
@@ -2631,6 +2649,9 @@ function switchSection(section) {
             modal.style.display = 'flex';
             setTimeout(() => {
                 modal.classList.add('active');
+                if (section === 'advanced') {
+                    loadUsersList();
+                }
             }, 10);
 
             // Pour les modaux, on garde la section de fond visible (accueil par défaut si rien n'est actif)
