@@ -5,34 +5,19 @@ import subprocess
 import signal
 import time
 
-# Détecter si on doit forcer le mode headless avant d'essayer d'importer PySide6
-force_headless = "--headless" in sys.argv or "-headless" in sys.argv or "--start" in sys.argv or "-start" in sys.argv or "HEADLESS" in os.environ
-
-GUI_AVAILABLE = False
-if not force_headless:
+from src.utils.headless_compat import (
+    GUI_AVAILABLE, QObject, Signal, QMainWindow, QSortFilterProxyModel,
+    QPoint, QModelIndex, QColor, QAction, QActionGroup, QStandardItem,
+    QStandardItemModel, QEvent, Qt, Ui_MainWindow, QApplication, QTranslator,
+    QCoreApplication, QLocale, QIcon, QHeaderView, QAbstractItemView, QFileDialog,
+    QMenu, QMessageBox, QWidget, QBrush
+)
+qt_themes = None
+if GUI_AVAILABLE:
     try:
-        from PySide6.QtWidgets import (QApplication, QMainWindow, QHeaderView, 
-                                     QAbstractItemView, QMessageBox, QMenu, QFileDialog, QWidget)
-        from PySide6.QtGui import (QStandardItemModel, QStandardItem, QColor, QAction, 
-                                 QActionGroup, QIcon, QBrush)
-        from PySide6.QtCore import (QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, 
-                                  QEvent, QCoreApplication, QLocale, QSortFilterProxyModel)
-        from src.ui_mainwindow import Ui_MainWindow
         import qt_themes
-        GUI_AVAILABLE = True
-    except (ImportError, Exception):
-        # Si PySide6 est absent ou si on ne peut pas l'utiliser (ex: pas de Display)
-        GUI_AVAILABLE = False
-
-if not GUI_AVAILABLE:
-    from src.utils.headless_compat import (
-        GUI_AVAILABLE, QObject, Signal, QMainWindow, QSortFilterProxyModel,
-        QPoint, QModelIndex, QColor, QAction, QActionGroup, QStandardItem,
-        QStandardItemModel, QEvent, Qt, Ui_MainWindow, QApplication, QTranslator,
-        QCoreApplication, QLocale, QIcon, QHeaderView, QAbstractItemView, QFileDialog,
-        QMenu, QMessageBox, QWidget, QBrush
-    )
-    qt_themes = None
+    except ImportError:
+        pass
 
 
 from src import var, fct, lic, threadAjIp, db, sFenetre
@@ -1335,17 +1320,13 @@ def run_headless_mode():
     
     # Timer pour vérifier le fichier stop toutes les secondes
     if GUI_AVAILABLE:
-        from PySide6.QtCore import QTimer
         stop_check_timer = QTimer()
         stop_check_timer.timeout.connect(check_stop_file)
         stop_check_timer.start(1000)
     else:
-        # En mode headless sans GUI, la boucle principale est dans app.exec() (DummyApp)
-        # On doit modifier DummyApp pour vérifier le fichier stop
-        # Note: On utilise une approche plus propre en surchargeant la méthode de l'instance
-        original_exec = app.exec
+        # En mode headless sans GUI, la boucle principale est dans app.exec()
         def looped_exec():
-            while app._running:
+            while getattr(app, '_running', True):
                 check_stop_file()
                 time.sleep(1)
             return 0

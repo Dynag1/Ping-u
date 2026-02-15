@@ -5,14 +5,7 @@ from src.utils.paths import AppPaths
 import os.path
 from datetime import datetime, time
 
-# Conditional Import for Qt Constants if needed, largely for 'lireNom'
-try:
-    from PySide6.QtCore import Qt
-    GUI_AVAILABLE = True
-except ImportError:
-    GUI_AVAILABLE = False
-    class Qt:
-        DisplayRole = 0
+from src.utils.headless_compat import Qt, GUI_AVAILABLE
 
 logger = get_logger(__name__)
 

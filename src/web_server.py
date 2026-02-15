@@ -46,12 +46,7 @@ except ImportError:
     def url_for(*args, **kwargs): return ""
     def CORS(*args, **kwargs): pass
 
-try:
-    from PySide6.QtCore import QObject, Signal
-    from PySide6.QtGui import QStandardItem
-    GUI_AVAILABLE = True
-except ImportError:
-    from src.utils.headless_compat import GUI_AVAILABLE, QObject, Signal, QStandardItem
+from src.utils.headless_compat import GUI_AVAILABLE, QObject, Signal, QStandardItem
 
 
 from src.utils.logger import get_logger

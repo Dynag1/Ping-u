@@ -21,15 +21,10 @@ except ImportError as e:
     HTTP_CHECKER_AVAILABLE = False
 
 # Imports PySide6 conditionnels
-try:
-    from PySide6.QtCore import QObject, Signal, QThread, Qt, QTimer
-    from PySide6.QtGui import QStandardItem, QColor, QBrush
-    GUI_AVAILABLE = True
-except ImportError:
-    from src.utils.headless_compat import (
-        GUI_AVAILABLE, QObject, Signal, QThread, Qt, QTimer,
-        QStandardItem, QColor, QBrush
-    )
+from src.utils.headless_compat import (
+    GUI_AVAILABLE, QObject, Signal, QThread, Qt, QTimer,
+    QStandardItem, QColor, QBrush
+)
 
 
 logger = get_logger(__name__)

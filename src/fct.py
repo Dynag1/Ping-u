@@ -10,18 +10,10 @@ import sys
 from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
-# Imports conditionnels pour éviter les erreurs en headless
-try:
-    from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
-    from PySide6.QtCore import QAbstractItemModel, QModelIndex
-    from PySide6.QtGui import QStandardItem, QStandardItemModel
-    GUI_AVAILABLE = True
-except ImportError:
-    from src.utils.headless_compat import (
-        QFileDialog, QMessageBox, QWidget, QModelIndex, 
-        QStandardItem, QStandardItemModel, GUI_AVAILABLE
-    )
-    class QAbstractItemModel: pass
+from src.utils.headless_compat import (
+    QFileDialog, QMessageBox, QWidget, QModelIndex, QAbstractItemModel,
+    QStandardItem, QStandardItemModel, GUI_AVAILABLE
+)
 
 
 def getIp(self):

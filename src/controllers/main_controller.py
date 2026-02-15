@@ -24,13 +24,16 @@ class MainController:
         try:
             logger.info(f"Démarrage monitoring (délai: {var.delais}s, seuil HS: {var.nbrHs})")
             
-            # Sécurité : Vérifier si le monitoring est déjà en cours
             if self.ping_manager is not None or var.tourne:
                 self.stop_monitoring()
                 try:
-                    from PySide6.QtCore import QThread
-                    QThread.msleep(500)
-                except ImportError:
+                    from src.utils.headless_compat import QThread
+                    if QThread.__name__ == 'QThread' and hasattr(QThread, 'msleep'):
+                        QThread.msleep(500)
+                    else:
+                        import time
+                        time.sleep(0.5)
+                except:
                     import time
                     time.sleep(0.5)
             
@@ -96,11 +99,8 @@ class MainController:
             if self.ping_manager:
                 self.ping_manager.stop()
                 # Traiter les événements Qt en attente pour laisser le temps au thread de se terminer
-                try:
-                    from PySide6.QtCore import QCoreApplication
-                    QCoreApplication.processEvents()
-                except ImportError:
-                    pass
+                from src.utils.headless_compat import QCoreApplication
+                QCoreApplication.processEvents()
                 self.ping_manager = None
             
             logger.info("Tous les services de monitoring arrêtés")
@@ -143,13 +143,7 @@ class MainController:
     def on_monitoring_result(self, ip, latency, color, temperature, bandwidth):
         """Gère le résultat d'un ping ou d'une mise à jour SNMP et met à jour le modèle Qt."""
         try:
-            try:
-                from PySide6.QtGui import QStandardItem, QBrush, QColor
-                from PySide6.QtCore import Qt
-            except ImportError:
-                from src.utils.headless_compat import QStandardItem, QBrush, QColor, Qt
-            
-            from src.utils.colors import AppColors
+            from src.utils.headless_compat import QStandardItem, QBrush, QColor, Qt, AppColors
             
             model = self.main_window.treeIpModel
             row = self.find_item_row(ip)

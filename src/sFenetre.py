@@ -1,27 +1,10 @@
 import sqlite3
 from src import var, db, lic
 
-try:
-    from PySide6.QtGui import QStandardItemModel, QStandardItem
-    from PySide6.QtCore import Qt, QSortFilterProxyModel, Signal, QObject
-    from PySide6.QtWidgets import QHeaderView, QDialog, QTimeEdit, QMessageBox
-    GUI_AVAILABLE = True
-except ImportError:
-    GUI_AVAILABLE = False
-    # Classes factices minimales
-    class QStandardItemModel: pass
-    class QStandardItem: pass
-    class Qt: pass
-    class QSortFilterProxyModel: pass
-    class Signal: 
-        def __init__(self, *args): pass
-        def emit(self, *args): pass
-    class QObject: pass
-    class QHeaderView: pass
-    class QDialog: pass
-    class QTimeEdit: pass
-    class QMessageBox: 
-        Accepted = 1
+from src.utils.headless_compat import (
+    QStandardItemModel, QStandardItem, Qt, QSortFilterProxyModel, Signal, QObject,
+    QHeaderView, QDialog, QTimeEdit, QMessageBox, GUI_AVAILABLE
+)
 
 
 """*******************************
