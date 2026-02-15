@@ -151,13 +151,19 @@ except ImportError:
             self.dataChanged.emit(idx, idx, [])
 
         def index(self, row, col, parent=None):
-            return QModelIndex()
+            return QModelIndex(row, col)
             
         def data(self, index, role=0):
             return None
 
     class QPoint: pass
-    class QModelIndex: pass
+    class QModelIndex:
+        def __init__(self, row=-1, col=-1):
+            self._row = row
+            self._col = col
+        def row(self): return self._row
+        def column(self): return self._col
+        def isValid(self): return self._row >= 0 and self._col >= 0
     class QColor:
         def __init__(self, *args): pass
     class QBrush:
