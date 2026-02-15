@@ -830,7 +830,10 @@ class MainWindow(QMainWindow):
                     logger.error(f"Erreur lecture ligne {row}: {row_e}")
             
             self.host_manager.set_hosts(hosts)
-            # logger.debug(f"HostManager synchronisé : {len(hosts)} hôtes")
+            
+            # Diffuser la mise à jour aux clients web après synchronisation
+            if getattr(self, 'web_server_running', False) and hasattr(self, 'web_server') and self.web_server:
+                self.web_server.broadcast_update()
             
         except Exception as e:
             logger.error(f"Erreur synchronisation HostManager: {e}", exc_info=True)
@@ -914,19 +917,16 @@ class MainWindow(QMainWindow):
                 logger.error(f"Erreur affichage URLs: {e}", exc_info=True)
     
     def on_treeview_data_changed(self, topLeft, bottomRight, roles):
-        """Appelé quand des données du treeview changent"""
-        if self.web_server_running and self.web_server:
-            self.web_server.broadcast_update()
+        """Appelé quand des données du treeview changent (optionnel car géré par _on_data_changed_sync)"""
+        pass # La mise à jour est déjà gérée par _on_data_changed_sync -> _sync_host_manager -> broadcast_update
     
     def on_treeview_rows_inserted(self, parent, first, last):
         """Appelé quand des lignes sont ajoutées au treeview"""
-        if self.web_server_running and self.web_server:
-            self.web_server.broadcast_update()
+        pass # Géré par _sync_host_manager -> broadcast_update
     
     def on_treeview_rows_removed(self, parent, first, last):
         """Appelé quand des lignes sont supprimées du treeview"""
-        if self.web_server_running and self.web_server:
-            self.web_server.broadcast_update()
+        pass # Géré par _sync_host_manager -> broadcast_update
 
 
 def run_headless_mode():
@@ -1067,24 +1067,22 @@ def run_headless_mode():
             
         def _on_treeview_data_changed(self, topLeft, bottomRight, roles):
             """Déclenché quand une cellule est modifiée (ex: nom, site)"""
-            if self.web_server_running and self.web_server:
-                self.web_server.broadcast_update()
-            
             # Synchro HostManager si colonnes de config modifiées
+            # La synchro déclenchera le broadcast_update
             col = topLeft.column()
             if col in [1, 2, 8, 9, 10]: # IP, Nom, Site, Commentaire, Excl
                 self._sync_host_manager()
+            else:
+                # Si modification mineure (latence/temp), diffuser quand même ? 
+                # En mode headless, fcy_ping le fait déjà en fin de cycle.
+                pass
 
         def _on_treeview_rows_inserted(self, parent, first, last):
             """Déclenché quand des lignes sont ajoutées (ex: scan)"""
-            if self.web_server_running and self.web_server:
-                self.web_server.broadcast_update()
             self._sync_host_manager()
 
         def _on_treeview_rows_removed(self, parent, first, last):
             """Déclenché quand des lignes sont supprimées"""
-            if self.web_server_running and self.web_server:
-                self.web_server.broadcast_update()
             self._sync_host_manager()
         
         def show_popup(self, message):
@@ -1163,6 +1161,10 @@ def run_headless_mode():
                 if self.host_manager:
                     self.host_manager.set_hosts(hosts)
                     logger.debug(f"HostManager synchronisé: {len(hosts)} hôtes")
+                
+                # Broadcaster après synchronisation
+                if self.web_server_running and self.web_server:
+                    self.web_server.broadcast_update()
                 
             except Exception as e:
                 logger.error(f"Erreur synchro HostManager: {e}")

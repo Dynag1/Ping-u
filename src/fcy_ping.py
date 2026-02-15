@@ -428,8 +428,8 @@ class PingManager(QObject):
         """Appelé quand une vague de pings est terminée."""
         self.finished_signal.emit()
         
-        # Broadcaster les mises à jour aux clients web (mode headless)
-        if not GUI_AVAILABLE and self.main_window:
+        # Broadcaster les mises à jour aux clients web (mode headless ou si serveur web actif)
+        if self.main_window:
             try:
                 if hasattr(self.main_window, 'web_server') and self.main_window.web_server:
                     self.main_window.web_server.broadcast_update()
