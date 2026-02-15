@@ -1760,10 +1760,30 @@ async function deleteHost(ip) {
     }
 
     try {
-        const result = await apiCall('/api/delete_host', 'POST', { ip });
-        showNotification(`${t('host_deleted')}: ${ip}`, 'info');
-        socket.emit('request_update');
-    } catch (error) { }
+        const response = await fetch('/api/delete_host', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ip: ip })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                showNotification(`${t('host_deleted')}: ${ip}`, 'info');
+                // Force update immediately
+                socket.emit('request_update');
+            } else {
+                showNotification(data.error || 'Erreur lors de la suppression', 'error');
+            }
+        } else {
+            showNotification('Erreur serveur (' + response.status + ')', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur deleteHost:', error);
+        showNotification('Erreur réseau', 'error');
+    }
 }
 
 async function excludeHost(ip, isExcluded) {
@@ -1801,24 +1821,38 @@ async function saveHostName(ip) {
     const newName = inputEl.value.trim();
 
     try {
-        const result = await apiCall('/api/update_host_name', 'POST', {
-            ip: ip,
-            name: newName
+        const response = await fetch('/api/update_host_name', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ip: ip, name: newName })
         });
 
-        if (displayEl) {
-            displayEl.textContent = newName || '-';
-            displayEl.style.display = 'inline-block';
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                if (displayEl) {
+                    displayEl.textContent = newName || '-';
+                    displayEl.style.display = 'inline-block';
+                }
+                if (inputEl) {
+                    inputEl.style.display = 'none';
+                }
+                showNotification(`${t('name_modified')} ${ip}`, 'success');
+                // Force update immediately
+                socket.emit('request_update');
+            } else {
+                showNotification(data.error || 'Erreur mise à jour nom', 'error');
+            }
+        } else {
+            showNotification('Erreur serveur (' + response.status + ')', 'error');
         }
-        if (inputEl) {
-            inputEl.style.display = 'none';
-        }
-
-        showNotification(`${t('name_modified')} ${ip}`, 'success');
-        socket.emit('request_update');
     } catch (error) {
+        console.error('Erreur saveHostName:', error);
         if (displayEl) displayEl.style.display = 'inline-block';
         if (inputEl) inputEl.style.display = 'none';
+        showNotification('Erreur réseau', 'error');
     }
 }
 

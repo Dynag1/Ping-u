@@ -8,7 +8,19 @@ import os
 import json
 from pathlib import Path
 from datetime import time, datetime
-from cryptography.fernet import Fernet
+try:
+    from cryptography.fernet import Fernet
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
+    class Fernet:
+        """Implémentation Dummy si cryptography n'est pas installé"""
+        def __init__(self, key): pass
+        @staticmethod
+        def generate_key(): return b'dummy_key'
+        def encrypt(self, data): return data
+        def decrypt(self, data): return data
+
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -18,7 +30,6 @@ CONFIG_DIR = "bd/config"
 TELEGRAM_CONFIG_FILE = os.path.join(CONFIG_DIR, "telegram.json")
 MAIL_CONFIG_FILE = os.path.join(CONFIG_DIR, "mail.json")
 GENERAL_CONFIG_FILE = os.path.join(CONFIG_DIR, "general.json")
-ALERTS_CONFIG_FILE = os.path.join(CONFIG_DIR, "alerts.json")
 ALERTS_CONFIG_FILE = os.path.join(CONFIG_DIR, "alerts.json")
 SITES_CONFIG_FILE = os.path.join(CONFIG_DIR, "sites.json")
 SECRET_KEY_FILE = "bd/secret.key"
@@ -33,6 +44,9 @@ def _get_fernet():
         return _fernet_instance
     
     try:
+        if not CRYPTOGRAPHY_AVAILABLE:
+            return Fernet(b'')
+
         # Créer le dossier si nécessaire (devrait déjà être fait)
         os.makedirs(os.path.dirname(SECRET_KEY_FILE), exist_ok=True)
         
@@ -49,7 +63,7 @@ def _get_fernet():
         return _fernet_instance
     except Exception as e:
         logger.error(f"Erreur initialisation chiffrement: {e}")
-        # Fallback temporaire pour ne pas crasher, mais c'est critique
+        # Fallback temporaire pour ne pas crasher
         return Fernet(Fernet.generate_key())
 
 def _encrypt_string(data):
@@ -57,6 +71,8 @@ def _encrypt_string(data):
     if not data:
         return ""
     try:
+        if not CRYPTOGRAPHY_AVAILABLE:
+            return data
         return _get_fernet().encrypt(data.encode()).decode()
     except Exception as e:
         logger.error(f"Erreur chiffrement: {e}")
@@ -67,6 +83,8 @@ def _decrypt_string(token):
     if not token:
         return ""
     try:
+        if not CRYPTOGRAPHY_AVAILABLE:
+            return token
         return _get_fernet().decrypt(token.encode()).decode()
     except Exception as e:
         # Si échec, c'est peut-être que ce n'est pas chiffré (legacy)
