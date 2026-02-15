@@ -1,42 +1,7 @@
-try:
-    from PySide6.QtCore import QObject, QRunnable, QThreadPool, QMutex, QMutexLocker, Signal, Slot, pyqtSlot
-    from PySide6.QtGui import QStandardItem
-    from PySide6.QtWidgets import QApplication
-    GUI_AVAILABLE = True
-except ImportError:
-    GUI_AVAILABLE = False
-    # Classes factices pour headless
-    class QObject: pass
-    class QRunnable: 
-        def setAutoDelete(self, val): pass
-    class QThreadPool:
-        @staticmethod
-        def globalInstance():
-            class DummyPool:
-                def setMaxThreadCount(self, n): pass
-                def start(self, worker): 
-                    # Exécuter directement dans le thread courant
-                    worker.run()
-                def waitForDone(self): pass
-                def clear(self): pass
-            return DummyPool()
-    class QMutex: pass
-    class QMutexLocker: 
-        def __init__(self, mutex): pass
-    class Signal:
-        def __init__(self, *args): pass
-        def emit(self, *args): pass
-    def Slot(*args): return lambda f: f
-    def pyqtSlot(*args): return lambda f: f
-    class QStandardItem:
-        def __init__(self, text=""): self._text = text
-        def text(self): return self._text
-    class QApplication:
-        @staticmethod
-        def instance():
-            class DummyApp:
-                def thread(self): return None
-            return DummyApp()
+from src.utils.headless_compat import (
+    GUI_AVAILABLE, QObject, QRunnable, QThreadPool, QMutex, QMutexLocker, Signal, Slot, pyqtSlot,
+    QStandardItem, QApplication
+)
 
 from src import ip_fct
 import multiprocessing
