@@ -1,11 +1,272 @@
 <div id="modal-advanced" class="section-modal">
     <div class="section-modal-content">
         <div class="section-modal-header">
-            <h2>⚙️ <span data-i18n="menu_advanced">Paramètres avancés</span></h2>
+            <h2>⚙️ <span data-i18n="settings_title">Paramètres</span></h2>
             <button class="section-modal-close" onclick="closeSectionModal('advanced')">✕</button>
         </div>
         <div class="section-modal-body">
             <div id="content-advanced" class="content-section active">
+
+                <!-- Contrôle du Monitoring -->
+                <div class="collapsible-section" id="section-monitoring" style="margin-bottom: 25px;">
+                    <div class="collapsible-header" onclick="toggleSection('section-monitoring')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon monitoring">🎮</div>
+                            <div>
+                                <h2 data-i18n="monitoring_control">Contrôle du Monitoring</h2>
+                                <p data-i18n="monitoring_desc">Démarrer/arrêter et configurer</p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="input-delai" data-i18n="ping_delay">Délai entre pings (sec)</label>
+                                <input type="number" id="input-delai" value="10" min="1" max="3600">
+                            </div>
+                            <div class="form-group">
+                                <label for="input-nb-hs" data-i18n="hs_before_alert">Nombre de HS avant alerte</label>
+                                <input type="number" id="input-nb-hs" value="3" min="1" max="10">
+                            </div>
+                        </div>
+                        <button id="btn-save-monitoring" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
+                            💾 <span data-i18n="save_monitoring">Sauvegarder la configuration</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alertes -->
+                <div class="collapsible-section" id="section-alerts" style="margin-bottom: 25px;">
+                    <div class="collapsible-header" onclick="toggleSection('section-alerts')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon alerts">🔔</div>
+                            <div>
+                                <h2 data-i18n="alerts_config">Configuration des Alertes</h2>
+                                <p data-i18n="alerts_desc">Email, Telegram, popup</p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-popup">
+                            <label for="check-popup">💬 <span data-i18n="alert_popup">Popup (notification
+                                    visuelle)</span></label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-mail">
+                            <label for="check-mail">📧 <span data-i18n="alert_email">Email d'alerte</span></label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-telegram">
+                            <label for="check-telegram">📱 Telegram</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-mail-recap">
+                            <label for="check-mail-recap">📊 <span data-i18n="alert_recap">Email
+                                    récapitulatif</span></label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="check-db-externe">
+                            <label for="check-db-externe">💾 <span data-i18n="alert_db">Base de données
+                                    externe</span></label>
+                        </div>
+
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="check-temp-alert">
+                                <label for="check-temp-alert">🌡️ <span data-i18n="alert_temp">Alerte température
+                                        élevée</span></label>
+                            </div>
+                            <div class="form-row" style="margin-top: 10px;">
+                                <div class="form-group">
+                                    <label for="input-temp-seuil-warning" data-i18n="temp_threshold_warning">Seuil de
+                                        warning (°C)</label>
+                                    <input type="number" id="input-temp-seuil-warning" value="60" min="30" max="120">
+                                    <small style="color: #666; font-size: 12px;" data-i18n="alert_if_temp_warning">
+                                        Visuel uniquement si température ≥ seuil
+                                    </small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-temp-seuil" data-i18n="temp_threshold">Seuil critique (°C)</label>
+                                    <input type="number" id="input-temp-seuil" value="70" min="30" max="120">
+                                    <small style="color: #666; font-size: 12px;" data-i18n="alert_if_temp">
+                                        Alerte + Visuel si température ≥ seuil
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btn-save-alerts" class="btn btn-info" style="width: 100%; margin-top: 15px;">
+                            💾 <span data-i18n="save_alerts">Sauvegarder les alertes</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Actions rapides -->
+                <div class="collapsible-section" id="section-actions" style="margin-bottom: 25px;">
+                    <div class="collapsible-header" onclick="toggleSection('section-actions')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon actions">⚡</div>
+                            <div>
+                                <h2 data-i18n="quick_actions">Actions Rapides</h2>
+                                <p data-i18n="actions_desc">Import, export, nettoyage</p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <button id="btn-clear-all" class="btn btn-danger">
+                                🗑️ <span data-i18n="clear_all">Tout effacer</span>
+                            </button>
+                            <button id="btn-remove-duplicates" class="btn btn-warning">
+                                🔄 <span data-i18n="remove_duplicates">Suppr. doublons</span>
+                            </button>
+                            <button id="btn-export-csv" class="btn btn-info">
+                                📥 <span data-i18n="export_csv">Exporter CSV</span>
+                            </button>
+                            <button id="btn-import-csv" class="btn btn-info">
+                                📤 <span data-i18n="import_csv">Importer CSV</span>
+                            </button>
+                            <button id="btn-export-xls" class="btn btn-primary" style="background: #217346;">
+                                📊 <span data-i18n="export_xls">Exporter Excel</span>
+                            </button>
+                            <button id="btn-import-xls" class="btn btn-primary" style="background: #217346;">
+                                📋 <span data-i18n="import_xls">Importer Excel</span>
+                            </button>
+                            <button onclick="setSelectedHostsSite()" class="btn btn-primary"
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); grid-column: span 2;">
+                                🏢 <span data-i18n="assign_site">Assigner site aux sélectionnés</span>
+                            </button>
+                            <button id="btn-save-settings" class="btn btn-primary" style="grid-column: 1 / -1;">
+                                💾 <span data-i18n="save">Sauvegarder</span>
+                            </button>
+                        </div>
+                        <input type="file" id="file-import-csv" accept=".csv" style="display: none;">
+                        <input type="file" id="file-import-xls" accept=".xlsx,.xls" style="display: none;">
+                    </div>
+                </div>
+
+                <!-- Sauvegarde & Restauration -->
+                <div class="collapsible-section" id="section-backup" style="margin-bottom: 25px;">
+                    <div class="collapsible-header" onclick="toggleSection('section-backup')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon backup">💾</div>
+                            <div>
+                                <h2 data-i18n="backup_restore_title">Sauvegarde & Restauration</h2>
+                                <p data-i18n="backup_restore_desc">Gérez les sauvegardes de votre configuration compléte
+                                </p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="main-grid" style="grid-template-columns: 1fr; gap: 15px;">
+                            <!-- Sauvegarde -->
+                            <div class="card" style="margin: 0;">
+                                <h2 data-i18n="backup_title">Sauvegarder</h2>
+                                <p style="margin-bottom: 20px; color: #a0aec0;" data-i18n="backup_desc">
+                                    Téléchargez une archive complète (.pingu) contenant :<br>
+                                    - Configuration des sites<br>
+                                    - Liste des hôtes<br>
+                                    - Paramètres de l'application<br>
+                                    - Configuration synoptique<br>
+                                    - Utilisateurs
+                                </p>
+                                <a href="/api/backup" class="btn btn-primary"
+                                    style="width: 100%; justify-content: center; text-decoration: none;">
+                                    💾 <span data-i18n="download_backup">Télécharger la sauvegarde</span>
+                                </a>
+                            </div>
+
+                            <!-- Restauration -->
+                            <div class="card" style="margin: 0;">
+                                <h2 data-i18n="restore_title">Restaurer</h2>
+                                <p style="margin-bottom: 20px; color: #a0aec0;" data-i18n="restore_desc">
+                                    Restaurez une configuration depuis un fichier .pingu.<br>
+                                    ⚠️ Cela écrasera la configuration actuelle.
+                                </p>
+                                <form id="restoreForm" onsubmit="handleRestore(event)">
+                                    <div class="form-group">
+                                        <input type="file" id="backupFile" accept=".pingu" required
+                                            style="padding: 8px;">
+                                    </div>
+                                    <button type="submit" class="btn btn-danger"
+                                        style="width: 100%; justify-content: center;">
+                                        ♻️ <span data-i18n="restore_btn">Restaurer la sauvegarde</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Utilisateurs -->
+                <div class="collapsible-section" id="section-users" style="margin-bottom: 25px;">
+                    <div class="collapsible-header" onclick="toggleSection('section-users')">
+                        <div class="collapsible-title">
+                            <div class="collapsible-icon users">👥</div>
+                            <div>
+                                <h2 data-i18n="users_list">Utilisateurs</h2>
+                                <p data-i18n="manage_users_desc">Gérer les accès utilisateurs</p>
+                            </div>
+                        </div>
+                        <div class="collapsible-toggle">▼</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="users-management">
+                            <!-- Formulaire d'ajout d'utilisateur -->
+                            <div class="card" style="margin: 0; margin-bottom: 15px;">
+                                <h2>➕ <span data-i18n="add_user">Ajouter un utilisateur</span></h2>
+                                <form id="form-add-user" class="user-form" onsubmit="return handleAddUser(event)">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="new-user-username" data-i18n="username">Nom
+                                                d'utilisateur</label>
+                                            <input type="text" id="new-user-username" required placeholder="ex: john">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="new-user-password" data-i18n="password">Mot de passe</label>
+                                            <input type="password" id="new-user-password" required
+                                                placeholder="••••••••">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="new-user-role" data-i18n="role">Rôle</label>
+                                            <select id="new-user-role">
+                                                <option value="user" data-i18n="role_user">Utilisateur</option>
+                                                <option value="admin" data-i18n="role_admin">Administrateur</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success" style="width: 100%;">
+                                        ➕ <span data-i18n="add_user_btn">Ajouter l'utilisateur</span>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Liste des utilisateurs -->
+                            <div class="card" style="margin: 0;">
+                                <h2>👥 <span data-i18n="users_list">Liste des utilisateurs</span></h2>
+                                <div class="users-table">
+                                    <table style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th data-i18n="username">Nom d'utilisateur</th>
+                                                <th data-i18n="role">Rôle</th>
+                                                <th data-i18n="user_actions">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="users-table-body">
+                                            <!-- Rempli dynamiquement par JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Paramètres Avancés -->
                 <div class="collapsible-section" id="section-advanced" style="margin-bottom: 25px;">
