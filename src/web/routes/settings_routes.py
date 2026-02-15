@@ -141,6 +141,7 @@ def save_alerts():
     except Exception as e:
         logger.error(f"Erreur save_alerts: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+@settings_bp.route('/api/get_mail_recap_settings')
 @WebAuth.login_required
 def get_mail_recap_settings():
     try:

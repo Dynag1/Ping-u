@@ -10,7 +10,7 @@ from src.utils.headless_compat import (
     QPoint, QModelIndex, QColor, QAction, QActionGroup, QStandardItem,
     QStandardItemModel, QEvent, Qt, Ui_MainWindow, QApplication, QTranslator,
     QCoreApplication, QLocale, QIcon, QHeaderView, QAbstractItemView, QFileDialog,
-    QMenu, QMessageBox, QWidget, QBrush
+    QMenu, QMessageBox, QWidget, QBrush, QThread, QTimer
 )
 qt_themes = None
 if GUI_AVAILABLE:
