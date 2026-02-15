@@ -96,12 +96,19 @@ class NetworkScanner:
             # Valider que l'IP est correcte
             if not ip or not isinstance(ip, str) or ip.count('.') != 3:
                 return
+            
+            # Extraire le nom s'il est présent dans les args
+            name = ""
+            if args and len(args) > 0:
+                name = args[0]
+                
             if self._is_new_device(ip, mac):
                 device = DiscoveredDevice(
                     ip=ip,
                     device_type=DeviceType.CAMERA_HIK,
                     manufacturer="Hikvision",
                     model=model,
+                    name=name,
                     mac=mac,
                     protocol="hikvision"
                 )
@@ -142,11 +149,18 @@ class NetworkScanner:
             # Valider que l'IP est correcte
             if not ip or not isinstance(ip, str) or ip.count('.') != 3:
                 return
+                
+            # Extraire le nom s'il est présent dans les args
+            name = ""
+            if args and len(args) > 0:
+                name = args[0]
+                
             if self._is_new_device(ip, mac):
                 device = DiscoveredDevice(
                     ip=ip,
                     device_type=DeviceType.CAMERA_GENERIC,
                     model=model,
+                    name=name,
                     mac=mac,
                     protocol="onvif"
                 )
@@ -216,12 +230,19 @@ class NetworkScanner:
             # Valider que l'IP est correcte
             if not ip or not isinstance(ip, str) or ip.count('.') != 3:
                 return
+                
+            # Extraire le nom s'il est présent dans les args
+            name = ""
+            if args and len(args) > 0:
+                name = args[0]
+                
             if self._is_new_device(ip, mac):
                 device = DiscoveredDevice(
                     ip=ip,
                     device_type=DeviceType.CAMERA_SAMSUNG,
                     manufacturer="Samsung",
                     model=model,
+                    name=name,
                     mac=mac,
                     protocol="samsung"
                 )
@@ -307,12 +328,19 @@ class NetworkScanner:
             # Valider que l'IP est correcte
             if not ip or not isinstance(ip, str) or ip.count('.') != 3:
                 return
+            
+            # Extraire le nom s'il est présent dans les args
+            name = ""
+            if args and len(args) > 0:
+                name = args[0]
+                
             if self._is_new_device(ip, mac):
                 device = DiscoveredDevice(
                     ip=ip,
                     device_type=DeviceType.CAMERA_AVIGILON,
                     manufacturer="Avigilon",
                     model=model,
+                    name=name,
                     mac=mac,
                     protocol="avigilon"
                 )

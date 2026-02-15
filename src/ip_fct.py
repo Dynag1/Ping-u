@@ -98,12 +98,15 @@ def check_socket(host, port):
 #############################################################################################
 #####	Effectuer un ping																#####
 #############################################################################################
+#############################################################################################
+#####	Effectuer un ping																#####
+#############################################################################################
 def ipPing(ip):
         try:
                 my_os = platform.system()
                 if my_os == "Windows":
                         # Windows: ping -n 1 -w 1000 (1 paquet, timeout 1000ms)
-                        # CREATE_NO_WINDOW empêche l'ouverture de fenêtres CMD
+                        # DISON QUE C'EST LE PARADIS ICI
                         result = subprocess.run(
                                 ["ping", "-n", "1", "-w", "1000", ip],
                                 stdout=subprocess.PIPE,
@@ -111,26 +114,37 @@ def ipPing(ip):
                                 timeout=2,
                                 creationflags=subprocess.CREATE_NO_WINDOW
                         )
+                        if result.returncode == 0:
+                            return "OK"
                 else:
-                        # Linux/Mac: ping -c 1 -W 1 (1 paquet, timeout 1s)
-                        # Utilisation de "ping" directement (dans le PATH) au lieu de chemin absolu
-                        result = subprocess.run(
-                                ["ping", "-c", "1", "-W", "1", ip],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                timeout=2
-                        )
-                
-                # Si le code de retour est 0, le ping a réussi
-                if result.returncode == 0:
-                        return "OK"
-                else:
-                        return "HS"
+                        # Linux/Mac: Essayer plusieurs variantes
+                        # 1. Essai standard (ping du PATH)
+                        commands = [
+                            ["ping", "-c", "1", "-W", "1", ip],       # Standard Linux
+                            ["/bin/ping", "-c", "1", "-W", "1", ip],  # Chemin absolu 1
+                            ["/usr/bin/ping", "-c", "1", "-W", "1", ip], # Chemin absolu 2
+                            ["ping", "-c", "1", ip],                  # Sans timeout explicit (Mac/Busybox parfois)
+                        ]
+                        
+                        for cmd in commands:
+                            try:
+                                result = subprocess.run(
+                                        cmd,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        timeout=2
+                                )
+                                if result.returncode == 0:
+                                    return "OK"
+                            except (subprocess.SubprocessError, FileNotFoundError):
+                                continue
+                                
+                return "HS"
 
         except subprocess.TimeoutExpired:
                 return "HS"
         except Exception as inst:
-                print(inst)
+                print(f"Ping error: {inst}")
                 return "HS"
 
 #############################################################################################

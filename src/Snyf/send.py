@@ -45,7 +45,6 @@ def send(type, comm, dialog):
         ).encode('ascii')
         port = 7701
         dest_ip = '255.255.255.255'
-        dest_ip = '255.255.255.255'
     elif type == 'xiaomi':
         # Miio Hello Packet
         msg = bytes.fromhex('21 31 00 20 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff')
@@ -64,32 +63,44 @@ def send(type, comm, dialog):
         return
 
     # Création du socket UDP
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-
-    # Activation du broadcast si besoin
-    if dest_ip == '255.255.255.255':
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        
+        # Activation du broadcast
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-    # TTL pour le multicast
-    if dest_ip.startswith('239.'):
-        s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+        # TTL pour le multicast
+        if dest_ip.startswith('239.'):
+            s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+            # Tenter de joindre avec l'interface par défaut
+            try:
+                # S'assurer que l'OS choisit la bonne interface pour le multicast
+                # Sur Linux, bind à 0.0.0.0 ne suffit pas toujours pour le ROUTAGE multicast sortant
+                pass 
+            except:
+                pass
 
-    # Configuration spécifique pour UPnP (multicast SSDP)
-    if type == 'upnp':
-        # Réutilisation du port
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # Adhésion au groupe multicast pour réceptionner les réponses
-        mreq = socket.inet_aton('239.255.255.250') + socket.inet_aton('0.0.0.0')
-        s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        # Configuration spécifique pour UPnP (multicast SSDP)
+        if type == 'upnp':
+            # Réutilisation du port
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                # Adhésion au groupe multicast pour réceptionner les réponses
+                mreq = socket.inet_aton('239.255.255.250') + socket.inet_aton('0.0.0.0')
+                s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+            except Exception as e:
+                logger.warning(f"Impossible de rejoindre le groupe multicast UPnP: {e}")
 
-    s.settimeout(10)  # Timeout augmenté pour laisser le temps aux réponses
+        s.settimeout(10)  # Timeout augmenté pour laisser le temps aux réponses
 
-    try:
         # Utilisation de ('', 0) pour éviter les conflits de port et recevoir sur toutes les interfaces
+        # SAUF pour UPnP/SSDP où on doit souvent écouter sur le port 1900 ou un port aléatoire
+        # Pour UPnP, les réponses SSDP arrivent parfois sur 1900 si on est un control point.
+        # Ici on utilise un port aléatoire, ce qui est standard pour un M-SEARCH.
         s.bind(('', 0))
     except Exception as e:
-        logger.error(f"Erreur de bind sur le port {port}: {e}")
-        s.close()
+        logger.error(f"Erreur création/bind socket pour {type}: {e}")
+        if 's' in locals(): s.close()
         return
 
     # Fonction de réception des réponses
@@ -98,12 +109,17 @@ def send(type, comm, dialog):
 
     def resp(s, dialog, comm, type):
         try:
+            # logger.info(f"Démarrage écoute {type} sur {s.getsockname()}")
             while True:
                 try:
-                    data, addr = s.recvfrom(4096)
+                    data, addr = s.recvfrom(65535) # Augmenter la taille du buffer
                 except socket.timeout:
-                    print("Fin de l'écoute, timeout atteint.")
+                    # logger.info(f"Fin de l'écoute {type}, timeout atteint.")
                     break
+                except Exception as e:
+                    logger.error(f"Erreur recvfrom {type}: {e}")
+                    break
+                    
                 ip = addr[0]
                 try:
                     if type == 'snmp':
@@ -111,38 +127,39 @@ def send(type, comm, dialog):
                         donn = fct.pars(data, type)
                     else:
                         donn = fct.pars(data.decode(errors='ignore'), type)
+                    
                     nom = donn[0] if len(donn) > 0 else ""
                     modele = donn[1] if len(donn) > 1 else ""
                     mac = donn[2] if len(donn) > 2 else ""
+                    
                 except Exception as e:
                     logger.debug(f"Erreur de parsing ({type}): {e}")
                     nom = modele = mac = ""
+                    
                 # Vérification des doublons
                 identifiant = mac if mac else ip
                 with lock:
                     if identifiant not in peripheriques_vus:
                         peripheriques_vus.add(identifiant)
-                        peripheriques_vus.add(identifiant)
                         logger.info(f"Découverte {type}: IP={ip} ID={identifiant} (Nom: {nom}, Modèle: {modele})")
-                        comm.addRow.emit("", ip, modele, mac, nom, "", "")
+                        comm.addRow.emit("", ip, str(modele), str(mac), str(nom), "", "")
         finally:
             s.close()
 
     # Fonction d'envoi et de lancement du thread de réception
     def start(dialog, comm):
-        # logger.debug(f"Envoi du message {type} vers {dest_ip}:{port}")
         try:
-            # Envoi répété pour UPnP (SSDP)
-            if type == 'upnp':
-                for _ in range(3):
-                    s.sendto(msg, (dest_ip, port))
-                    time.sleep(0.1)
-            else:
+            local_port = s.getsockname()[1]
+            logger.info(f"Envoi {type} vers {dest_ip}:{port} (depuis :{local_port})")
+            
+            # Envoi répété pour tout le monde pour être sûr
+            for _ in range(2):
                 s.sendto(msg, (dest_ip, port))
-            logger.info(f"Message de découverte {type} envoyé à {dest_ip}:{port}")
+                time.sleep(0.1)
+                
         except OSError as e:
             if e.errno == 101: # Network is unreachable
-                 logger.error(f"Erreur réseau (Unreachable): Impossible d'envoyer vers {dest_ip}. Vérifiez les routes ou l'interface.")
+                 logger.error(f"Erreur réseau (Unreachable) pour {type}: Impossible d'envoyer vers {dest_ip}.")
             else:
                  logger.error(f"Erreur d'envoi {type}: {e}")
             s.close()
@@ -151,10 +168,10 @@ def send(type, comm, dialog):
             logger.error(f"Erreur d'envoi {type}: {e}")
             s.close()
             return
+            
         t1 = threading.Thread(target=resp, args=(s, dialog, comm, type))
         t1.daemon = True  # Permet la fermeture propre du thread
         t1.start()
-        # Ne pas faire t1.join() pour ne pas bloquer l'interface
 
     # Lancement
     start(dialog, comm)

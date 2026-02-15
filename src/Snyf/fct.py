@@ -131,9 +131,6 @@ def pars(data, scan_type):
                         pass
             except Exception:
                 pass
-        
-            except Exception:
-                pass
 
         # Xiaomi
         elif scan_type == "xiaomi":
