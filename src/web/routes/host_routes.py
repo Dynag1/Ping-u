@@ -1,7 +1,10 @@
 from flask import Blueprint, request, jsonify, current_app
 from src.web_auth import WebAuth
 from src.utils.logger import get_logger
-from src.utils.headless_compat import QStandardItem
+try:
+    from PySide6.QtGui import QStandardItem
+except ImportError:
+    from src.utils.headless_compat import QStandardItem
 import threading
 
 logger = get_logger(__name__)

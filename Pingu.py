@@ -5,19 +5,32 @@ import subprocess
 import signal
 import time
 
-try:
-    from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
-    from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QMenu
-    from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QAction, QActionGroup
-    from PySide6.QtCore import QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, QEvent, QCoreApplication, QLocale, QSortFilterProxyModel
-    from src.ui_mainwindow import Ui_MainWindow
-    import qt_themes
-    GUI_AVAILABLE = True
-except ImportError:
+# Détecter si on doit forcer le mode headless avant d'essayer d'importer PySide6
+force_headless = "--headless" in sys.argv or "-headless" in sys.argv or "--start" in sys.argv or "-start" in sys.argv or "HEADLESS" in os.environ
+
+GUI_AVAILABLE = False
+if not force_headless:
+    try:
+        from PySide6.QtWidgets import (QApplication, QMainWindow, QHeaderView, 
+                                     QAbstractItemView, QMessageBox, QMenu, QFileDialog, QWidget)
+        from PySide6.QtGui import (QStandardItemModel, QStandardItem, QColor, QAction, 
+                                 QActionGroup, QIcon, QBrush)
+        from PySide6.QtCore import (QObject, Signal, Qt, QPoint, QModelIndex, QTranslator, 
+                                  QEvent, QCoreApplication, QLocale, QSortFilterProxyModel)
+        from src.ui_mainwindow import Ui_MainWindow
+        import qt_themes
+        GUI_AVAILABLE = True
+    except (ImportError, Exception):
+        # Si PySide6 est absent ou si on ne peut pas l'utiliser (ex: pas de Display)
+        GUI_AVAILABLE = False
+
+if not GUI_AVAILABLE:
     from src.utils.headless_compat import (
         GUI_AVAILABLE, QObject, Signal, QMainWindow, QSortFilterProxyModel,
         QPoint, QModelIndex, QColor, QAction, QActionGroup, QStandardItem,
-        QStandardItemModel, QEvent, Qt, Ui_MainWindow, QApplication, QTranslator
+        QStandardItemModel, QEvent, Qt, Ui_MainWindow, QApplication, QTranslator,
+        QCoreApplication, QLocale, QIcon, QHeaderView, QAbstractItemView, QFileDialog,
+        QMenu, QMessageBox, QWidget, QBrush
     )
     qt_themes = None
 

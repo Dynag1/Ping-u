@@ -192,13 +192,27 @@ except ImportError:
     class QAction: pass
     class QActionGroup: pass
     class QMainWindow: pass
-    class QHeaderView: pass
-    class QSortFilterProxyModel: pass
-    class QApplication:
-        def __init__(self, *args): pass
+    class QTranslator:
+        def __init__(self, *args, **kwargs): pass
+        def load(self, *args, **kwargs): return False
+    
+    class QCoreApplication:
         @staticmethod
         def instance(): return None
-    class QTranslator: pass
+        @staticmethod
+        def translate(context, text, disambiguation=None, n=-1): return text
+        @staticmethod
+        def processEvents(): pass
+        @staticmethod
+        def applicationDirPath(): return os.path.dirname(os.path.abspath(sys.argv[0]))
+    
+    class QLocale:
+        def __init__(self, *args): pass
+        def name(self): return "fr_FR"
+    
+    class QIcon:
+        def __init__(self, *args): pass
+        def addFile(self, *args, **kwargs): pass
     
     class QEvent:
         LanguageChange = 0
@@ -219,6 +233,67 @@ except ImportError:
 
     class Ui_MainWindow:
         def setupUi(self, obj): pass
+        def retranslateUi(self, obj): pass
+
+    class QAbstractItemView:
+        NoSelection = 0
+    
+    class QHeaderView:
+        Fixed = 0
+        Stretch = 1
+        ResizeToContents = 2
+    
+    class QFileDialog:
+        @staticmethod
+        def getSaveFileName(*args, **kwargs): return ("", "")
+        @staticmethod
+        def getOpenFileName(*args, **kwargs): return ("", "")
+    
+    class QMessageBox:
+        @staticmethod
+        def information(*args, **kwargs): pass
+        @staticmethod
+        def warning(*args, **kwargs): pass
+        @staticmethod
+        def critical(*args, **kwargs): pass
+        @staticmethod
+        def question(*args, **kwargs): return 0
+        Ok = 1
+        Yes = 2
+        No = 3
+
+    class QMenu:
+        def __init__(self, *args): pass
+        def addAction(self, *args): pass
+        def exec(self, *args): pass
+    
+    class QWidget:
+        def __init__(self, *args): pass
+        def setVisible(self, v): pass
+        def show(self): pass
+        def hide(self): pass
+        def layout(self): return None
+        def setLayout(self, l): pass
+
+    class QSortFilterProxyModel:
+        def __init__(self, *args): pass
+        def setSourceModel(self, m): pass
+        def sourceModel(self): return None
+        def mapToSource(self, i): return i
+        def mapFromSource(self, i): return i
+        def setFilterFixedString(self, s): pass
+        def setFilterKeyColumn(self, c): pass
+
+    class QApplication:
+        def __init__(self, *args): pass
+        @staticmethod
+        def instance(): return None
+        @staticmethod
+        def processEvents(): pass
+        def exec(self): return 0
+        def quit(self): pass
+        def installTranslator(self, t): pass
+        def removeTranslator(self, t): pass
 
 # Exportation des symboles
 if not GUI_AVAILABLE:
