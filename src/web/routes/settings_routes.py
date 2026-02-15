@@ -100,8 +100,38 @@ def test_telegram():
     except Exception as e:
         logger.error(f"Erreur test_telegram: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@settings_bp.route('/api/get_mail_recap_settings')
+@settings_bp.route('/api/save_alerts', methods=['POST'])
+@WebAuth.login_required
+def save_alerts():
+    try:
+        data = request.get_json()
+        
+        # Mise à jour des variables
+        var.popup = data.get('popup', False)
+        var.mail = data.get('mail', False)
+        var.telegram = data.get('telegram', False)
+        var.mailRecap = data.get('mail_recap', False)
+        var.dbExterne = data.get('db_externe', False)
+        var.tempAlert = data.get('temp_alert', False)
+        
+        try:
+            var.tempSeuil = int(data.get('temp_seuil', 70))
+        except:
+            pass
+            
+        try:
+            var.tempSeuilWarning = int(data.get('temp_seuil_warning', 60))
+        except:
+            pass
+            
+        # Sauvegarde persistante
+        db.save_param_db()
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Erreur save_alerts: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 @WebAuth.login_required
 def get_mail_recap_settings():
     try:
@@ -201,6 +231,20 @@ def update_general_setting():
 @WebAuth.login_required
 def save_settings():
     try:
+        # Si des données sont envoyées, on met à jour les variables
+        if request.is_json:
+            data = request.get_json()
+            if 'delai' in data:
+                try:
+                    var.delais = int(data['delai'])
+                except:
+                    pass
+            if 'nb_hs' in data:
+                try:
+                    var.nbrHs = int(data['nb_hs'])
+                except:
+                    pass
+                    
         db.save_param_db()
         return jsonify({'success': True})
     except Exception as e:

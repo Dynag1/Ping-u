@@ -1518,8 +1518,13 @@ document.getElementById('file-import-csv').addEventListener('change', async func
 });
 
 document.getElementById('btn-save-settings').addEventListener('click', async function () {
+    const settings = {
+        delai: parseInt(document.getElementById('input-delai').value) || 10,
+        nb_hs: parseInt(document.getElementById('input-nb-hs').value) || 3
+    };
+
     try {
-        const result = await apiCall('/api/save_settings', 'POST');
+        const result = await apiCall('/api/save_settings', 'POST', settings);
         showNotification(t('settings_saved'), 'success');
     } catch (error) { }
 });
