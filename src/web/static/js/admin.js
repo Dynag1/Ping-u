@@ -2222,6 +2222,20 @@ document.getElementById('form-license').addEventListener('submit', async functio
     } catch (error) { }
 });
 
+// Load settings when opening advanced modal
+const btnAdvanced = document.querySelector('[onclick="openSectionModal(\'advanced\')"]');
+if (btnAdvanced) {
+    btnAdvanced.addEventListener('click', function () {
+        loadSettings();
+        loadMailRecapSettings();
+        loadLicenseInfo();
+    });
+}
+// Also load on DOM ready just in case
+document.addEventListener('DOMContentLoaded', function () {
+    loadSettings();
+});
+
 async function loadLicenseInfo() {
     try {
         const result = await apiCall('/api/get_license_info');
