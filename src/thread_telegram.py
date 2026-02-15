@@ -58,8 +58,14 @@ def get_telegram_credentials():
     return None, []
 
 
-def main(message):
-    """Envoie un message à tous les chat IDs configurés"""
+def main(message, specific_chat_id=None):
+    """
+    Envoie un message Telegram.
+    
+    Args:
+        message: Le message à envoyer
+        specific_chat_id: ID de chat spécifique (optionnel, pour tests)
+    """
     if not REQUESTS_AVAILABLE:
         logger.warning("Telegram non disponible: module 'requests' manquant")
         return
@@ -68,6 +74,11 @@ def main(message):
     
     if not token:
         logger.error("Token Telegram non configuré. Utilisez l'interface d'administration.")
+        return
+    
+    # Si un chat ID spécifique est fourni (ex: test), on utilise celui-là
+    if specific_chat_id:
+        send_telegram_message(message, specific_chat_id, token)
         return
     
     if not chat_ids:
