@@ -17,59 +17,11 @@ try:
     from PySide6.QtGui import QStandardItem, QStandardItemModel
     GUI_AVAILABLE = True
 except ImportError:
-    GUI_AVAILABLE = False
-    # Classes factices pour le typage et l'exécution headless
-    class QFileDialog: 
-        @staticmethod
-        def getSaveFileName(*args, **kwargs): return (None, None)
-        @staticmethod
-        def getOpenFileName(*args, **kwargs): return (None, None)
-    class QMessageBox:
-        @staticmethod
-        def information(*args): pass
-        @staticmethod
-        def critical(*args): pass
-        Ok = 1
+    from src.utils.headless_compat import (
+        QFileDialog, QMessageBox, QWidget, QModelIndex, 
+        QStandardItem, QStandardItemModel, GUI_AVAILABLE
+    )
     class QAbstractItemModel: pass
-    class QModelIndex: pass
-    class QStandardItem:
-        def __init__(self, text=""): 
-            self._text = str(text) if text else ""
-            self._data = {}
-        def text(self): return self._text
-        def setText(self, text): self._text = str(text)
-        def setData(self, data, role=0): self._data[role] = data
-        def data(self, role=0): return self._data.get(role)
-    class QStandardItemModel:
-        def __init__(self):
-            self._rows = []
-            self._headers = []
-            self._column_count = 0
-        def rowCount(self): return len(self._rows)
-        def columnCount(self): return self._column_count
-        def appendRow(self, items): 
-            self._rows.append(items)
-            if len(items) > self._column_count:
-                self._column_count = len(items)
-        def removeRows(self, row, count): 
-            del self._rows[row:row+count]
-        def setHorizontalHeaderLabels(self, labels):
-            class HeaderItem:
-                def __init__(self, text): self._text = str(text)
-                def text(self): return self._text
-            self._headers = [HeaderItem(l) for l in labels]
-            self._column_count = len(labels)
-        def horizontalHeaderItem(self, col):
-            if 0 <= col < len(self._headers):
-                return self._headers[col]
-            class DummyItem:
-                def text(self): return ""
-            return DummyItem()
-        def item(self, row, col):
-            if 0 <= row < len(self._rows) and 0 <= col < len(self._rows[row]):
-                return self._rows[row][col]
-            return None
-    class QWidget: pass
 
 
 def getIp(self):
