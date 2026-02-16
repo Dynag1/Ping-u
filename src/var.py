@@ -47,6 +47,10 @@ traffic_cache = {}
 # Format: {'ip': {'in_mbps': float, 'out_mbps': float}}
 bandwidth_cache = {}
 
+# Constants for host states in lists (avoid collision with nbrHs count)
+STATE_ALERT_SENT = 8888
+STATE_RECOVERY = 9999
+
 couleur_vert = AppColors.VERT_PALE
 couleur_jaune = AppColors.JAUNE_PALE
 couleur_orange = AppColors.ORANGE_PALE
