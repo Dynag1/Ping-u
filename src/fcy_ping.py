@@ -1,3 +1,4 @@
+import time
 import asyncio
 import platform
 import re
@@ -269,11 +270,11 @@ class AsyncPingWorker(QThread):
                     cmd = ["ping", "-n", "2", "-w", "2000", "-4", target_ip]
                 else:
                     # -c 2 : deux pings
-                    # -W 2 : timeout 2s
-                    # Utiliser le chemin complet de ping
+                    # -W 4 : timeout 4s (augmenté pour éviter les faux positifs)
+                    # Utiliser "ping" qui est dans le PATH normalement
                     # Warning: certaines vieilles versions de ping linux ne supportent pas -4 ou le gèrent différemment
                     # Mais la plupart moderne oui. Sinon utiliser ping directement.
-                    cmd = ["/bin/ping", "-c", "2", "-W", "2", target_ip]
+                    cmd = ["ping", "-c", "2", "-W", "4", target_ip]
 
                 # Création du sous-processus
                 # Sur Windows, masquer la fenêtre CMD
@@ -328,7 +329,7 @@ class AsyncPingWorker(QThread):
                         logger.debug(f"Ping OK (TTL présent) mais latence illisible pour {host}. Forcé à 10ms.")
                 else:
                     latency = 500.0
-                    logger.debug(f"Ping échoué pour {host} (RC={process.returncode}, TTL={'Oui' if has_ttl else 'Non'}, Loss100={'Oui' if is_100_percent_loss else 'Non'}) output:\n{output.strip()}")
+                    logger.warning(f"Ping échoué pour {host} (RC={process.returncode}, TTL={'Oui' if has_ttl else 'Non'}, Loss100={'Oui' if is_100_percent_loss else 'Non'}) output:\n{output.strip()}")
 
 
             except Exception as e:
@@ -477,6 +478,8 @@ class PingManager(QObject):
         self.timer = None
         # Cache pour stocker les données de trafic entre les cycles
         self.traffic_cache = {}
+        # Cache pour stocker la dernière date de succès SNMP (timestamp)
+        self.snmp_last_seen = {}
         self.snmp_worker = None
 
     def start(self):
@@ -485,9 +488,13 @@ class PingManager(QObject):
         
         # Initialiser le worker SNMP autonome
         if SNMP_AVAILABLE:
+            logger.info("SNMP disponible, création du worker SNMP...")
             self.snmp_worker = SNMPWorker(self.traffic_cache, self.get_ips_callback)
             self.snmp_worker.snmp_update_signal.connect(self.handle_snmp_result)
             self.snmp_worker.start()
+            logger.info("Worker SNMP démarré")
+        else:
+            logger.warning("SNMP NON disponible, worker SNMP non démarré")
         
         self.schedule_next_run()
 
@@ -558,9 +565,12 @@ class PingManager(QObject):
 
     def handle_snmp_result(self, ip, temp, bandwidth):
         """Relaye les résultats SNMP."""
-        # On peut ré-émettre via un signal dédié ou le signal de résultat général
-        # Pour rester compatible avec l'architecture, on émet vers l'extérieur
-        self.result_signal.emit(ip, -1.0, "", temp, bandwidth) # -1.0 pour indiquer que c'est une MAJ SNMP seulement
+        # SNMP est DISSOCIÉ du statut HS - il fournit uniquement temp/bandwidth
+        # Les alertes/HS sont gérés EXCLUSIVEMENT par le ping ICMP
+
+        # Relayer les données SNMP pour affichage (température/bandwidth)
+        color = ""  # Pas de couleur spécifique pour SNMP
+        self.result_signal.emit(ip, -1.0, color, temp, bandwidth)
 
 
     def update_lists(self, ip, latency):
@@ -576,15 +586,13 @@ class PingManager(QObject):
             # Stats toujours mises à jour
             if latency >= 500:
                 self.list_increment(var.liste_stats, ip, log=False)
-                # On traite tous les échecs comme potentiellement HS ici.
-                # L'exclusion sera gérée visuellement et lors du filtrage initial des IPs.
+                # Traitement des échecs ping - indépendant de SNMP
                 self.list_increment(var.liste_hs, ip, log=True)
                 
                 # Vérifier si notifications activées pour cet hôte
                 if settings.get('email', True):
                     self.list_increment(var.liste_mail, ip, log=False)
                 else:
-                    # Si désactivé mais présent (changement de config pendant panne), on nettoie
                     self.list_ok(var.liste_mail, ip)
                     
                 if settings.get('telegram', True):
@@ -751,7 +759,7 @@ class SNMPWorker(QThread):
 
     async def run_loop(self):
         """Boucle principale SNMP avec délai fixe de 5 secondes."""
-        logger.debug("Boucle SNMP démarrée")
+        logger.info("Boucle SNMP démarrée")
         while self.is_running:
             try:
                 start_time = asyncio.get_event_loop().time()
