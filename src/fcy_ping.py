@@ -53,16 +53,10 @@ def _is_url(host):
         parsed = parse_host_port(host)
         host = parsed['host']
     
-    # Vérifier si c'est un nom de domaine (contient des lettres)
-    # Les IPs contiennent uniquement des chiffres et des points
-    # Pattern pour IPv4: \d+\.\d+\.\d+\.\d+
-    ip_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
-    if re.match(ip_pattern, host):
-        # C'est une IP valide, pas une URL
-        return False
-    
-    # Si ce n'est pas une IP et contient des lettres, c'est probablement un domaine/URL
-    return bool(re.search(r'[a-zA-Z]', host))
+    # Strict check: URL must start with protocol
+    # If just a hostname (e.g. 'google.com' or 'nas'), treat as ping target
+    return host.startswith('http://') or host.startswith('https://')
+
 
 
 async def check_tcp_port(host, port, timeout=2):
