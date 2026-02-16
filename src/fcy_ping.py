@@ -4,6 +4,7 @@ import platform
 import re
 import sys
 import subprocess
+import shutil
 import src.var as var
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
@@ -271,10 +272,9 @@ class AsyncPingWorker(QThread):
                 else:
                     # -c 2 : deux pings
                     # -W 4 : timeout 4s (augmenté pour éviter les faux positifs)
-                    # Utiliser "ping" qui est dans le PATH normalement
-                    # Warning: certaines vieilles versions de ping linux ne supportent pas -4 ou le gèrent différemment
-                    # Mais la plupart moderne oui. Sinon utiliser ping directement.
-                    cmd = ["ping", "-c", "2", "-W", "4", target_ip]
+                    # Utiliser le chemin complet pour éviter "No such file or directory"
+                    ping_path = shutil.which("ping") or "/usr/bin/ping"
+                    cmd = [ping_path, "-c", "2", "-W", "4", target_ip]
 
                 # Création du sous-processus
                 # Sur Windows, masquer la fenêtre CMD
