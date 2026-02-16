@@ -242,16 +242,38 @@ class AsyncPingWorker(QThread):
         else:
             # Mode ICMP classique pour les IP
             try:
+                # Résolution DNS préalable pour les noms d'hôtes
+                # Cela évite que la commande ping n'échoue ou ne prenne trop de temps sur le DNS
+                # et permet de préciser l'erreur
+                target_ip = host
+                try:
+                    # Ne pas résoudre si c'est déjà une IP (simple check)
+                    if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', host):
+                         import socket
+                         target_ip = await asyncio.get_event_loop().run_in_executor(
+                             None, 
+                             socket.gethostbyname, 
+                             host
+                         )
+                         logger.debug(f"Résolution DNS: {host} -> {target_ip}")
+                except Exception as e:
+                     logger.warning(f"Échec résolution DNS pour {host}: {e}")
+                     # On continue quand même avec le nom, au cas où (ex: mDNS local, etc)
+                     target_ip = host
+
                 # Commande selon l'OS
                 if self.system == "windows":
-                    # -n 2 : deux pings pour confirmer la perte et éviter les faux positifs
+                    # -n 2 : deux pings
                     # -w 2000 : timeout 2000ms
-                    cmd = ["ping", "-n", "2", "-w", "2000", host]
+                    # -4 : forcer IPv4
+                    cmd = ["ping", "-n", "2", "-w", "2000", "-4", target_ip]
                 else:
                     # -c 2 : deux pings
                     # -W 2 : timeout 2s
-                    # Utiliser le chemin complet de ping pour éviter les problèmes de permissions
-                    cmd = ["/bin/ping", "-c", "2", "-W", "2", host]
+                    # Utiliser le chemin complet de ping
+                    # Warning: certaines vieilles versions de ping linux ne supportent pas -4 ou le gèrent différemment
+                    # Mais la plupart moderne oui. Sinon utiliser ping directement.
+                    cmd = ["/bin/ping", "-c", "2", "-W", "2", target_ip]
 
                 # Création du sous-processus
                 # Sur Windows, masquer la fenêtre CMD
@@ -588,8 +610,8 @@ class PingManager(QObject):
             
         if ip in liste:
             current_count = int(liste[ip])
-            # Ne jamais incrémenter les états spéciaux (10 = alerte envoyée, 20 = retour OK détecté)
-            if current_count >= 10:
+            # Ne jamais incrémenter les états spéciaux (alerte envoyée ou retour OK)
+            if current_count >= var.STATE_ALERT_SENT:
                 if log:
                     logger.debug(f"[PING] {host_type} {ip}: état spécial {current_count}, pas d'incrémentation")
                 return
@@ -612,7 +634,8 @@ class PingManager(QObject):
         # Vérification de sécurité: s'assurer que le compteur n'est jamais > nbrHs (sauf états spéciaux >= 10)
         if ip in liste:
             current_value = int(liste[ip])
-            if current_value < 10 and current_value > int(var.nbrHs):
+            # Protection contre dépassement nbrHs (sauf états spéciaux)
+            if current_value < var.STATE_ALERT_SENT and current_value > int(var.nbrHs):
                 logger.error(f"[PING] {host_type} {ip}: ERREUR - compteur {current_value} > nbrHs {var.nbrHs}, réinitialisation à {var.nbrHs}")
                 liste[ip] = int(var.nbrHs)
 
@@ -620,13 +643,13 @@ class PingManager(QObject):
         if ip in liste:
             current_value = int(liste[ip])
             logger.debug(f"[PING] list_ok({ip}): valeur actuelle={current_value}, liste={liste.__class__.__name__}")
-            if current_value == 10:
+            if current_value == var.STATE_ALERT_SENT:
                 # Alerte HS envoyée, marquer pour notification de retour
-                liste[ip] = 20
-                logger.info(f"[PING] {ip}: hôte revenu en ligne, marqué 20 pour notification de retour")
-            elif current_value == 20:
+                liste[ip] = var.STATE_RECOVERY
+                logger.info(f"[PING] {ip}: hôte revenu en ligne, marqué {var.STATE_RECOVERY} pour notification de retour")
+            elif current_value == var.STATE_RECOVERY:
                 # Notification de retour en attente, ne pas supprimer !
-                logger.debug(f"[PING] {ip}: notification de retour en attente, on garde la valeur 20")
+                logger.debug(f"[PING] {ip}: notification de retour en attente, on garde la valeur {var.STATE_RECOVERY}")
             else:
                 # Compteur en cours (< nbrHs), supprimer car l'hôte répond à nouveau
                 logger.debug(f"[PING] {ip}: supprimé de la liste (compteur était {current_value})")

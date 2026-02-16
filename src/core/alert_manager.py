@@ -207,8 +207,8 @@ class AlertManager(QObject):
             for key, value in list(var.liste_hs.items()):
                 if int(value) == int(var.nbrHs):
                     ip_hs += f"{key}\n "
-                    var.liste_hs[key] = 10
-                elif int(value) == 20:
+                    var.liste_hs[key] = var.STATE_ALERT_SENT
+                elif int(value) == var.STATE_RECOVERY:
                     ip_ok += f"{key}\n "
                     erase.append(key)
             
@@ -238,6 +238,16 @@ class AlertManager(QObject):
             if var.liste_mail:
                 logger.debug(f"[MAIL] État liste_mail: {dict(var.liste_mail)}")
             
+            # Vérification préventive de la configuration SMTP
+            try:
+                smtp_params = db.lire_param_mail()
+                # [email, password, port, server, recipients, telegram]
+                if not smtp_params or not smtp_params[0] or not smtp_params[3] or not smtp_params[4]:
+                    if var.liste_mail:
+                        logger.warning("[MAIL] Configuration SMTP incomplète ou manquante - Les alertes mail ne pourront pas être envoyées")
+            except Exception as e_smtp:
+                logger.error(f"[MAIL] Erreur vérification config SMTP: {e_smtp}")
+
             for key, value in list(var.liste_mail.items()):
                 if int(value) == int(var.nbrHs):
                     # Hôte qui vient de tomber
@@ -269,9 +279,9 @@ class AlertManager(QObject):
                         details=host_info
                     )
                     
-                    var.liste_mail[key] = 10
+                    var.liste_mail[key] = var.STATE_ALERT_SENT
                     
-                elif int(value) == 20:
+                elif int(value) == var.STATE_RECOVERY:
                     # Hôte qui revient en ligne
                     logger.info(f"[MAIL] Alerte retour détectée: {key} revient en ligne")
                     
@@ -327,6 +337,18 @@ class AlertManager(QObject):
             
             message = self.main_window.tr("Alerte sur le site ") + var.nom_site + "\n \n"
             
+            # Vérification préventive de la configuration Telegram
+            try:
+                if not getattr(thread_telegram, 'REQUESTS_AVAILABLE', False):
+                     logger.warning("[TELEGRAM] Module 'requests' manquant - Impossible d'envoyer des alertes Telegram")
+                     
+                token, chat_ids = thread_telegram.get_telegram_credentials()
+                if not token or not chat_ids:
+                    if var.liste_telegram:
+                        logger.warning("[TELEGRAM] Token ou Chat ID manquant - Les alertes Telegram ne pourront pas être envoyées")
+            except Exception as e_tg:
+                logger.error(f"[TELEGRAM] Erreur vérification config: {e_tg}")
+
             for key, value in list(var.liste_telegram.items()):
                 if int(value) == int(var.nbrHs):
                     logger.info(f"Alerte Telegram: {key} HS")
@@ -349,8 +371,8 @@ class AlertManager(QObject):
                         details={'ip': key, 'nom': nom, 'site': site}
                     )
                     
-                    var.liste_telegram[key] = 10
-                elif int(value) == 20:
+                    var.liste_telegram[key] = var.STATE_ALERT_SENT
+                elif int(value) == var.STATE_RECOVERY:
                     metadata = {}
                     if self.get_host_metadata_callback:
                         metadata = self.get_host_metadata_callback(key)

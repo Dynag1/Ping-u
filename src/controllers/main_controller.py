@@ -167,7 +167,15 @@ class MainController:
                     latency_text = f"{latency:.1f} ms" if latency < 500 else "HS"
                     item_lat.setText(f"{latency_text}")
                 else:
-                    item_lat.setText(f"{latency:.1f} ms" if latency < 500 else "HS")
+                    # Si latence HS (>= 500)
+                    if latency >= 500:
+                        # Si la couleur est ORANGE (Warning), c'est une vérification en cours (non confirmé)
+                        if color == AppColors.ORANGE_PALE:
+                            item_lat.setText("Verif...")
+                        else:
+                            item_lat.setText("HS")
+                    else:
+                        item_lat.setText(f"{latency:.1f} ms")
 
             # Mise à jour Température (si temperature n'est pas None)
             if temperature is not None:
