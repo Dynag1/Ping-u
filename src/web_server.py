@@ -172,6 +172,7 @@ class WebServer(QObject):
         from src.web.routes.synoptic_routes import synoptic_bp
         from src.web.routes.log_routes import log_bp
         from src.web.routes.dashboard_routes import dashboard_bp
+        from src.web.routes.monitoring_routes import monitoring_bp
 
         self.app.register_blueprint(main_bp)
         self.app.register_blueprint(auth_bp)
@@ -185,6 +186,8 @@ class WebServer(QObject):
         self.app.register_blueprint(synoptic_bp)
         self.app.register_blueprint(log_bp)
         self.app.register_blueprint(dashboard_bp)
+        self.app.register_blueprint(monitoring_bp)
+
         self.app.register_blueprint(notification_bp)
         
         # Initialiser la variable globale dans notification_routes

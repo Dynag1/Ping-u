@@ -281,6 +281,22 @@ class SNMPHelper:
             logger.debug(f"SNMPHelper initialisé (communauté='{community}', timeout={timeout}s)")
         else:
             logger.debug("SNMPHelper initialisé sans support SNMP")
+            
+        # Moteur SNMP partagé (lazy loading)
+        self._snmp_engine = None
+
+    def _get_engine(self):
+        """Récupère ou crée le moteur SNMP partagé."""
+        if not SNMP_AVAILABLE:
+            return None
+            
+        if self._snmp_engine is None:
+            try:
+                self._snmp_engine = SnmpEngine()
+            except Exception as e:
+                logger.error(f"Erreur création SnmpEngine: {e}")
+                return None
+        return self._snmp_engine
 
     async def get_device_type(self, ip):
         """
@@ -620,11 +636,16 @@ class SNMPHelper:
         if not SNMP_AVAILABLE:
             return None
         
-        snmp_engine = None
+        # Utiliser le moteur SNMP partagé
+        snmp_engine = self._get_engine()
+        if not snmp_engine:
+            return None
+
         try:
-            snmp_engine = SnmpEngine()
+            # Note: getCmd en pysnmp 6.x retourne directement le tuple résultat lorsqu'il est awaité
+            # Contrairement à ce que le code précédent suggérait avec 'iterator'
             
-            iterator = await getCmd(
+            result = await getCmd(
                 snmp_engine,
                 CommunityData(self.community),
                 UdpTransportTarget((ip, 161), timeout=self.timeout, retries=self.retries),
@@ -632,7 +653,7 @@ class SNMPHelper:
                 ObjectType(ObjectIdentity(oid))
             )
             
-            errorIndication, errorStatus, errorIndex, varBinds = iterator
+            errorIndication, errorStatus, errorIndex, varBinds = result
             
             if errorIndication:
                 return None
@@ -670,24 +691,11 @@ class SNMPHelper:
                         # En mode numeric, retourner None si pas convertible
                         return None
         except Exception as e:
+            # logger.debug(f"Erreur requête SNMP {ip} ({oid}): {e}")
             return None
-        finally:
-            # Fermeture propre du SnmpEngine pour éviter les fuites de ressources et erreurs "Unregistered transport"
-            if snmp_engine is not None:
-                try:
-                    # Fermer le dispatcher
-                    if snmp_engine.transportDispatcher:
-                        snmp_engine.transportDispatcher.closeDispatcher()
-                        # Désenregistrer explicitement le transport si possible
-                        # Cela évite que des callbacks soient appelés après la fermeture de la boucle
-                        try:
-                            # Tenter de désenregistrer tous les transports connus
-                            for transport_domain in list(snmp_engine.transportDispatcher.transports.keys()):
-                                snmp_engine.transportDispatcher.unregisterTransport(transport_domain)
-                        except:
-                            pass
-                except Exception:
-                    pass
+        
+        # Note: On NE ferme PAS le dispatcher ici car l'engine est partagé !
+
 
     async def find_best_interface(self, ip):
         """
@@ -1150,12 +1158,17 @@ class SNMPHelper:
             return None
         
         interfaces = []
-        snmp_engine = None
+
         
         try:
             from pysnmp.hlapi.asyncio import nextCmd, ObjectIdentity, ObjectType
             
-            snmp_engine = SnmpEngine()
+            
+            # Utiliser le moteur SNMP partagé
+            snmp_engine = self._get_engine()
+            if not snmp_engine:
+                 return None
+
             
             # OIDs à récupérer pour chaque interface
             oid_ifDescr = '1.3.6.1.2.1.2.2.1.2'
@@ -1211,6 +1224,7 @@ class SNMPHelper:
                         'speed_mbps': round(float(speed_mbps) if speed_mbps else 0.0, 1),
                         'type': int(if_type) if if_type else 0
                     })
+
                     
                 except Exception as e:
                     # Interface non disponible ou erreur, continuer avec la suivante
@@ -1228,18 +1242,9 @@ class SNMPHelper:
             logger.debug(f"Erreur récupération interfaces pour {ip}: {e}")
             return None
         finally:
-            # Fermeture propre du SnmpEngine
-            if snmp_engine is not None:
-                try:
-                    if snmp_engine.transportDispatcher:
-                        snmp_engine.transportDispatcher.closeDispatcher()
-                        try:
-                            for transport_domain in list(snmp_engine.transportDispatcher.transports.keys()):
-                                snmp_engine.transportDispatcher.unregisterTransport(transport_domain)
-                        except:
-                            pass
-                except Exception:
-                    pass
+            # On ne ferme plus le SnmpEngine car il est partagé
+            pass
+
     
     async def get_all_ports_bandwidth(self, ip, interface_indices=None):
         """
@@ -1312,8 +1317,22 @@ class SNMPHelper:
             'no_snmp': len(self._no_snmp_cache),
             'has_snmp': len(self._has_snmp_cache),
             'working_oids': len(self._working_oids),
-            'oids_per_ip': {ip: list(oids.keys()) for ip, oids in self._working_oids.items()}
         }
+
+    def close(self):
+        """Ferme proprement le moteur SNMP partagé."""
+        if self._snmp_engine and self._snmp_engine.transportDispatcher:
+            try:
+                # Fermer le dispatcher
+                self._snmp_engine.transportDispatcher.closeDispatcher()
+                
+                # Désenregistrer les transports un par un
+                for domain in list(self._snmp_engine.transportDispatcher.transports.keys()):
+                    self._snmp_engine.transportDispatcher.unregisterTransport(domain)
+            except Exception:
+                pass
+        self._snmp_engine = None
 
 # Instance globale (peut être configurée depuis les paramètres)
 snmp_helper = SNMPHelper()
+

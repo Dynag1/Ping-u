@@ -324,20 +324,43 @@ class AsyncPingWorker(QThread):
                     await asyncio.sleep(0.5)  # Petite pause avant retry
                     logger.debug(f"[RETRY] Seconde tentative pour {host}...")
                     
-                    # Réutilisation de la même commande
+                    # Tentative plus robuste: 3 pings, timeout 3s
+                    retry_cmd = list(cmd)
+                    if self.system == "windows":
+                        # Remplacer -n 2 par -n 3 et -w 2000 par -w 3000
+                        try:
+                            idx_n = retry_cmd.index("-n")
+                            retry_cmd[idx_n+1] = "3"
+                            idx_w = retry_cmd.index("-w")
+                            retry_cmd[idx_w+1] = "3000"
+                        except ValueError:
+                            pass # Fallback à commande originale si options non trouvées
+                    else:
+                        # Remplacer -c 2 par -c 3 et -W 2 par -W 3
+                        try:
+                            idx_c = retry_cmd.index("-c")
+                            retry_cmd[idx_c+1] = "3"
+                            # Note: sur certaines distros, W est après c
+                            if "-W" in retry_cmd:
+                                idx_W = retry_cmd.index("-W")
+                                retry_cmd[idx_W+1] = "3"
+                        except ValueError:
+                            pass
+
                     if self.system == "windows":
                         process = await asyncio.create_subprocess_exec(
-                            *cmd,
+                            *retry_cmd,
                             stdout=asyncio.subprocess.PIPE,
                             stderr=asyncio.subprocess.PIPE,
                             creationflags=subprocess.CREATE_NO_WINDOW
                         )
                     else:
                         process = await asyncio.create_subprocess_exec(
-                            *cmd,
+                            *retry_cmd,
                             stdout=asyncio.subprocess.PIPE,
                             stderr=asyncio.subprocess.PIPE
                         )
+
 
                     stdout, stderr = await process.communicate()
                     
@@ -361,7 +384,8 @@ class AsyncPingWorker(QThread):
                             latency = 10.0
                         logger.info(f"[RETRY] {host} récupéré au second ping ({latency}ms)")
                     else:
-                        logger.debug(f"[RETRY] Echec confirmé pour {host}")
+                        logger.debug(f"[RETRY] Echec confirmé pour {host} (output: {output.strip()})")
+
                         
                 except Exception as e:
                     logger.error(f"Erreur retry ping {host}: {e}")
@@ -409,10 +433,12 @@ class AsyncPingWorker(QThread):
                     return val
                 
             else:
-                # Linux/Mac: time=XX.X ms
-                match = re.search(r"time=(\d+\.?\d*)", output, re.IGNORECASE)
+                # Linux/Mac: time=XX.X ms  ou  temps=XX.X ms (français)
+                # On cherche les deux formats par sécurité
+                match = re.search(r"(?:time|temps)=(\d+\.?\d*)", output, re.IGNORECASE)
                 if match:
                     return float(match.group(1))
+
         except Exception as e:
             logger.error(f"Erreur parsing latence: {e}")
         

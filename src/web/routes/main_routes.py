@@ -29,6 +29,19 @@ def synoptic():
         logger.error(f"Erreur rendu synoptic: {e}", exc_info=True)
         return jsonify({'error': 'Template introuvable'}), 500
 
+@main_bp.route('/monitoring')
+@WebAuth.any_login_required
+def monitoring():
+    try:
+        is_admin = session.get('role') == 'admin'
+        username = session.get('username', '')
+        # Vérifier si on a un host_id en paramètre pour pré-sélectionner
+        host_id = request.args.get('host', '')
+        return render_template('monitoring.html', is_admin=is_admin, username=username, selected_host=host_id)
+    except Exception as e:
+        logger.error(f"Erreur rendu monitoring: {e}", exc_info=True)
+        return jsonify({'error': 'Template introuvable'}), 500
+
 @main_bp.route('/api/start_monitoring', methods=['POST'])
 @WebAuth.login_required
 def start_monitoring():
