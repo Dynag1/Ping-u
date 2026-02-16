@@ -2,6 +2,7 @@ import asyncio
 import platform
 import re
 import sys
+import subprocess
 import src.var as var
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
@@ -176,7 +177,7 @@ class AsyncPingWorker(QThread):
         # 2. Tester les adresses IP en PARALLÈLE par lots (comme avant)
         if ip_addresses:
             logger.debug(f"Test parallèle de {len(ip_addresses)} adresse(s) IP...")
-            batch_size = 20  # Réduit pour garantir la stabilité avec requêtes SNMP
+            batch_size = 5  # Réduit pour éviter la surcharge et les faux positifs (HS alors que connecté)
             for i in range(0, len(ip_addresses), batch_size):
                 if not self.is_running:
                     break
@@ -316,6 +317,54 @@ class AsyncPingWorker(QThread):
             except Exception as e:
                 logger.debug(f"Erreur ping {host}: {e}")
                 latency = 500.0
+            
+            # Double vérification si échec (pour éviter les faux positifs)
+            if latency >= 500.0 and self.is_running:
+                try:
+                    await asyncio.sleep(0.5)  # Petite pause avant retry
+                    logger.debug(f"[RETRY] Seconde tentative pour {host}...")
+                    
+                    # Réutilisation de la même commande
+                    if self.system == "windows":
+                        process = await asyncio.create_subprocess_exec(
+                            *cmd,
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.PIPE,
+                            creationflags=subprocess.CREATE_NO_WINDOW
+                        )
+                    else:
+                        process = await asyncio.create_subprocess_exec(
+                            *cmd,
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.PIPE
+                        )
+
+                    stdout, stderr = await process.communicate()
+                    
+                    try:
+                        if self.system == "windows":
+                            output = stdout.decode('cp850', errors='ignore')
+                        else:
+                            output = stdout.decode('utf-8', errors='ignore')
+                    except:
+                        output = stdout.decode('utf-8', errors='ignore')
+                        
+                    has_ttl = "TTL=" in output.upper() or "ttl=" in output.lower()
+                    loss_match = re.search(r"(\d+)% [^,\n]*?(perte|loss)", output, re.IGNORECASE)
+                    is_100_percent_loss = False
+                    if loss_match and loss_match.group(1) == "100":
+                        is_100_percent_loss = True
+
+                    if (process.returncode == 0 or has_ttl) and not is_100_percent_loss:
+                        latency = self.parse_latency(output)
+                        if latency >= 500 and has_ttl:
+                            latency = 10.0
+                        logger.info(f"[RETRY] {host} récupéré au second ping ({latency}ms)")
+                    else:
+                        logger.debug(f"[RETRY] Echec confirmé pour {host}")
+                        
+                except Exception as e:
+                    logger.error(f"Erreur retry ping {host}: {e}")
 
         # Interrogation SNMP pour la température uniquement (optimisé pour beaucoup d'équipements)
         # Les débits sont récupérés par le serveur web à la demande (non-bloquant)
