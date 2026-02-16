@@ -512,11 +512,31 @@ class PingManager(QObject):
 
     def handle_result(self, ip, latency, color, temperature, bandwidth):
         """Relaye le résultat et met à jour les listes internes."""
-        # Relayage vers le signal principal pour que le contrôleur mette à jour le modèle
-        self.result_signal.emit(ip, latency, color, temperature, bandwidth)
         
         # Mise à jour des listes de statistiques/alertes (toujours stockées dans src.var)
         self.update_lists(ip, latency)
+        
+        # Gestion visuelle des échecs non confirmés
+        visual_color = color
+        
+        # Si latence HS (>= 500) mais que le seuil n'est pas atteint (non confirmé)
+        if latency >= 500.0:
+            try:
+                # Vérifier le compteur actuel
+                current_count = var.liste_hs.get(ip, 0)
+                target_hs = int(var.nbrHs)
+                
+                # Si le seuil est > 1 et qu'on n'a pas encore atteint le seuil
+                if target_hs > 1 and current_count < target_hs:
+                    # Afficher en ORANGE (Warning) au lieu de ROUGE pour signaler "en cours de vérification"
+                    # Cela évite les "HS" rouges fugitifs qui n'apparaissent pas dans les logs
+                    visual_color = AppColors.ORANGE_PALE
+            except Exception as e:
+                logger.debug(f"Erreur calcul couleur visuelle pour {ip}: {e}")
+
+        # Relayage vers le signal principal pour que le contrôleur mette à jour le modèle
+        self.result_signal.emit(ip, latency, visual_color, temperature, bandwidth)
+
 
     def handle_snmp_result(self, ip, temp, bandwidth):
         """Relaye les résultats SNMP."""
