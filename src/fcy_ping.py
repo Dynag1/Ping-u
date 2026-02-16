@@ -306,7 +306,8 @@ class AsyncPingWorker(QThread):
                         logger.debug(f"Ping OK (TTL présent) mais latence illisible pour {host}. Forcé à 10ms.")
                 else:
                     latency = 500.0
-                    # logger.debug(f"Ping échoué pour {host}")
+                    logger.debug(f"Ping échoué pour {host} (RC={process.returncode}, TTL={'Oui' if has_ttl else 'Non'}, Loss100={'Oui' if is_100_percent_loss else 'Non'}) output:\n{output.strip()}")
+
 
             except Exception as e:
                 logger.debug(f"Erreur ping {host}: {e}")
@@ -428,10 +429,11 @@ class AsyncPingWorker(QThread):
                 
             else:
                 # Linux/Mac: time=XX.X ms  ou  temps=XX.X ms (français)
-                # On cherche les deux formats par sécurité
-                match = re.search(r"(?:time|temps)=(\d+\.?\d*)", output, re.IGNORECASE)
+                # On cherche les deux formats par sécurité. Supporte virgule ou point.
+                match = re.search(r"(?:time|temps)=([0-9]+[.,]?[0-9]*)", output, re.IGNORECASE)
                 if match:
-                    return float(match.group(1))
+                    val_str = match.group(1).replace(',', '.')
+                    return float(val_str)
 
         except Exception as e:
             logger.error(f"Erreur parsing latence: {e}")
