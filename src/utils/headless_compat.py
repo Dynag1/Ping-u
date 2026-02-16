@@ -133,11 +133,16 @@ if not GUI_AVAILABLE:
     class QStandardItem:
         def __init__(self, text=""):
             self._text = str(text)
-            self._data = {}
+            self._data = {0: self._text} # 0 is Qt.DisplayRole
         def text(self): return self._text
-        def setText(self, t): self._text = str(t)
+        def setText(self, t): 
+            self._text = str(t)
+            self.setData(self._text, 0) # Qt.DisplayRole = 0
         def setData(self, value, role=0): self._data[role] = value
-        def data(self, role=0): return self._data.get(role)
+        def data(self, role=0): 
+            if role == 0 and 0 not in self._data:
+                 return self._text
+            return self._data.get(role)
         def setBackground(self, brush): pass
         def setForeground(self, brush): pass
         def setCheckable(self, b): pass
