@@ -22,6 +22,14 @@ class MainController:
     def start_monitoring(self):
         """Démarre tous les services de monitoring."""
         try:
+            # Recharger les paramètres d'alerte depuis la DB pour être sûr
+            try:
+                from src import db
+                db.lire_param_db()
+                logger.info(f"Paramètres chargés: Mail={var.mail}, Telegram={var.telegram}, Popup={var.popup}")
+            except Exception as e:
+                logger.error(f"Erreur rechargement paramètres DB: {e}")
+
             logger.info(f"Démarrage monitoring (délai: {var.delais}s, seuil HS: {var.nbrHs})")
             
             if self.ping_manager is not None or var.tourne:
@@ -176,6 +184,18 @@ class MainController:
                             item_lat.setText("HS")
                     else:
                         item_lat.setText(f"{latency:.1f} ms")
+            
+            # Cas spécial : SNMP OK (latency = -1.0)
+            elif latency == -1.0:
+                item_lat = model.item(row, 5)
+                if not item_lat:
+                    item_lat = QStandardItem()
+                    model.setItem(row, 5, item_lat)
+                
+                # On ne change pas le texte de latence (on garde HS ou le temps de réponse)
+                # Sauf si c'était vide, on peut mettre "SNMP" ou similaire
+                if item_lat.text() == "":
+                    item_lat.setText("Alive")
 
             # Mise à jour Température (si temperature n'est pas None)
             if temperature is not None:
@@ -200,7 +220,7 @@ class MainController:
                     pass
 
             # Coloration de la ligne (si latence mise à jour et non exclusion)
-            if latency >= 0:
+            if latency >= 0 or (latency == -1.0 and color):
                 for col in range(model.columnCount()):
                     if col == 6: continue # On ne touche pas au fond de la température si géré spécifiquement
                     item = model.item(row, col)
@@ -222,21 +242,26 @@ class MainController:
             # Synchronisation Thread-Safe avec HostManager pour le serveur Web
             if hasattr(self.main_window, 'host_manager'):
                 try:
-                    lat_text = "HS"
-                    status = "offline"
-                    if not is_excluded and latency >= 0 and latency < 500:
-                        lat_text = f"{latency:.1f} ms"
-                        status = "online"
-                    elif is_excluded:
-                        # Si exclu, on garde le status offline mais on affiche le ping si dispo ?
-                        # Dans la logique actuelle, exclu = grisé.
-                        pass
-
+                    # Récupérer l'état actuel de l'hôte pour ne pas tout écraser si latency = -1
+                    current_host = self.main_window.host_manager.get_host_by_ip(ip)
+                    
+                    lat_text = current_host.get('latence', 'HS') if current_host else "HS"
+                    status = current_host.get('status', 'offline') if current_host else "offline"
+                    
+                    # Mise à jour seulement si c'est un résultat de Ping (latency >= 0)
+                    if latency >= 0:
+                        status = "offline"
+                        lat_text = "HS"
+                        if not is_excluded and latency < 500:
+                            lat_text = f"{latency:.1f} ms"
+                            status = "online"
+                    
+                    # Mise à jour HostManager
                     self.main_window.host_manager.update_host_status(
                         ip, 
                         lat_text, 
                         status, 
-                        str(temperature) if temperature is not None else None
+                        str(temperature) if temperature is not None else (current_host.get('temp') if current_host else None)
                     )
                 except Exception as hm_err:
                     logger.error(f"Erreur update HostManager: {hm_err}")
