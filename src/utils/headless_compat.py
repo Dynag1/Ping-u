@@ -280,15 +280,46 @@ if not GUI_AVAILABLE:
         NoBrush = 0
 
     class QTimer:
-        timeout = Signal()
         def __init__(self):
             self.timeout = Signal()
-        def start(self, ms=1000): pass
-        def stop(self): pass
-        def setInterval(self, ms): pass
+            self._timer = None
+            self._interval = 1000
+            self._running = False
+            
+        def start(self, ms=None):
+            if ms is not None:
+                self._interval = ms
+            self._running = True
+            self._schedule()
+            
+        def stop(self):
+            self._running = False
+            if self._timer:
+                self._timer.cancel()
+                self._timer = None
+                
+        def setInterval(self, ms):
+            self._interval = ms
+            # Si le timer tourne, on redémarre avec le nouvel intervalle au prochain tick
+            
+        def _schedule(self):
+            if not self._running: return
+            if self._timer: self._timer.cancel()
+            
+            # Utiliser threading.Timer pour l'exécution différée
+            self._timer = threading.Timer(self._interval / 1000.0, self._tick)
+            self._timer.daemon = True
+            self._timer.start()
+            
+        def _tick(self):
+            if self._running:
+                # Émettre le signal via QThread si possible, ou direct
+                self.timeout.emit()
+                self._schedule()
+
         @staticmethod
         def singleShot(ms, callback):
-            timer = threading.Timer(ms / 1000, callback)
+            timer = threading.Timer(ms / 1000.0, callback)
             timer.daemon = True
             timer.start()
 
