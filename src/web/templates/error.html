@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ error_title | default('Erreur') }} - Ping ü</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px 40px;
+            max-width: 600px;
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .error-title {
+            color: #2d3748;
+            font-size: 32px;
+            font-weight: 700;
+            margin: 20px 0;
+        }
+
+        .error-message {
+            color: #4a5568;
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 30px 0;
+        }
+
+        .error-code {
+            color: #a0aec0;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            margin-top: 10px;
+        }
+
+        .btn-container {
+            margin-top: 40px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .info-box {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 5px;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            margin-top: 0;
+            color: #2d3748;
+            font-size: 16px;
+        }
+
+        .info-box p {
+            margin: 10px 0 0 0;
+            color: #718096;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .footer-text {
+            margin-top: 30px;
+            color: #a0aec0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-container">
+        <div class="error-icon">🔒</div>
+        <h1 class="error-title">{{ error_title | default('Erreur') }}</h1>
+        <p class="error-message">{{ error_message | default('Une erreur est survenue.') }}</p>
+
+        {% if error_code %}
+        <p class="error-code">Code d'erreur: {{ error_code }}</p>
+        {% endif %}
+
+        <div class="info-box">
+            <h3>ℹ️ Pourquoi cette erreur ?</h3>
+            <p>
+                La page synoptique est une fonctionnalité premium qui nécessite une licence active.
+                Cette restriction garantit le développement continu et la maintenance de Ping ü.
+            </p>
+        </div>
+
+        <div class="btn-container">
+            <a href="/" class="btn btn-primary">🏠 Retour à l'accueil</a>
+            {% if is_admin %}
+            <a href="/admin" class="btn btn-secondary">⚙️ Administration</a>
+            {% endif %}
+        </div>
+
+        <p class="footer-text">
+            {% if username %}
+            Connecté en tant que: <strong>{{ username }}</strong>
+            {% endif %}
+        </p>
+    </div>
+</body>
+
+</html>

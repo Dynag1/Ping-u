@@ -272,14 +272,26 @@ class LicenseManager:
     
     def _read_license_from_file(self):
         """Lit la licence depuis le fichier de configuration"""
-        fichier = "bd/tabs/tabG"
         try:
+            # Nouveau système: lire depuis JSON via secure_config
+            try:
+                from src import secure_config
+                config = secure_config.load_general_config()
+                license_key = config.get('license_key', '')
+                if license_key:
+                    return license_key
+            except ImportError:
+                pass  # secure_config non disponible, essayer l'ancien système
+            
+            # Ancien système (fallback): lire depuis pickle
+            fichier = "bd/tabs/tabG"
             if os.path.isfile(fichier):
                 with open(fichier, "rb") as f:
                     variables = pickle.load(f)
                     return variables[1] if len(variables) > 1 else None
-        except:
-            return None
+        except Exception as e:
+            # Log uniquement en debug pour ne pas polluer
+            pass
         return None
 
 

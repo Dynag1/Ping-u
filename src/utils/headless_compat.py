@@ -14,9 +14,10 @@ force_headless = "--headless" in sys.argv or "-headless" in sys.argv or "--start
 GUI_AVAILABLE = False
 if not force_headless:
     try:
-        from PySide6.QtCore import QObject, Signal, QThread, Qt, QTimer, QPoint, QModelIndex, QEvent, QCoreApplication, QLocale, QAbstractItemModel, QRunnable, QThreadPool, QMutex, QMutexLocker, Slot
+        from PySide6.QtCore import QObject, Signal, QThread, Qt, QTimer, QPoint, QModelIndex, QEvent, QCoreApplication, QLocale, QAbstractItemModel, QRunnable, QThreadPool, QMutex, QMutexLocker, Slot, QSortFilterProxyModel, QTranslator
         from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QBrush, QAction, QActionGroup, QIcon
         from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView, QAbstractItemView, QMessageBox, QMenu, QFileDialog, QWidget, QDialog, QTimeEdit
+        from src.ui_mainwindow import Ui_MainWindow
         pyqtSlot = Slot # Alias pour compatibilité
         GUI_AVAILABLE = True
     except (ImportError, Exception):
