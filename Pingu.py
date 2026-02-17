@@ -999,6 +999,16 @@ def run_headless_mode():
     except Exception as e:
         logger.warning(f"Erreur chargement sites: {e}")
     
+    # Vérifier la licence
+    try:
+        if lic.verify_license():
+            jours = lic.jours_restants_licence()
+            logger.info(f"[HEADLESS] ✅ Licence active ({jours} jours restants)")
+        else:
+            logger.warning(f"[HEADLESS] ⚠️ Licence inactive - certaines fonctionnalités peuvent être limitées")
+    except Exception as e:
+        logger.warning(f"[HEADLESS] Erreur vérification licence: {e}")
+    
     # Utiliser les classes de compatibilité déjà importées
     if GUI_AVAILABLE:
         app = QApplication.instance()
@@ -1058,6 +1068,10 @@ def run_headless_mode():
             
             # Créer le contrôleur APRÈS self.ui
             self.main_controller = MainController(self)
+            
+            # Connexion des signaux de monitoring pour l'API web en mode headless
+            self.comm.start_monitoring_signal.connect(self.main_controller.start_monitoring)
+            self.comm.stop_monitoring_signal.connect(self.main_controller.stop_monitoring)
         
         def tr(self, text):
             """Traduction minimale pour compatibilité Qt"""

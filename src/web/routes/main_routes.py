@@ -22,6 +22,18 @@ def index():
 @WebAuth.any_login_required
 def synoptic():
     try:
+        # Vérification de la licence
+        from src import lic
+        if not lic.verify_license():
+            # Licence invalide - afficher une page d'erreur
+            error_message = "Vous devez avoir une licence active pour accéder à la page synoptique."
+            return render_template('error.html', 
+                                 error_title="Licence requise",
+                                 error_message=error_message,
+                                 is_admin=session.get('role') == 'admin',
+                                 username=session.get('username', '')), 403
+        
+        # Licence valide - afficher la page normalement
         is_admin = session.get('role') == 'admin'
         username = session.get('username', '')
         return render_template('synoptic.html', is_admin=is_admin, username=username)
@@ -40,6 +52,19 @@ def monitoring():
         return render_template('monitoring.html', is_admin=is_admin, username=username, selected_host=host_id)
     except Exception as e:
         logger.error(f"Erreur rendu monitoring: {e}", exc_info=True)
+        return jsonify({'error': 'Template introuvable'}), 500
+
+@main_bp.route('/statistics')
+@WebAuth.any_login_required
+def statistics():
+    try:
+        is_admin = session.get('role') == 'admin'
+        username = session.get('username', '')
+        # Récupérer le paramètre IP si fourni
+        ip_filter = request.args.get('ip', '')
+        return render_template('statistics.html', is_admin=is_admin, username=username, ip_filter=ip_filter)
+    except Exception as e:
+        logger.error(f"Erreur rendu statistics: {e}", exc_info=True)
         return jsonify({'error': 'Template introuvable'}), 500
 
 @main_bp.route('/api/start_monitoring', methods=['POST'])

@@ -14,9 +14,10 @@ force_headless = "--headless" in sys.argv or "-headless" in sys.argv or "--start
 GUI_AVAILABLE = False
 if not force_headless:
     try:
-        from PySide6.QtCore import QObject, Signal, QThread, Qt, QTimer, QPoint, QModelIndex, QEvent, QCoreApplication, QLocale, QAbstractItemModel, QRunnable, QThreadPool, QMutex, QMutexLocker, Slot
+        from PySide6.QtCore import QObject, Signal, QThread, Qt, QTimer, QPoint, QModelIndex, QEvent, QCoreApplication, QLocale, QAbstractItemModel, QRunnable, QThreadPool, QMutex, QMutexLocker, Slot, QSortFilterProxyModel, QTranslator
         from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor, QBrush, QAction, QActionGroup, QIcon
         from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView, QAbstractItemView, QMessageBox, QMenu, QFileDialog, QWidget, QDialog, QTimeEdit
+        from src.ui_mainwindow import Ui_MainWindow
         pyqtSlot = Slot # Alias pour compatibilité
         GUI_AVAILABLE = True
     except (ImportError, Exception):
@@ -279,15 +280,52 @@ if not GUI_AVAILABLE:
         NoBrush = 0
 
     class QTimer:
-        timeout = Signal()
         def __init__(self):
             self.timeout = Signal()
-        def start(self, ms=1000): pass
-        def stop(self): pass
-        def setInterval(self, ms): pass
+            self._timer = None
+            self._interval = 1000
+            self._running = False
+            
+        def start(self, ms=None):
+            if ms is not None:
+                self._interval = ms
+            self._running = True
+            self._schedule()
+            
+        def stop(self):
+            self._running = False
+            if self._timer:
+                self._timer.cancel()
+                self._timer = None
+                
+        def setInterval(self, ms):
+            self._interval = ms
+            # Si le timer tourne, on redémarre avec le nouvel intervalle au prochain tick
+            # Mais pour être plus réactif, on peut aussi annuler et relancer
+            if self._running:
+                self._schedule()
+            
+        def interval(self):
+            return self._interval
+            
+        def _schedule(self):
+            if not self._running: return
+            if self._timer: self._timer.cancel()
+            
+            # Utiliser threading.Timer pour l'exécution différée
+            self._timer = threading.Timer(self._interval / 1000.0, self._tick)
+            self._timer.daemon = True
+            self._timer.start()
+            
+        def _tick(self):
+            if self._running:
+                # Émettre le signal via QThread si possible, ou direct
+                self.timeout.emit()
+                self._schedule()
+
         @staticmethod
         def singleShot(ms, callback):
-            timer = threading.Timer(ms / 1000, callback)
+            timer = threading.Timer(ms / 1000.0, callback)
             timer.daemon = True
             timer.start()
 

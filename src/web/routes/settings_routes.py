@@ -198,10 +198,15 @@ def get_license_info():
     try:
         is_active = lic.verify_license()
         activation_code = lic.generate_activation_code()
+        
+        # Log pour debug
+        logger.info(f"API get_license_info: active={is_active}, code={activation_code}")
+        
         return jsonify({
             'success': True,
             'active': is_active,
-            'activation_code': activation_code
+            'activation_code': activation_code,
+            'days_remaining': lic.jours_restants_licence()
         })
     except Exception as e:
         logger.error(f"Erreur get_license_info: {e}", exc_info=True)
@@ -212,14 +217,27 @@ def get_license_info():
 def save_general():
     try:
         data = request.get_json()
+        
+        # Sauvegarde via secure_config
+        secure_config.save_general_config(
+            site_name=data.get('site', ''),
+            license_key=data.get('license', ''),
+            theme=data.get('theme', 'nord')
+        )
+        
+        # Mise à jour des variables globales pour effet immédiat
         var.nom_site = data.get('site', '')
         var.license_key = data.get('license', '')
         var.theme = data.get('theme', 'nord')
+        
+        # Legacy backup
         db.save_param_db()
+        
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"Erreur save_general: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
 @settings_bp.route('/api/update_general_setting', methods=['POST'])
 @WebAuth.login_required
 def update_general_setting():
@@ -228,10 +246,15 @@ def update_general_setting():
         key = data.get('key')
         value = data.get('value')
         
-        if key == 'site': var.nom_site = value
-        elif key == 'theme': var.theme = value
+        if key == 'site': 
+            var.nom_site = value
+            secure_config.save_general_config(site_name=value)
+        elif key == 'theme': 
+            var.theme = value
+            secure_config.save_general_config(theme=value)
+        elif key == 'advanced_title':
+            secure_config.save_general_config(advanced_title=value)
         
-        db.save_param_db()
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"Erreur update_general_setting: {e}", exc_info=True)

@@ -173,7 +173,7 @@ class AsyncPingWorker(QThread):
         # 2. Tester les adresses IP en PARALLÈLE par lots (comme avant)
         if ip_addresses:
             logger.debug(f"Test parallèle de {len(ip_addresses)} adresse(s) IP...")
-            batch_size = 5  # Réduit pour éviter la surcharge et les faux positifs (HS alors que connecté)
+            batch_size = 20  # Nombre d'hôtes testés en parallèle
             for i in range(0, len(ip_addresses), batch_size):
                 if not self.is_running:
                     break
@@ -782,7 +782,7 @@ class SNMPWorker(QThread):
 
     async def snmp_poll(self, ips):
         """Interroge les équipements SNMP par petits lots pour éviter la surcharge."""
-        batch_size = 5  # Traiter 5 IPs à la fois max
+        batch_size = 20  # Traiter 20 IPs à la fois max
         
         for i in range(0, len(ips), batch_size):
             if not self.is_running:

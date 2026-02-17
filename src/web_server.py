@@ -173,6 +173,7 @@ class WebServer(QObject):
         from src.web.routes.log_routes import log_bp
         from src.web.routes.dashboard_routes import dashboard_bp
         from src.web.routes.monitoring_routes import monitoring_bp
+        from src.web.routes.stats_routes import stats_bp
 
         self.app.register_blueprint(main_bp)
         self.app.register_blueprint(auth_bp)
@@ -187,6 +188,7 @@ class WebServer(QObject):
         self.app.register_blueprint(log_bp)
         self.app.register_blueprint(dashboard_bp)
         self.app.register_blueprint(monitoring_bp)
+        self.app.register_blueprint(stats_bp)
 
         self.app.register_blueprint(notification_bp)
         

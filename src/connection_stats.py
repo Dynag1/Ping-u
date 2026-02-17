@@ -351,7 +351,9 @@ class ConnectionStatsManager:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT DISTINCT ip, hostname FROM connection_events
+                    SELECT ip, MAX(hostname) as hostname, MAX(site) as site
+                    FROM connection_events
+                    GROUP BY ip
                     ORDER BY ip
                 ''')
                 return [dict(row) for row in cursor.fetchall()]
