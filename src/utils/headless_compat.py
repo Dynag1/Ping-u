@@ -301,6 +301,12 @@ if not GUI_AVAILABLE:
         def setInterval(self, ms):
             self._interval = ms
             # Si le timer tourne, on redémarre avec le nouvel intervalle au prochain tick
+            # Mais pour être plus réactif, on peut aussi annuler et relancer
+            if self._running:
+                self._schedule()
+            
+        def interval(self):
+            return self._interval
             
         def _schedule(self):
             if not self._running: return
