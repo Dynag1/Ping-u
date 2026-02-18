@@ -1228,13 +1228,11 @@ def run_headless_mode():
         logger.info(f"[HEADLESS] Serveur web demarre sur http://0.0.0.0:{port}")
     else:
         logger.error("[HEADLESS] Impossible de demarrer le serveur web")
-        sys.exit(1)
-    
-    # Ne PAS démarrer le monitoring automatiquement
-    # L'utilisateur peut le démarrer via l'interface web admin
+    # Démarrer le monitoring automatiquement en headless si des hôtes sont présents
     if hosts_loaded:
         logger.info(f"Monitoring pret pour {window.treeIpModel.rowCount()} hôte(s)")
-        logger.info(f"Demarrez le monitoring via l'interface web: http://localhost:{port}/admin")
+        logger.info("Démarrage automatique du monitoring...")
+        window.main_controller.start_monitoring()
     else:
         logger.info(f"Aucun hôte configuré. Configurez via l'interface web: http://localhost:{port}/admin")
     

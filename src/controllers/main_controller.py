@@ -266,6 +266,13 @@ class MainController:
                 except Exception as hm_err:
                     logger.error(f"Erreur update HostManager: {hm_err}")
 
+                # Diffuser la mise à jour aux clients web (si serveur actif)
+                if hasattr(self.main_window, 'web_server') and self.main_window.web_server:
+                    try:
+                        self.main_window.web_server.broadcast_update()
+                    except Exception as ws_err:
+                        logger.error(f"Erreur broadcast web: {ws_err}")
+
         except Exception as e:
             logger.error(f"Erreur on_monitoring_result pour {ip}: {e}")
 

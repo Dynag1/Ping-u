@@ -26,7 +26,7 @@ else
 fi
 
 echo "🐍 Python: $PYTHON_CMD"
-$PYTHON_CMD --version
+"$PYTHON_CMD" --version
 
 # Vérifier les modules essentiels
 echo ""
@@ -35,7 +35,7 @@ echo "🔍 Vérification des modules..."
 MISSING_MODULES=""
 
 check_module() {
-    if ! $PYTHON_CMD -c "import $1" 2>/dev/null; then
+    if ! "$PYTHON_CMD" -c "import $1" 2>/dev/null; then
         echo "   ❌ $1 manquant"
         MISSING_MODULES="$MISSING_MODULES $2"
     else
@@ -48,12 +48,13 @@ check_module "flask_socketio" "Flask-SocketIO"
 check_module "flask_cors" "Flask-Cors"
 check_module "requests" "requests"
 check_module "eventlet" "eventlet"
+check_module "pysnmp" "pysnmp-lextudio"
 
 # Installer les modules manquants
 if [ -n "$MISSING_MODULES" ]; then
     echo ""
     echo "📦 Installation des modules manquants..."
-    $PIP_CMD install $MISSING_MODULES
+    "$PIP_CMD" install $MISSING_MODULES
 fi
 
 # Nettoyer le cache Python

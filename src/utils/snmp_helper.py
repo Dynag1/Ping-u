@@ -691,7 +691,7 @@ class SNMPHelper:
                         # En mode numeric, retourner None si pas convertible
                         return None
         except Exception as e:
-            # logger.debug(f"Erreur requête SNMP {ip} ({oid}): {e}")
+            logger.debug(f"Erreur requête SNMP {ip} ({oid}): {e}")
             return None
         
         # Note: On NE ferme PAS le dispatcher ici car l'engine est partagé !
