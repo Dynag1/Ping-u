@@ -678,9 +678,6 @@ class SNMPHelper:
             
             errorIndication, errorStatus, errorIndex, varBinds = result
             
-            # Log des trames SNMP brutes (requis par l'utilisateur)
-            logger.info(f"SNMP RAW {ip} ({oid}): Indication={errorIndication}, Status={errorStatus}, VarBinds={varBinds}")
-            
             if errorIndication:
                 return None
             elif errorStatus:
