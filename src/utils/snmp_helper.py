@@ -479,14 +479,15 @@ class SNMPHelper:
         """Méthode interne pour récupérer la température."""
         # Si un OID spécifique est fourni, on l'utilise
         if oid:
-            temp = await self._query_oid(ip, oid, return_type='numeric')
-            return temp if isinstance(temp, (int, float)) else None
+            temp_raw = await self._query_oid(ip, oid, return_type='numeric')
+            return self._parse_temperature_value(temp_raw)
         
         # Si on a déjà un OID qui fonctionne pour cette IP, l'utiliser en priorité
         if ip in self._working_oids and 'temp' in self._working_oids[ip]:
             working_oid = self._working_oids[ip]['temp']
-            temp = await self._query_oid(ip, working_oid, return_type='numeric')
-            if temp is not None and isinstance(temp, (int, float)):
+            temp_raw = await self._query_oid(ip, working_oid, return_type='numeric')
+            temp = self._parse_temperature_value(temp_raw)
+            if temp is not None:
                 return temp
             else:
                 # L'OID ne fonctionne plus, le retirer du cache
@@ -503,8 +504,10 @@ class SNMPHelper:
         # Tester les OIDs filtrés
         for name, oid_value in oids_to_test.items():
             try:
-                temp = await self._query_oid(ip, oid_value, return_type='numeric')
-                if temp is not None and isinstance(temp, (int, float)):
+                temp_raw = await self._query_oid(ip, oid_value, return_type='numeric')
+                temp = self._parse_temperature_value(temp_raw)
+                
+                if temp is not None:
                     logger.debug(f"Température {ip}: {temp}°C (OID: {name})")
                     # Sauvegarder l'OID qui fonctionne pour cette IP
                     if ip not in self._working_oids:
@@ -621,6 +624,26 @@ class SNMPHelper:
         
         return device_type in ups_candidates
 
+    def _parse_temperature_value(self, value):
+        """Convertit une valeur brute SNMP en température Celsius."""
+        try:
+            numeric_value = float(value)
+            # Conversion selon la plage de valeur (température en °C)
+            if numeric_value > 10000:
+                # Probablement en millièmes de degrés (ex: 71600 = 71.6°C)
+                numeric_value = numeric_value / 1000.0
+            elif numeric_value > 1000:
+                # Probablement en centièmes de degrés (ex: 7215 = 72.15°C)
+                numeric_value = numeric_value / 100.0
+            elif numeric_value > 200:
+                # Probablement en dixièmes de degrés (ex: 450 = 45.0°C)
+                numeric_value = numeric_value / 10.0
+            # Si < 200, c'est déjà en degrés Celsius (plage normale: -40°C à 150°C)
+            # Arrondir à 1 chiffre après la virgule
+            return round(numeric_value, 1)
+        except (ValueError, TypeError):
+            return None
+
     async def _query_oid(self, ip, oid, return_type='numeric'):
         """
         Interroge un OID SNMP spécifique avec pysnmp 6.x (asyncio).
@@ -655,6 +678,9 @@ class SNMPHelper:
             
             errorIndication, errorStatus, errorIndex, varBinds = result
             
+            # Log des trames SNMP brutes (requis par l'utilisateur)
+            logger.info(f"SNMP RAW {ip} ({oid}): Indication={errorIndication}, Status={errorStatus}, VarBinds={varBinds}")
+            
             if errorIndication:
                 return None
             elif errorStatus:
@@ -670,20 +696,9 @@ class SNMPHelper:
                     
                     # Sinon essayer de convertir en nombre (mode numeric ou auto)
                     try:
-                        numeric_value = float(value)
-                        # Conversion selon la plage de valeur (température en °C)
-                        if numeric_value > 10000:
-                            # Probablement en millièmes de degrés (ex: 71600 = 71.6°C)
-                            numeric_value = numeric_value / 1000.0
-                        elif numeric_value > 1000:
-                            # Probablement en centièmes de degrés (ex: 7215 = 72.15°C)
-                            numeric_value = numeric_value / 100.0
-                        elif numeric_value > 200:
-                            # Probablement en dixièmes de degrés (ex: 450 = 45.0°C)
-                            numeric_value = numeric_value / 10.0
-                        # Si < 200, c'est déjà en degrés Celsius (plage normale: -40°C à 150°C)
-                        # Arrondir à 1 chiffre après la virgule
-                        return round(numeric_value, 1)
+                        # Retourner la valeur brute (sans scaling heuristique)
+                        # Le scaling doit être fait par l'appelant contextuel (température vs traffic)
+                        return float(value)
                     except (ValueError, TypeError):
                         # Si conversion échoue et mode auto, retourner en string
                         if return_type == 'auto':
