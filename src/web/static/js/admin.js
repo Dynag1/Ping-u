@@ -2645,14 +2645,21 @@ function switchSection(section) {
         }, 300);
     });
 
-    // Masquer toutes les sections de contenu inline (toujours, pour repartir de zéro)
-    const allContentSections = ['content-accueil', 'content-sites', 'content-dashboards', 'content-backup', 'content-users', 'content-notifications'];
-    allContentSections.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('active');
-    });
+    // Liste des sections principales (content-sites supprimé car intégré dans accueil)
+    const allContentSections = ['content-accueil', 'content-dashboards', 'content-backup', 'content-users', 'content-notifications'];
 
-    // Mettre à jour les highlights du menu (Sidebar + Header)
+    // Sections en ligne (non-modales)
+    const inlineSections = ['accueil', 'sites', 'dashboards', 'backup', 'notifications', 'users', 'main'];
+
+    // Si c'est une section principale, on masque tout d'abord
+    if (inlineSections.includes(section) || !section) {
+        allContentSections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+    }
+
+    // Mettre à jour les highlights du menu
     document.querySelectorAll('.menu-nav-item, .header-nav-btn').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.section === section) {
@@ -2660,24 +2667,52 @@ function switchSection(section) {
         }
     });
 
-    // Gérer l'affichage de la section demandée
-    const inlineSections = ['accueil', 'sites', 'dashboards', 'backup', 'notifications'];
+    // Gestion du panneau sites (intégré à l'accueil)
+    const panelSites = document.getElementById('panel-sites');
 
+    // Cas spécifique : SITES (affiche accueil + panneau sites)
+    if (section === 'sites') {
+        const accueil = document.getElementById('content-accueil');
+        if (accueil) accueil.classList.add('active');
+
+        if (panelSites) {
+            panelSites.style.display = 'block';
+            loadSites();
+        }
+
+        closeMenu();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+
+    // Cas spécifique : ACCUEIL (affiche accueil + masque panneau sites)
+    if (section === 'accueil' || !section || section === 'main') {
+        const accueil = document.getElementById('content-accueil');
+        if (accueil) accueil.classList.add('active');
+
+        if (panelSites) panelSites.style.display = 'none';
+
+        closeMenu();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+
+    // Autres sections
     if (inlineSections.includes(section)) {
+        if (panelSites) panelSites.style.display = 'none'; // Sécurité
+
         const target = document.getElementById('content-' + section);
         if (target) {
             target.classList.add('active');
         }
 
-        // Chargement des données au besoin
-        if (section === 'sites') loadSites();
         if (section === 'dashboards') loadDashboards();
         if (section === 'users') loadUsersList();
 
         closeMenu();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-        // C'est un modal (ajout, advanced, configuration)
+        // C'est un modal
         const modal = document.getElementById('modal-' + section);
         if (modal) {
             modal.style.display = 'flex';
@@ -2688,26 +2723,18 @@ function switchSection(section) {
                 }
             }, 10);
 
-            // Pour les modaux, on garde la section de fond visible (accueil par défaut si rien n'est actif)
-            // Mais si on arrive d'une autre section, on l'a déjà masquée plus haut
-            // Donc si on ouvre un modal, on doit s'assurer qu'UN fond reste visible (accueil)
+            // S'assurer qu'un fond est visible
             let backgroundActive = false;
-            inlineSections.forEach(s => {
-                if (document.getElementById('content-' + s).classList.contains('active')) backgroundActive = true;
+            allContentSections.forEach(id => {
+                if (document.getElementById(id).classList.contains('active')) backgroundActive = true;
             });
+
             if (!backgroundActive) {
                 const home = document.getElementById('content-accueil');
                 if (home) home.classList.add('active');
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-        }
-        closeMenu();
-
-        // Scroll logic for modals
-        const modalBody = modal ? modal.querySelector('.section-modal-body') : null;
-        if (modalBody) {
-            modalBody.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 }

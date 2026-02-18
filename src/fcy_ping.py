@@ -806,19 +806,38 @@ class SNMPWorker(QThread):
         if not self.is_running:
             return
         
+        # Nettoyage de l'IP : retirer le port si présent pour SNMP
+        # SNMP utilise toujours le port 161 standard
+        target_ip = ip
+        if URL_PARSER_AVAILABLE:
+            try:
+                parsed = parse_host_port(ip)
+                if parsed and parsed['host']:
+                    target_ip = parsed['host']
+                    # Si c'est une URL (http://...), on ignore SNMP sauf si c'est juste un hostname
+                    if parsed['protocol']:
+                        # Optionnel: on pourrait décider de ne pas faire de SNMP sur les URLs web
+                        # Pour l'instant on garde le comportement : on essaie sur le hostname
+                        pass
+            except Exception as e:
+                logger.debug(f"Erreur parsing IP pour SNMP {ip}: {e}")
+
         temp = None
         bandwidth = None
         
         try:
             # Température avec timeout court
+            # Utiliser target_ip (sans port)
+            # logger.info(f"Polling SNMP temp for {target_ip}...")
             temp = await asyncio.wait_for(
-                snmp_helper.get_temperature(ip), 
+                snmp_helper.get_temperature(target_ip), 
                 timeout=2.0
             )
         except asyncio.TimeoutError:
+            # logger.warning(f"Timeout SNMP temp {target_ip}")
             pass
         except Exception as e:
-            logger.debug(f"Erreur SNMP temp {ip}: {e}")
+            logger.warning(f"Erreur SNMP temp {ip} -> {target_ip}: {e}")
         
         if not self.is_running:
             return
@@ -826,8 +845,9 @@ class SNMPWorker(QThread):
         try:
             # Bande passante avec timeout court
             previous_data = self.traffic_cache.get(ip)
+            # Utiliser target_ip (sans port) pour la requête SNMP
             bandwidth_result = await asyncio.wait_for(
-                snmp_helper.calculate_bandwidth(ip, interface_index=None, previous_data=previous_data),
+                snmp_helper.calculate_bandwidth(target_ip, interface_index=None, previous_data=previous_data),
                 timeout=2.0
             )
             
@@ -837,10 +857,11 @@ class SNMPWorker(QThread):
                     'out_mbps': bandwidth_result['out_mbps']
                 }
                 self.traffic_cache[ip] = bandwidth_result['raw_data']
+                # logger.info(f"Bandwidth updated for {ip}")
         except asyncio.TimeoutError:
             pass
         except Exception as e:
-            logger.debug(f"Erreur SNMP bandwidth {ip}: {e}")
+            logger.warning(f"Erreur SNMP bandwidth {ip} -> {target_ip}: {e}")
         
         # Émettre les résultats si disponibles
         if temp or bandwidth:
