@@ -40,6 +40,7 @@ liste_hs = {}
 liste_mail = {}
 liste_telegram = {}
 liste_stats = {}  # Liste dédiée au suivi des statistiques de connexion (indépendante des alertes)
+liste_exclu = set() # Liste des hôtes exclus des notifications
 
 # Cache SNMP - Stockage global des données de trafic réseau et des débits calculés
 # Format: {'ip': {'in': octets, 'out': octets, 'timestamp': float}}

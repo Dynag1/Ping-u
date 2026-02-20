@@ -789,6 +789,7 @@ class MainWindow(QMainWindow):
         """Synchronise le modèle Qt vers le HostManager (Thread-Safe)"""
         try:
             hosts = []
+            var.liste_exclu.clear() # Sync from model
             model = self.treeIpModel
             for row in range(model.rowCount()):
                 try:
@@ -801,6 +802,10 @@ class MainWindow(QMainWindow):
                         item = model.item(row, col)
                         return item.text() if item else ""
                     
+                    is_excl = get_text(10) == 'x'
+                    if is_excl:
+                        var.liste_exclu.add(ip)
+
                     host = {
                         'id': get_text(0),
                         'ip': ip,
@@ -812,13 +817,13 @@ class MainWindow(QMainWindow):
                         'suivi': get_text(7),
                         'site': get_text(8),
                         'commentaire': get_text(9),
-                        'excl': get_text(10)
+                        'excl': 'x' if is_excl else ''
                         # Status sera géré dynamiquement, mais on prend l'état initial
                     }
                     
                     # Déterminer status initial
                     latence = host['latence']
-                    if latence == "HS" or host['excl'] == 'x':
+                    if latence == "HS":
                         host['status'] = 'offline'
                     else:
                         host['status'] = 'online'

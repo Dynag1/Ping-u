@@ -250,11 +250,12 @@ class MainController:
                     
                     # Mise à jour seulement si c'est un résultat de Ping (latency >= 0)
                     if latency >= 0:
-                        status = "offline"
-                        lat_text = "HS"
-                        if not is_excluded and latency < 500:
+                        if latency < 500:
                             lat_text = f"{latency:.1f} ms"
                             status = "online"
+                        else:
+                            status = "offline"
+                            lat_text = "HS"
                     
                     # Mise à jour HostManager
                     self.main_window.host_manager.update_host_status(

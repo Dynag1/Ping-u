@@ -205,11 +205,16 @@ class AlertManager(QObject):
             ip_ok = ""
             
             for key, value in list(var.liste_hs.items()):
+                # On ignore les popups pour les hôtes exclus
+                is_excluded = key in var.liste_exclu
+
                 if int(value) == int(var.nbrHs):
-                    ip_hs += f"{key}\n "
+                    if not is_excluded:
+                        ip_hs += f"{key}\n "
                     var.liste_hs[key] = var.STATE_ALERT_SENT
                 elif int(value) == var.STATE_RECOVERY:
-                    ip_ok += f"{key}\n "
+                    if not is_excluded:
+                        ip_ok += f"{key}\n "
                     erase.append(key)
             
             for cle in erase:
@@ -425,8 +430,11 @@ class AlertManager(QObject):
             
             for host in all_hosts_data:
                 ip = host.get('ip')
+                if not ip or ip in var.liste_exclu:
+                    continue
+                
                 temp_text = host.get('temp')
-                if not ip or not temp_text:
+                if not temp_text:
                     continue
                 
                 # Extraire la valeur numérique de la température

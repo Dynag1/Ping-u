@@ -48,13 +48,46 @@ def exclude_host():
             item_ip = model.item(row, 1)
             if item_ip and item_ip.text() == ip:
                 model.setItem(row, 10, QStandardItem("x"))
-                latence_item = model.item(row, 5)
-                if latence_item: latence_item.setText("EXCLU")
+                
+                # Mettre à jour la liste globale d'exclusion
+                from src import var
+                var.liste_exclu.add(ip)
+                
+                # On ne le retire PAS de liste_hs car l'utilisateur veut le suivre dans les vues
+                # Mais on le retire des listes de notifications actives
+                var.liste_mail.pop(ip, None)
+                var.liste_telegram.pop(ip, None)
+                
                 current_app.config['WEB_SERVER'].broadcast_update()
                 return jsonify({'success': True})
         return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
     except Exception as e:
         logger.error(f"Erreur exclude_host: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@host_bp.route('/api/include_host', methods=['POST'])
+@WebAuth.login_required
+def include_host():
+    try:
+        data = request.get_json()
+        ip = data.get('ip')
+        main_window = current_app.config['MAIN_WINDOW']
+        model = main_window.treeIpModel
+        for row in range(model.rowCount()):
+            item_ip = model.item(row, 1)
+            if item_ip and item_ip.text() == ip:
+                model.setItem(row, 10, QStandardItem(""))
+                
+                # Mettre à jour la liste globale d'exclusion
+                from src import var
+                if ip in var.liste_exclu:
+                    var.liste_exclu.remove(ip)
+                
+                current_app.config['WEB_SERVER'].broadcast_update()
+                return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Hôte non trouvé'}), 404
+    except Exception as e:
+        logger.error(f"Erreur include_host: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @host_bp.route('/api/update_comment', methods=['POST'])

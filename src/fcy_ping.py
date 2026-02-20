@@ -606,6 +606,9 @@ class PingManager(QObject):
         # Mais pour l'instant on garde la compatibilité avec src.var.
         
         try:
+            # Vérifier l'exclusion
+            is_excluded = ip in var.liste_exclu
+
             # Récupérer les paramètres de notification (cache ? ou direct DB)
             # Puisqu'on est dans le thread principal ou GUI, accès DB rapide (SQLite local)
             settings = get_host_notification_settings(ip)
@@ -613,18 +616,25 @@ class PingManager(QObject):
             # Stats toujours mises à jour
             if latency >= 500:
                 self.list_increment(var.liste_stats, ip, log=False)
+                
                 # Traitement des échecs ping - indépendant de SNMP
+                # Toujours mis à jour pour le suivi dans les vues (mais exclusion gérée dans AlertManager pour popup)
                 self.list_increment(var.liste_hs, ip, log=True)
                 
-                # Vérifier si notifications activées pour cet hôte
-                if settings.get('email', True):
-                    self.list_increment(var.liste_mail, ip, log=False)
+                if not is_excluded:
+                    # Vérifier si notifications activées pour cet hôte
+                    if settings.get('email', True):
+                        self.list_increment(var.liste_mail, ip, log=False)
+                    else:
+                        self.list_ok(var.liste_mail, ip)
+                        
+                    if settings.get('telegram', True):
+                        self.list_increment(var.liste_telegram, ip, log=False)
+                    else:
+                        self.list_ok(var.liste_telegram, ip)
                 else:
+                    # S'il est exclu, on s'assure qu'il n'est pas dans les listes actives de notification
                     self.list_ok(var.liste_mail, ip)
-                    
-                if settings.get('telegram', True):
-                    self.list_increment(var.liste_telegram, ip, log=False)
-                else:
                     self.list_ok(var.liste_telegram, ip)
             else:
                 self.list_ok(var.liste_stats, ip)
