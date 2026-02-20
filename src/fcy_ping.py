@@ -225,6 +225,20 @@ class AsyncPingWorker(QThread):
             except Exception as e:
                 logger.error(f"[HTTP] Exception lors de la vérification de {original_address}: {e}", exc_info=True)
                 latency = 500.0
+
+            # Double vérification si échec (pour éviter les faux positifs)
+            if latency >= 500.0 and self.is_running:
+                try:
+                    await asyncio.sleep(0.5)
+                    logger.debug(f"[HTTP-RETRY] Seconde tentative pour {original_address}...")
+                    result = await http_checker.check_website(original_address)
+                    if result['success']:
+                        latency = result['response_time_ms']
+                        logger.info(f"[HTTP-RETRY] ✓ Site web {original_address} récupéré au second essai: {latency:.1f} ms")
+                    else:
+                        logger.debug(f"[HTTP-RETRY] Echec confirmé pour le site web {original_address}: {result.get('error', 'Unknown')}")
+                except Exception as e:
+                    logger.error(f"[HTTP-RETRY] Erreur retry HTTP {original_address}: {e}")
         
         # Cas 2: IP ou domaine avec port personnalisé -> TCP check
         elif has_custom_port and port:
@@ -239,6 +253,19 @@ class AsyncPingWorker(QThread):
             except Exception as e:
                 logger.error(f"[TCP] Exception lors de la vérification de {host}:{port}: {e}", exc_info=True)
                 latency = 500.0
+                
+            # Double vérification si échec (pour éviter les faux positifs)
+            if latency >= 500.0 and self.is_running:
+                try:
+                    await asyncio.sleep(0.5)
+                    logger.debug(f"[TCP-RETRY] Seconde tentative pour {host}:{port}...")
+                    latency = await check_tcp_port(host, port, timeout=2)
+                    if latency < 500:
+                        logger.info(f"[TCP-RETRY] ✓ Port {port} récupéré au second essai sur {host} - {latency:.1f} ms")
+                    else:
+                        logger.debug(f"[TCP-RETRY] Echec confirmé pour {host}:{port}")
+                except Exception as e:
+                    logger.error(f"Erreur retry TCP {host}:{port}: {e}")
         
         # Cas 3: IP ou domaine sans port -> ICMP ping classique
         else:
