@@ -53,8 +53,8 @@ def exclude_host():
                 from src import var
                 var.liste_exclu.add(ip)
                 
-                # On ne le retire PAS de liste_hs car l'utilisateur veut le suivre dans les vues
-                # Mais on le retire des listes de notifications actives
+                # On le retire uniquement des listes de notifications actives (Mail/Telegram)
+                # liste_hs est conservée pour le suivi visuel standard
                 var.liste_mail.pop(ip, None)
                 var.liste_telegram.pop(ip, None)
                 

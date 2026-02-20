@@ -618,7 +618,7 @@ class PingManager(QObject):
                 self.list_increment(var.liste_stats, ip, log=False)
                 
                 # Traitement des échecs ping - indépendant de SNMP
-                # Toujours mis à jour pour le suivi dans les vues (mais exclusion gérée dans AlertManager pour popup)
+                # Toujours mis à jour pour le suivi visuel (HS) et les compteurs
                 self.list_increment(var.liste_hs, ip, log=True)
                 
                 if not is_excluded:
@@ -633,7 +633,7 @@ class PingManager(QObject):
                     else:
                         self.list_ok(var.liste_telegram, ip)
                 else:
-                    # S'il est exclu, on s'assure qu'il n'est pas dans les listes actives de notification
+                    # S'il est exclu, on s'assure qu'il n'est pas dans les listes actives d'envoi mail/telegram
                     self.list_ok(var.liste_mail, ip)
                     self.list_ok(var.liste_telegram, ip)
             else:

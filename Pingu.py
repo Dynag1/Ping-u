@@ -826,6 +826,7 @@ class MainWindow(QMainWindow):
                     if latence == "HS":
                         host['status'] = 'offline'
                     else:
+                        # Si latence == "EXCLU" ou autre, on considère online pour le compteur
                         host['status'] = 'online'
                         
                     hosts.append(host)

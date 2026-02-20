@@ -230,10 +230,8 @@ class MainController:
                     
                     if is_excluded:
                         item.setForeground(QBrush(QColor("gray")))
-                        if latency < 500:
-                            item.setBackground(QBrush(QColor(240, 240, 240)))
-                        else:
-                            item.setBackground(QBrush(QColor(255, 240, 240)))
+                        # Toujours un fond neutre pour les exclus
+                        item.setBackground(QBrush(QColor(240, 240, 240)))
                     else:
                         if color:
                             item.setBackground(QBrush(QColor(color)))
