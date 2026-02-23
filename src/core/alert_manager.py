@@ -1,7 +1,7 @@
 from src.utils.headless_compat import QObject, Signal, QTimer, GUI_AVAILABLE
 
 import threading
-from src import thread_mail, thread_recap_mail, thread_telegram, var, db
+from src import thread_mail, thread_recap_mail, thread_telegram, var, db, email_sender
 from src.utils.logger import get_logger
 from src.utils.colors import AppColors
 from src.notification_manager import NotificationManager
@@ -44,7 +44,6 @@ class AlertManager(QObject):
     def start(self):
         """Démarre la surveillance des alertes."""
         logger.info(f"Gestionnaire d'alertes démarré (seuil: {var.nbrHs})")
-        self.check_mail_recap()
         
         # Démarrer le timer avec le délai configuré
         delay_ms = max(10, int(var.delais)) * 1000
@@ -89,6 +88,10 @@ class AlertManager(QObject):
                 self.process_telegram()
             if var.tempAlert:
                 self.process_temp_alerts()
+            
+            # Vérifier l'état du mail recap (lance le thread si activé et qu'il ne tourne pas)
+            self.check_mail_recap()
+            
         except Exception as e:
             logger.error(f"Erreur vérification alertes: {e}", exc_info=True)
 
@@ -101,17 +104,9 @@ class AlertManager(QObject):
                 return
             
             try:
-                # Note: On passe une liste d'IPs/Host info au lieu du modèle si possible
-                # Mais thread_recap_mail semble encore dépendre du modèle.
-                # Pour l'instant, on reste compatible ou on passe None si non-GUI
-                from src.utils.headless_compat import GUI_AVAILABLE
-                model_to_pass = None
-                if GUI_AVAILABLE and hasattr(self.main_window, 'treeIpModel'):
-                    model_to_pass = self.main_window.treeIpModel
-
                 self.mail_recap_thread = threading.Thread(
                     target=thread_recap_mail.main, 
-                    args=(self.main_window, model_to_pass),
+                    args=(self.main_window, self.get_all_hosts_data_callback),
                     daemon=True,
                     name="MailRecapThread"
                 )
@@ -119,6 +114,18 @@ class AlertManager(QObject):
                 logger.info("Thread mail recap lancé")
             except Exception as e:
                 logger.error(f"Erreur lancement recap mail: {e}", exc_info=True)
+
+    def _get_host_metadata(self, ip):
+        """Récupère les métadonnées d'un hôte (nom, site, mac, latence, etc.) de manière sécurisée."""
+        metadata = {}
+        if self.get_host_metadata_callback:
+            metadata = self.get_host_metadata_callback(ip) or {}
+        return {
+            'nom': metadata.get('nom') or "Inconnu",
+            'site': metadata.get('site') or "",
+            'mac': metadata.get('mac') or "",
+            'latence': metadata.get('latence') or "OK"
+        }
 
     def process_stats(self):
         """Enregistre les événements de déconnexion/reconnexion dans les statistiques.
@@ -139,12 +146,9 @@ class AlertManager(QObject):
                 if int_value == int(var.nbrHs):
                     # Déconnexion détectée
                     if key not in self._stats_recorded_disconnects:
-                        metadata = {}
-                        if self.get_host_metadata_callback:
-                            metadata = self.get_host_metadata_callback(key)
-                        
-                        hostname = metadata.get('nom') or key
-                        site = metadata.get('site') or ""
+                        meta = self._get_host_metadata(key)
+                        hostname = meta['nom'] if meta['nom'] != "Inconnu" else key
+                        site = meta['site']
                         
                         stats_manager.record_disconnect(key, hostname, site)
                         logger.info(f"[STATS] Déconnexion enregistrée: {key} [site: {site or 'N/A'}]")
@@ -159,17 +163,14 @@ class AlertManager(QObject):
                         
                         self._stats_recorded_disconnects.add(key)
                     # Passer à l'état "alerté" pour permettre la détection de reconnexion
-                    var.liste_stats[key] = 10
+                    var.liste_stats[key] = var.STATE_ALERT_SENT
                     
-                elif int_value == 20:
+                elif int_value == var.STATE_RECOVERY:
                     # Reconnexion détectée
                     if key in self._stats_recorded_disconnects:
-                        metadata = {}
-                        if self.get_host_metadata_callback:
-                            metadata = self.get_host_metadata_callback(key)
-                            
-                        hostname = metadata.get('nom') or key
-                        site = metadata.get('site') or ""
+                        meta = self._get_host_metadata(key)
+                        hostname = meta['nom'] if meta['nom'] != "Inconnu" else key
+                        site = meta['site']
                         
                         stats_manager.record_reconnect(key, hostname, site)
                         logger.info(f"[STATS] Reconnexion enregistrée: {key} [site: {site or 'N/A'}]")
@@ -186,7 +187,7 @@ class AlertManager(QObject):
                     # Marquer pour suppression
                     erase.append(key)
                     
-                elif int_value == 10:
+                elif int_value == var.STATE_ALERT_SENT:
                     # État alerté - s'assurer qu'on l'a dans le set
                     self._stats_recorded_disconnects.add(key)
             
@@ -233,8 +234,6 @@ class AlertManager(QObject):
     def process_mail(self):
         """Traite les alertes mail avec templates HTML modernes."""
         try:
-            from src import email_sender
-            
             erase = []
             hosts_down = []
             hosts_up = []
@@ -254,32 +253,28 @@ class AlertManager(QObject):
                 logger.error(f"[MAIL] Erreur vérification config SMTP: {e_smtp}")
 
             for key, value in list(var.liste_mail.items()):
+                if key in var.liste_exclu:
+                    continue
+                    
                 if int(value) == int(var.nbrHs):
                     # Hôte qui vient de tomber
                     logger.info(f"Alerte mail: {key} HS")
                     
-                    metadata = {}
-                    if self.get_host_metadata_callback:
-                        metadata = self.get_host_metadata_callback(key)
-                    
-                    nom = metadata.get('nom') or "Inconnu"
-                    mac = metadata.get('mac') or ""
-                    site = metadata.get('site') or ""
-                    latence = "HS"
+                    meta = self._get_host_metadata(key)
                     
                     host_info = {
                         'ip': key,
-                        'nom': nom,
-                        'mac': mac,
-                        'latence': latence,
-                        'site': site
+                        'nom': meta['nom'],
+                        'mac': meta['mac'],
+                        'latence': "HS",
+                        'site': meta['site']
                     }
                     hosts_down.append(host_info)
                     
                     # Notification Interne
                     self.notification_manager.add_notification(
                         type_alert='mail',
-                        message=f"Alerte Mail : {nom} ({key}) est HS",
+                        message=f"Alerte Mail : {meta['nom']} ({key}) est HS",
                         level='error',
                         details=host_info
                     )
@@ -290,28 +285,21 @@ class AlertManager(QObject):
                     # Hôte qui revient en ligne
                     logger.info(f"[MAIL] Alerte retour détectée: {key} revient en ligne")
                     
-                    metadata = {}
-                    if self.get_host_metadata_callback:
-                        metadata = self.get_host_metadata_callback(key)
-                    
-                    nom = metadata.get('nom') or "Inconnu"
-                    mac = metadata.get('mac') or ""
-                    site = metadata.get('site') or ""
-                    latence = metadata.get('latence') or "OK"
+                    meta = self._get_host_metadata(key)
                     
                     host_info = {
                         'ip': key,
-                        'nom': nom,
-                        'mac': mac,
-                        'latence': latence,
-                        'site': site
+                        'nom': meta['nom'],
+                        'mac': meta['mac'],
+                        'latence': meta['latence'],
+                        'site': meta['site']
                     }
                     hosts_up.append(host_info)
                     
                     # Notification Interne
                     self.notification_manager.add_notification(
                         type_alert='mail',
-                        message=f"Rétablissement Mail : {nom} ({key}) est OK",
+                        message=f"Rétablissement Mail : {meta['nom']} ({key}) est OK",
                         level='success',
                         details=host_info
                     )
@@ -326,7 +314,8 @@ class AlertManager(QObject):
                 logger.info(f"[MAIL] Envoi d'un mail groupé: {len(hosts_down)} HS, {len(hosts_up)} revenu(s)")
                 threading.Thread(
                     target=email_sender.send_grouped_alert_email,
-                    args=(hosts_down, hosts_up)
+                    args=(hosts_down, hosts_up),
+                    daemon=True
                 ).start()
                 
         except Exception as e:
@@ -355,45 +344,36 @@ class AlertManager(QObject):
                 logger.error(f"[TELEGRAM] Erreur vérification config: {e_tg}")
 
             for key, value in list(var.liste_telegram.items()):
+                if key in var.liste_exclu:
+                    continue
+
                 if int(value) == int(var.nbrHs):
                     logger.info(f"Alerte Telegram: {key} HS")
                     
-                    metadata = {}
-                    if self.get_host_metadata_callback:
-                        metadata = self.get_host_metadata_callback(key)
-                    
-                    nom = metadata.get('nom') or "Inconnu"
-                    site = metadata.get('site') or ""
-                    
-                    site_prefix = f"[{site}] " if site else ""
-                    ip_hs_text += f"{site_prefix}{nom} : {key}\n"
+                    meta = self._get_host_metadata(key)
+                    site_prefix = f"[{meta['site']}] " if meta['site'] else ""
+                    ip_hs_text += f"{site_prefix}{meta['nom']} : {key}\n"
                     
                     # Notification Interne
                     self.notification_manager.add_notification(
                         type_alert='telegram',
-                        message=f"Alerte Telegram : {nom} ({key}) HS",
+                        message=f"Alerte Telegram : {meta['nom']} ({key}) HS",
                         level='error',
-                        details={'ip': key, 'nom': nom, 'site': site}
+                        details={'ip': key, 'nom': meta['nom'], 'site': meta['site']}
                     )
                     
                     var.liste_telegram[key] = var.STATE_ALERT_SENT
                 elif int(value) == var.STATE_RECOVERY:
-                    metadata = {}
-                    if self.get_host_metadata_callback:
-                        metadata = self.get_host_metadata_callback(key)
-                        
-                    nom = metadata.get('nom') or "Inconnu"
-                    site = metadata.get('site') or ""
-                    
-                    site_prefix = f"[{site}] " if site else ""
-                    ip_ok_text += f"{site_prefix}{nom} : {key}\n"
+                    meta = self._get_host_metadata(key)
+                    site_prefix = f"[{meta['site']}] " if meta['site'] else ""
+                    ip_ok_text += f"{site_prefix}{meta['nom']} : {key}\n"
                     
                     # Notification Interne
                     self.notification_manager.add_notification(
                         type_alert='telegram',
-                        message=f"Rétablissement Telegram : {nom} ({key}) OK",
+                        message=f"Rétablissement Telegram : {meta['nom']} ({key}) OK",
                         level='success',
-                        details={'ip': key, 'nom': nom, 'site': site}
+                        details={'ip': key, 'nom': meta['nom'], 'site': meta['site']}
                     )
                     
                     erase.append(key)
@@ -410,7 +390,7 @@ class AlertManager(QObject):
                 message += self.main_window.tr("les hotes suivants sont OK : \n") + ip_ok_text
                 
             if send_msg:
-                threading.Thread(target=thread_telegram.main, args=(message,)).start()
+                threading.Thread(target=thread_telegram.main, args=(message,), daemon=True).start()
                 
         except Exception as e:
             logger.error(f"Erreur process telegram: {e}", exc_info=True)
@@ -466,16 +446,16 @@ class AlertManager(QObject):
                             # Notification Interne
                             self.notification_manager.add_notification(
                                 type_alert='temperature',
-                                message=f"Température élevée : {nom} ({key}) - {temp}°C",
+                                message=f"Température élevée : {nom} ({ip}) - {temp}°C",
                                 level='warning',
                                 details={'ip': ip, 'nom': nom, 'temp': temp, 'seuil': seuil}
                             )
                             
-                            var.liste_temp_alert[ip] = 10  # Marquer comme alerté
+                            var.liste_temp_alert[ip] = var.STATE_ALERT_SENT  # Marquer comme alerté
                 else:
                     # Température normale
                     if ip in var.liste_temp_alert:
-                        if var.liste_temp_alert[ip] == 10:
+                        if var.liste_temp_alert[ip] == var.STATE_ALERT_SENT:
                             nom = host.get('nom') or "Inconnu"
                             hosts_normal_temp.append({
                                 'ip': ip,
@@ -487,7 +467,7 @@ class AlertManager(QObject):
                             # Notification Interne
                             self.notification_manager.add_notification(
                                 type_alert='temperature',
-                                message=f"Température normale : {nom} ({key}) - {temp}°C",
+                                message=f"Température normale : {nom} ({ip}) - {temp}°C",
                                 level='success',
                                 details={'ip': ip, 'nom': nom, 'temp': temp}
                             )
@@ -523,7 +503,6 @@ class AlertManager(QObject):
             # Email
             if var.mail:
                 try:
-                    from src import email_sender
                     for host in hosts:
                         host_info = {
                             'ip': host['ip'],
@@ -533,7 +512,8 @@ class AlertManager(QObject):
                         }
                         threading.Thread(
                             target=email_sender.send_temp_alert_email,
-                            args=(host_info, alert_type)
+                            args=(host_info, alert_type),
+                            daemon=True
                         ).start()
                 except Exception as e:
                     logger.error(f"Erreur envoi email température: {e}")
@@ -541,7 +521,7 @@ class AlertManager(QObject):
             # Telegram
             if var.telegram:
                 full_message = self.main_window.tr("Alerte sur le site ") + var.nom_site + "\n\n" + message
-                threading.Thread(target=thread_telegram.main, args=(full_message,)).start()
+                threading.Thread(target=thread_telegram.main, args=(full_message,), daemon=True).start()
                 
         except Exception as e:
             logger.error(f"Erreur envoi alertes température: {e}", exc_info=True)

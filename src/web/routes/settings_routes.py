@@ -183,10 +183,21 @@ def save_mail_recap():
 @WebAuth.login_required
 def send_test_recap():
     try:
-        from src import email_sender
+        from src import thread_recap_mail
         import threading
         main_window = current_app.config['MAIN_WINDOW']
-        threading.Thread(target=email_sender.send_recap_email, args=(main_window.treeIpModel, True)).start()
+        
+        get_hosts_callback = None
+        if hasattr(main_window, 'main_controller') and main_window.main_controller.alert_manager:
+            get_hosts_callback = main_window.main_controller.alert_manager.get_all_hosts_data_callback
+        elif hasattr(main_window, 'main_controller'):
+            get_hosts_callback = main_window.main_controller.get_all_hosts_data
+            
+        threading.Thread(
+            target=thread_recap_mail.prepaMail, 
+            args=(None, get_hosts_callback, True) # True for test_mode
+        ).start()
+        
         return jsonify({'success': True, 'message': 'Email de test envoyé'})
     except Exception as e:
         logger.error(f"Erreur send_test_recap: {e}", exc_info=True)

@@ -5,6 +5,9 @@
 import time
 from datetime import datetime
 from src import var, thread_mail, db
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def jour_demande():
@@ -28,27 +31,23 @@ def jour_demande():
         if data[7]:
             jourDemande = jourDemande + ("6",)
     except Exception as e:
-        print(f"Erreur jour_demande: {e}")
+        logger.error(f"Erreur jour_demande: {e}")
     return jourDemande
 
 
-def prepaMail(self, tree_model):
+def prepaMail(self, get_hosts_callback, test_mode=False):
     """Prépare et envoie l'email récapitulatif avec template HTML moderne."""
     try:
         from src import email_sender
         
         # Collecter les données des hôtes
         hosts_data = []
-        for row in range(tree_model.rowCount()):
-            index_nom = tree_model.index(row, 2)  # Colonne Nom
-            index_ip = tree_model.index(row, 1)   # Colonne IP
-            index_statut = tree_model.index(row, 5)  # Colonne Latence/Statut
-            index_temp = tree_model.index(row, 6)  # Colonne Température
-
-            nom = tree_model.data(index_nom) or "Inconnu"
-            ip = tree_model.data(index_ip) or "N/A"
-            statut_text = tree_model.data(index_statut) or "N/A"
-            temp_text = tree_model.data(index_temp) or ""
+        hosts = get_hosts_callback() if get_hosts_callback else []
+        for host in hosts:
+            nom = host.get('nom') or "Inconnu"
+            ip = host.get('ip') or "N/A"
+            statut_text = host.get('latence') or "N/A"
+            temp_text = host.get('temp') or ""
             
             # Déterminer le statut
             status = 'offline' if statut_text == "HS" else 'online'
@@ -88,52 +87,46 @@ def prepaMail(self, tree_model):
         hosts_data.sort(key=sort_key)
         
         # Envoyer l'email avec le nouveau template
-        email_sender.send_recap_email(hosts_data, test_mode=False)
+        email_sender.send_recap_email(hosts_data, test_mode=test_mode)
         
     except Exception as inst:
-        print(f"Erreur prepaMail: {inst}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Erreur prepaMail: {inst}", exc_info=True)
 
 
-def main(self, tree_model):
-    try:
-        data = db.lire_param_mail_recap()
-        if not data or len(data) < 8:
-            print("Configuration mail récap non trouvée, thread arrêté")
-            return
-        heureDemande = data[0].strftime("%H:%M") if data[0] else "00:00"
-    except Exception as e:
-        print(f"Erreur lecture config mail recap: {e}")
-        return
-    
+def main(self, get_hosts_callback):
     while True:
         try:
             # Vérifier l'arrêt demandé via stop_event ou var.tourne
             if var.stop_event.is_set() or not var.tourne:
-                print("Mail recap: arrêt demandé")
+                logger.info("Mail recap: arrêt demandé")
                 break
                 
             if var.mailRecap:
+                try:
+                    data = db.lire_param_mail_recap()
+                    heureDemande = data[0].strftime("%H:%M") if data and data[0] else "00:00"
+                except Exception as e:
+                    logger.error(f"Erreur lecture config mail recap dans le thread: {e}")
+                    heureDemande = "00:00"
+                    
                 a = False
                 j = jour_demande()
                 d = datetime.now()
                 jour = str(d.weekday())
                 heure = d.strftime('%H:%M')
                 for x in j:
-                    print(x)
                     if str(x) == jour:
                         if str(heure) == str(heureDemande):
                             a = True
                 if a is True:
-                    prepaMail(self, tree_model)
+                    prepaMail(self, get_hosts_callback)
                 
                 # Utiliser stop_event.wait() au lieu de time.sleep()
                 # Cela permet d'interrompre immédiatement quand stop_event.set() est appelé
                 if var.stop_event.wait(timeout=60):
-                    print("Mail recap: arrêt signalé via stop_event")
+                    logger.info("Mail recap: arrêt signalé via stop_event")
                     break
             else:
                 break
         except Exception as inst:
-            print("thread_recap - " + str(inst))
+            logger.error("thread_recap - " + str(inst), exc_info=True)

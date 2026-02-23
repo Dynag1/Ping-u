@@ -12,6 +12,46 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+def _get_smtp_config():
+    """Récupère et valide la configuration SMTP depuis la base de données."""
+    smtp_params = db.lire_param_mail()
+    if not smtp_params or len(smtp_params) < 5:
+        logger.error("Paramètres SMTP non configurés ou incomplets")
+        return None
+    
+    config = {
+        'email': smtp_params[0],
+        'password': smtp_params[1],
+        'port': int(smtp_params[2]) if str(smtp_params[2]).isdigit() else 0,
+        'server': smtp_params[3],
+        'recipients': smtp_params[4]
+    }
+    
+    if not all([config['server'], config['email'], config['recipients']]):
+        logger.error("Configuration SMTP invalide (serveur, email ou destinataire manquant)")
+        return None
+        
+    return config
+
+def _send_email(message, smtp_config):
+    """Gère la connexion et l'envoi de l'email via SMTP."""
+    try:
+        if smtp_config['port'] == 465:
+            with smtplib.SMTP_SSL(smtp_config['server'], smtp_config['port'], timeout=5) as server:
+                server.login(smtp_config['email'], smtp_config['password'])
+                server.send_message(message)
+        else:
+            with smtplib.SMTP(smtp_config['server'], smtp_config['port'], timeout=5) as server:
+                server.starttls()
+                server.login(smtp_config['email'], smtp_config['password'])
+                server.send_message(message)
+        return True
+    except Exception as e:
+        logger.error(f"Echec de la connexion SMTP ou de l'envoi: {e}")
+        raise e
+
+
+
 
 def get_email_template_alert(host_info, alert_type='down'):
     """
@@ -526,26 +566,14 @@ def send_grouped_alert_email(hosts_down, hosts_up):
         if not hosts_down and not hosts_up:
             return False
             
-        # Charger les paramètres SMTP
-        smtp_params = db.lire_param_mail()
-        if not smtp_params or len(smtp_params) < 5:
-            logger.error("Paramètres SMTP non configurés")
-            return False
-        
-        smtp_email = smtp_params[0]
-        smtp_password = smtp_params[1]
-        smtp_port = int(smtp_params[2])
-        smtp_server = smtp_params[3]
-        recipients = smtp_params[4]
-        
-        if not all([smtp_server, smtp_email, recipients]):
-            logger.error("Configuration SMTP incomplète")
+        smtp_config = _get_smtp_config()
+        if not smtp_config:
             return False
         
         # Créer le message
         message = MIMEMultipart('alternative')
-        message['From'] = smtp_email
-        message['To'] = recipients
+        message['From'] = smtp_config['email']
+        message['To'] = smtp_config['recipients']
         
         # Sujet selon le contenu
         site_name = var.nom_site if hasattr(var, 'nom_site') and var.nom_site else 'Réseau'
@@ -595,15 +623,7 @@ def send_grouped_alert_email(hosts_down, hosts_up):
         message.attach(part2)
         
         # Envoyer l'email
-        if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5) as server:
-                server.login(smtp_email, smtp_password)
-                server.send_message(message)
-        else:
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
-                server.starttls()
-                server.login(smtp_email, smtp_password)
-                server.send_message(message)
+        _send_email(message, smtp_config)
         
         total = len(hosts_down) + len(hosts_up)
         logger.info(f"Email d'alerte groupé envoyé ({len(hosts_down)} HS, {len(hosts_up)} revenus)")
@@ -619,28 +639,14 @@ def send_alert_email(host_info, alert_type='down'):
     Envoie un email d'alerte pour un hôte (conservé pour compatibilité)
     """
     try:
-        # Charger les paramètres SMTP
-        smtp_params = db.lire_param_mail()
-        if not smtp_params or len(smtp_params) < 5:
-            logger.error("Paramètres SMTP non configurés")
-            return False
-        
-        # Ordre correct des paramètres dans la DB (sFenetre.py):
-        # [0]=email, [1]=password, [2]=port, [3]=server, [4]=recipients, [5]=telegram_chatid
-        smtp_email = smtp_params[0]
-        smtp_password = smtp_params[1]
-        smtp_port = int(smtp_params[2])
-        smtp_server = smtp_params[3]
-        recipients = smtp_params[4]
-        
-        if not all([smtp_server, smtp_email, recipients]):
-            logger.error("Configuration SMTP incomplète")
+        smtp_config = _get_smtp_config()
+        if not smtp_config:
             return False
         
         # Créer le message
         message = MIMEMultipart('alternative')
-        message['From'] = smtp_email
-        message['To'] = recipients
+        message['From'] = smtp_config['email']
+        message['To'] = smtp_config['recipients']
         
         # Sujet selon le type d'alerte
         if alert_type == 'down':
@@ -671,15 +677,7 @@ Ce message a été envoyé automatiquement par Ping ü.
         message.attach(part2)
         
         # Envoyer l'email avec timeout réduit
-        if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5) as server:
-                server.login(smtp_email, smtp_password)
-                server.send_message(message)
-        else:
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
-                server.starttls()
-                server.login(smtp_email, smtp_password)
-                server.send_message(message)
+        _send_email(message, smtp_config)
         
         logger.info(f"Email d'alerte {alert_type} envoyé pour {host_info.get('ip')}")
         return True
@@ -830,26 +828,14 @@ def send_temp_alert_email(host_info, alert_type='high'):
     Envoie un email d'alerte pour une température élevée
     """
     try:
-        # Charger les paramètres SMTP
-        smtp_params = db.lire_param_mail()
-        if not smtp_params or len(smtp_params) < 5:
-            logger.error("Paramètres SMTP non configurés")
-            return False
-        
-        smtp_email = smtp_params[0]
-        smtp_password = smtp_params[1]
-        smtp_port = int(smtp_params[2])
-        smtp_server = smtp_params[3]
-        recipients = smtp_params[4]
-        
-        if not all([smtp_server, smtp_email, recipients]):
-            logger.error("Configuration SMTP incomplète")
+        smtp_config = _get_smtp_config()
+        if not smtp_config:
             return False
         
         # Créer le message
         message = MIMEMultipart('alternative')
-        message['From'] = smtp_email
-        message['To'] = recipients
+        message['From'] = smtp_config['email']
+        message['To'] = smtp_config['recipients']
         
         # Sujet selon le type d'alerte
         if alert_type == 'high':
@@ -880,15 +866,7 @@ Ce message a été envoyé automatiquement par Ping ü.
         message.attach(part2)
         
         # Envoyer l'email
-        if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5) as server:
-                server.login(smtp_email, smtp_password)
-                server.send_message(message)
-        else:
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
-                server.starttls()
-                server.login(smtp_email, smtp_password)
-                server.send_message(message)
+        _send_email(message, smtp_config)
         
         logger.info(f"Email alerte température {alert_type} envoyé pour {host_info.get('ip')}")
         return True
@@ -903,22 +881,8 @@ def send_recap_email(hosts_data, test_mode=False):
     Envoie un email récapitulatif
     """
     try:
-        # Charger les paramètres SMTP
-        smtp_params = db.lire_param_mail()
-        if not smtp_params or len(smtp_params) < 5:
-            logger.error("Paramètres SMTP non configurés")
-            return False
-        
-        # Ordre correct des paramètres dans la DB (sFenetre.py):
-        # [0]=email, [1]=password, [2]=port, [3]=server, [4]=recipients, [5]=telegram_chatid
-        smtp_email = smtp_params[0]
-        smtp_password = smtp_params[1]
-        smtp_port = int(smtp_params[2])
-        smtp_server = smtp_params[3]
-        recipients = smtp_params[4]
-        
-        if not all([smtp_server, smtp_email, recipients]):
-            logger.error("Configuration SMTP incomplète")
+        smtp_config = _get_smtp_config()
+        if not smtp_config:
             return False
         
         # Calculer les statistiques
@@ -936,8 +900,8 @@ def send_recap_email(hosts_data, test_mode=False):
         
         # Créer le message
         message = MIMEMultipart('alternative')
-        message['From'] = smtp_email
-        message['To'] = recipients
+        message['From'] = smtp_config['email']
+        message['To'] = smtp_config['recipients']
         
         if test_mode:
             message['Subject'] = f"🧪 TEST - Récapitulatif Ping ü - {availability}% disponibilité"
@@ -977,15 +941,7 @@ LISTE DES HÔTES :
         message.attach(part2)
         
         # Envoyer l'email avec timeout réduit
-        if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5) as server:
-                server.login(smtp_email, smtp_password)
-                server.send_message(message)
-        else:
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
-                server.starttls()
-                server.login(smtp_email, smtp_password)
-                server.send_message(message)
+        _send_email(message, smtp_config)
         
         logger.info(f"Email récapitulatif envoyé ({total} hôtes, {availability}% disponibilité)")
         return True
